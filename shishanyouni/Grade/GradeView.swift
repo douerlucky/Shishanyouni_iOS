@@ -29,33 +29,36 @@ struct GradeInquiry: View
     {
         ZStack(alignment: .bottom)
         {
-            // 底层的成绩列表
+            // 底层的成绩列表 - 改用 List
             ZStack
             {
-                ScrollView
+                if Grades.count == 0
                 {
-                    LazyVStack(spacing: 16)
-                    {
-                        if Grades.count == 0
-                        {
-                            Text("未查询到任何成绩")
-                                .font(Font.title)
-                        }
-                        else
-                        {
-                            ForEach(Grades)
-                            { item in
-                                GradeCard(grade: item)
-                            }
-                        }
+                    VStack {
+                        Spacer()
+                        Text("未查询到任何成绩")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                        Spacer()
                     }
-                    .padding(.top, 10)
-                    // 给底部留出空隙，防止最后一个卡片被按钮遮住
-                    .padding(.bottom, 100)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .blur(radius: isLoading ? 3 : 0)
                 }
-                .frame(maxWidth: .infinity)
-                .background(Color(uiColor: .secondarySystemBackground))
-                .blur(radius: isLoading ? 3 : 0) // 加载时列表模糊处理
+                else
+                {
+                    List(Grades) { item in
+                        GradeCard(grade: item)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .listRowSeparator(.hidden)
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .blur(radius: isLoading ? 3 : 0)
+                    // 给底部留出空隙，防止最后一个卡片被按钮遮住
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear.frame(height: 90)
+                    }
+                }
 
                 if isLoading
                 {
@@ -70,7 +73,7 @@ struct GradeInquiry: View
                             .foregroundColor(.secondary)
                     }
                     .frame(width: 180, height: 120)
-                    .background(Color(.systemBackground).opacity(0.8))
+                    .background(Color(.systemBackground).opacity(0.95))
                     .cornerRadius(15)
                     .shadow(radius: 10)
                 }
@@ -85,10 +88,11 @@ struct GradeInquiry: View
                 alertMessage: $alertMessage,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
-                gradeQuery: gradeQuery,
+                gradeQuery: gradeQuery
             )
         }
         .navigationTitle("成绩查询")
+        .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.large)
         .alert(alertTitle, isPresented: $showAlert)
         {
@@ -112,6 +116,7 @@ struct GradeCard: View
             {
                 Text(grade.kcmc)
                     .font(.title2)
+                    .fontWeight(.semibold)
                 Spacer()
             }
 
@@ -121,25 +126,31 @@ struct GradeCard: View
                 VStack
                 {
                     Text(grade.cj)
-                        .font(Font.title3)
+                        .font(.title3)
+                        .fontWeight(.medium)
                     Text("成绩")
-                        .font(Font.footnote)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
                 Spacer()
                 VStack
                 {
                     Text(grade.xf)
-                        .font(Font.title3)
+                        .font(.title3)
+                        .fontWeight(.medium)
                     Text("学分")
-                        .font(Font.footnote)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
                 Spacer()
                 VStack
                 {
                     Text(grade.jd)
-                        .font(Font.title3)
+                        .font(.title3)
+                        .fontWeight(.medium)
                     Text("绩点")
-                        .font(Font.footnote)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
             }
             .padding(.horizontal, 12)
@@ -147,8 +158,10 @@ struct GradeCard: View
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
-        .padding(.horizontal, 20) // 确保占屏幕约 90% 的视觉效果
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 
@@ -175,6 +188,7 @@ struct BottomButtonView: View
     {
         HStack(spacing: 20)
         {
+            // 学期选择按钮
             Button(action: { showPicker = true })
             {
                 HStack
@@ -183,9 +197,10 @@ struct BottomButtonView: View
                 }
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color(.tertiarySystemBackground))
             .foregroundColor(.blue)
             .clipShape(Capsule())
+            
             // 查询按钮
             Button(action: {
                 print("查询中...")
@@ -213,8 +228,8 @@ struct BottomButtonView: View
                         await MainActor.run
                         {
                             // 失败
-                            self.alertTitle = "哎呀，出错了"
-                            self.alertMessage = error.localizedDescription // 或者写“用户名密码错误”
+                            self.alertTitle = "哎呀,出错了"
+                            self.alertMessage = error.localizedDescription
                             self.showAlert = true
                         }
                     }
@@ -222,7 +237,7 @@ struct BottomButtonView: View
 
             })
             {
-                Label("查询成绩", systemImage: "")
+                Text("查询成绩")
                     .font(.headline)
                     .padding()
                     .background(Color.blue)
@@ -236,21 +251,37 @@ struct BottomButtonView: View
                 Image(systemName: "chart.bar.fill")
                     .font(.headline)
                     .padding()
-                    .background(Color.blue.opacity(0.1)) // 淡淡的蓝色
+                    .background(Color.blue.opacity(0.15))
                     .foregroundColor(.blue)
                     .clipShape(Capsule())
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 64)
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: -5)
+            ZStack {
+                // 毛玻璃液态效果
+                RoundedRectangle(cornerRadius: 64)
+                    .fill(.ultraThinMaterial)
+                
+                // 边框增强立体感
+                RoundedRectangle(cornerRadius: 64)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.3),
+                                Color.white.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.5
+                    )
+            }
+            .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: -8)
+            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: -2)
         )
-        
-
         .padding(.horizontal, 20)
-        .padding(.bottom, 10) // 避开 iPhone 的底部操作条
+        .padding(.bottom, 10)
         .sheet(isPresented: $showPicker)
         {
             VStack
@@ -281,7 +312,7 @@ struct BottomButtonView: View
                 .buttonStyle(.borderedProminent)
                 .padding(.bottom)
             }
-            .presentationDetents([.height(300)]) // 不遮全屏
+            .presentationDetents([.height(300)])
         }
     }
 }

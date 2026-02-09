@@ -16,7 +16,7 @@ struct shishanyouniApp: App
     {
         WindowGroup
         {
-            ContentView()
+            MainTabView()
             .environmentObject(userinfo)
         }
     }

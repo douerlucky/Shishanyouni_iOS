@@ -1,14 +1,13 @@
 import SwiftUI
 
-struct ContentView: View
+struct HomeView: View
 {
     @State private var cookieInput = "No cookies yet."
-   
 
     // 控制页面跳转状态
     @State private var navigateToGrades = false
     @State private var navigateDebugRoom = false
-    
+
     @EnvironmentObject var userinfo: userInfo
 
     var body: some View
@@ -22,8 +21,8 @@ struct ContentView: View
                     navigateDebugRoom = true
                 }
                 .buttonStyle(.borderedProminent)
-                
-                Button("查询成绩（2025 学年 第 3 学期）")
+
+                Button("成绩查询")
                 {
                     Task
                     {
@@ -31,11 +30,6 @@ struct ContentView: View
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                
-                Button("当前学号密码")
-                {
-                    userinfo.debugprint()
-                }
             }
             .padding()
             .navigationTitle("首页")
@@ -51,14 +45,12 @@ struct ContentView: View
                     .navigationTitle("Debug房间")
                     .navigationBarTitleDisplayMode(.inline)
             }
-
         }
     }
 }
 
 #Preview
 {
-    ContentView()
+    HomeView()
         .environmentObject(userInfo())
-        
 }

@@ -28,8 +28,11 @@
 		FE4D98162F330FB40087BCAE /* shishanyouni.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shishanyouni.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D98232F330FB60087BCAE /* shishanyouniTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D982D2F330FB60087BCAE /* shishanyouniUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE61BDA12F3A42F70082A9F9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -121,6 +124,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE61BDA22F3A42F70082A9F9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE6847852F3A33B500BC709F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE77A01E2F37BC800045B79D /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -129,6 +146,13 @@
 			sourceTree = "<group>";
 		};
 		FEFF050F2F39F24C009EA8F0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FEFF05742F39F740009EA8F0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -246,8 +270,20 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
+					ProductGroup = FEFF05742F39F740009EA8F0 /* Products */;
+					ProjectRef = FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE6847852F3A33B500BC709F /* Products */;
+					ProjectRef = FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FE25E0212F389407005F9B7C /* Products */;
 					ProjectRef = FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE61BDA22F3A42F70082A9F9 /* Products */;
+					ProjectRef = FE61BDA12F3A42F70082A9F9 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE77A01E2F37BC800045B79D /* Products */;
@@ -463,6 +499,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "狮山没我";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -493,6 +530,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "狮山没我";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
