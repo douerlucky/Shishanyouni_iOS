@@ -1,0 +1,94 @@
+opt_out_usage
+default_platform :ios
+skip_docs
+
+platform :ios do
+
+  desc "Lints the project"
+  lane :lint do
+    sh 'cd ../ && ./Pods/SwiftLint/swiftlint'
+  end
+
+  desc "Ensures that SwiftyRSA can be integrated with Carthage"
+  lane :test_carthage do
+    commit = last_git_commit()[:commit_hash]
+    git_repo_path = File.expand_path('..', File.dirname(__FILE__))
+    sh "rm ../CarthageIntegrationTest/Cartfile* || true"
+    sh "echo 'git \"file://#{git_repo_path}\" \"#{commit}\"' > ../CarthageIntegrationTest/Cartfile"
+    carthage(project_directory: './CarthageIntegrationTest', use_xcframeworks: true, platform: 'iOS')
+    sh "cp -R ../CarthageIntegrationTest/Carthage/Build/SwiftyRSA.xcframework ../CarthageIntegrationTest/CarthageIntegrationTest/"
+    gym(
+        project: './CarthageIntegrationTest/CarthageIntegrationTest.xcodeproj',
+        export_method: 'ad-hoc',
+        skip_codesigning: true,
+        skip_archive: true
+    )
+  end
+  
+  desc "Runs all the tests for Xcode 13.2.1"
+  lane :test_latest_xcode do
+    
+    swift_version = '5.0'
+    
+    # iOS
+    test_ios(
+      sdk: 'iphonesimulator',
+      swift_version: swift_version,
+      devices: [
+        'iPhone 8',
+        'iPhone 12'
+      ]
+    )
+    
+    # tvOS
+    test_tvos(
+      sdk: 'appletvsimulator',
+      swift_version: swift_version,
+      devices: [
+        'Apple TV',
+      ]
+    )
+
+    # watchOS (smoke test)
+    test_watchos(
+      sdk: 'watchsimulator',
+      swift_version: swift_version
+    )
+  end
+end
+
+
+private_lane :test_ios do |params|
+  scan(
+    scheme: 'SwiftyRSA iOS',
+    sdk: params[:sdk],
+    output_types: 'junit',
+    output_files: 'iOS.xml',
+    xcargs: "SWIFT_VERSION='#{params[:swift_version]}'",
+    include_simulator_logs: false, # https://github.com/fastlane/fastlane/issues/8909
+    devices: params[:devices],
+    disable_concurrent_testing: true # tests fail with concurrent simulators, see https://circleci.com/gh/TakeScoop/SwiftyRSA/138
+  )
+end
+
+private_lane :test_tvos do |params|
+  scan(
+    scheme: 'SwiftyRSA tvOS',
+    sdk: params[:sdk],
+    output_types: 'junit',
+    output_files: 'tvOS.xml',
+    xcargs: "SWIFT_VERSION='#{params[:swift_version]}'",
+    include_simulator_logs: false, # https://github.com/fastlane/fastlane/issues/8909
+    devices: params[:devices],
+    disable_concurrent_testing: true
+  )
+end
+
+private_lane :test_watchos do |params|
+  xcodebuild(
+    scheme: 'SwiftyRSA watchOS',
+    sdk: params[:sdk],
+    configuration: 'Debug',
+    xcargs: "SWIFT_VERSION='#{params[:swift_version]}'"
+  )
+end
