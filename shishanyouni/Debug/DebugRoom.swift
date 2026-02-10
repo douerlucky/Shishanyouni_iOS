@@ -96,7 +96,7 @@ struct DebugRoom: View
                         print(userinfo.encryptedResult)
                     }
                     .buttonStyle(.bordered)
-                    
+
                     Button("设定该学号密码")
                     {
                         userinfo.performEncryption()
@@ -107,6 +107,47 @@ struct DebugRoom: View
                 .padding()
                 .background(Color.blue.opacity(0.05))
                 .cornerRadius(12)
+                
+                Button("当前学号密码")
+                {
+                    userinfo.debugprint()
+                }
+                
+                // 替换 DebugRoom.swift 中的 "测试查询课表接口" 按钮代码为：
+
+                Button("测试查询课表接口")
+                {
+                    let coursequery: CourseQuery = CourseQuery()
+                    Task
+                    {
+                        do
+                        {
+                            print("🚀 开始测试课表接口...")
+                            let result: String = try await coursequery.loginAndGetCookie(
+                                username: userinfo.username,
+                                rsaPassword: userinfo.encryptedResult
+                            )
+                            print("✅ 成功获取 Cookie: \(result)")
+                        }
+                        catch let error as NSError
+                        {
+                            print("❌ 失败了！")
+                            print("错误域: \(error.domain)")
+                            print("错误代码: \(error.code)")
+                            print("错误描述: \(error.localizedDescription)")
+                            if let userInfo = error.userInfo as? [String: Any] {
+                                print("详细信息:")
+                                for (key, value) in userInfo {
+                                    print("  \(key): \(value)")
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            print("❌ 未知错误: \(error)")
+                        }
+                    }
+                }
                 Spacer(minLength: 0)
                     .sheet(isPresented: $showWeb)
                     {
