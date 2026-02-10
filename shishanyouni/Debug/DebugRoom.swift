@@ -107,12 +107,12 @@ struct DebugRoom: View
                 .padding()
                 .background(Color.blue.opacity(0.05))
                 .cornerRadius(12)
-                
+
                 Button("当前学号密码")
                 {
                     userinfo.debugprint()
                 }
-                
+
                 // 替换 DebugRoom.swift 中的 "测试查询课表接口" 按钮代码为：
 
                 Button("测试查询课表接口")
@@ -128,6 +128,29 @@ struct DebugRoom: View
                                 rsaPassword: userinfo.encryptedResult
                             )
                             print("✅ 成功获取 Cookie: \(result)")
+
+                            // 2. 查询课表
+                            let courses = try await coursequery.fetchCourses(
+                                cookie: result,
+                                xnm: "2025", // 2025学年
+                                xqm: "12" // 12=下学期，3=上学期
+                            )
+
+                            print("✅ 成功获取 \(courses.count) 门课程")
+
+                            // 3. 遍历课程信息
+                            for course in courses
+                            {
+                                print("""
+                                   课程: \(course.kcmc)
+                                   ID: \(course.jxb_id)
+                                   时间: \(course.xqjmc ?? "周\(course.xqj)") \(course.formattedJcs)
+                                   教室: \(course.cdmc ?? "无")
+                                   老师: \(course.xm ?? "未知") (\(course.zcmc ?? ""))
+                                   班级: \(course.classList.joined(separator: ", "))
+                                   周次: \(course.zcd ?? "")
+                                """)
+                            }
                         }
                         catch let error as NSError
                         {
@@ -135,9 +158,11 @@ struct DebugRoom: View
                             print("错误域: \(error.domain)")
                             print("错误代码: \(error.code)")
                             print("错误描述: \(error.localizedDescription)")
-                            if let userInfo = error.userInfo as? [String: Any] {
+                            if let userInfo = error.userInfo as? [String: Any]
+                            {
                                 print("详细信息:")
-                                for (key, value) in userInfo {
+                                for (key, value) in userInfo
+                                {
                                     print("  \(key): \(value)")
                                 }
                             }

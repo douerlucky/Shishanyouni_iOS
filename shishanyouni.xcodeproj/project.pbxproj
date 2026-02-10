@@ -25,6 +25,7 @@
 
 /* Begin PBXFileReference section */
 		FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE4D98162F330FB40087BCAE /* shishanyouni.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shishanyouni.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D98232F330FB60087BCAE /* shishanyouniTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D982D2F330FB60087BCAE /* shishanyouniUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -97,6 +98,13 @@
 
 /* Begin PBXGroup section */
 		FE25E0212F389407005F9B7C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE3860C72F3AFA9500E0E1C9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -292,6 +300,10 @@
 				{
 					ProductGroup = FEFF050F2F39F24C009EA8F0 /* Products */;
 					ProjectRef = FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE3860C72F3AFA9500E0E1C9 /* Products */;
+					ProjectRef = FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */;
 				},
 			);
 			projectRoot = "";
