@@ -9,14 +9,14 @@ import Foundation
 
 // MARK: - 响应结构体
 
-struct CourseResponse: Decodable
+struct ScheduleResponse: Decodable
 {
     let kbList: [Course]
 }
 
 // MARK: - 课程结构体
 
-struct Course: Identifiable, Decodable
+struct Course: Identifiable, Decodable, Encodable
 {
     let jxb_id: String // 教学班ID（唯一标识）
     let kch_id: String // 课程ID
@@ -53,23 +53,58 @@ struct Course: Identifiable, Decodable
         guard let zcd = zcd else { return Set() }
 
         var result = Set<Int>()
-        // 去掉“周”，按逗号分割成 ["5", "8-9", "11"]
+
+        // 去掉"周"，按逗号分割成各个部分
         let segments = zcd.replacingOccurrences(of: "周", with: "").components(separatedBy: ",")
 
         for segment in segments
         {
-            if segment.contains("-")
+            let trimmed = segment.trimmingCharacters(in: .whitespaces)
+
+            // 检查是否包含单双周标记
+            let isSingleWeek = trimmed.contains("(单)") || trimmed.contains("（单）")
+            let isDoubleWeek = trimmed.contains("(双)") || trimmed.contains("（双）")
+
+            // 移除单双周标记，提取数字部分
+            let cleanSegment = trimmed
+                .replacingOccurrences(of: "(单)", with: "")
+                .replacingOccurrences(of: "（单）", with: "")
+                .replacingOccurrences(of: "(双)", with: "")
+                .replacingOccurrences(of: "（双）", with: "")
+                .trimmingCharacters(in: .whitespaces)
+
+            if cleanSegment.contains("-")
             {
-                // 处理范围格式 "8-9"
-                let parts = segment.components(separatedBy: "-")
-                if parts.count == 2, let start = Int(parts[0]), let end = Int(parts[1])
+                // 处理范围格式 "8-9"、"13-17(单)"、"6-10(双)" 等
+                let parts = cleanSegment.components(separatedBy: "-")
+                if parts.count == 2,
+                   let start = Int(parts[0].trimmingCharacters(in: .whitespaces)),
+                   let end = Int(parts[1].trimmingCharacters(in: .whitespaces))
                 {
-                    for w in start ... end { result.insert(w) }
+                    for w in start ... end
+                    {
+                        // 如果有单周标记，只添加奇数周
+                        if isSingleWeek && w % 2 == 1
+                        {
+                            result.insert(w)
+                        }
+                        // 如果有双周标记，只添加偶数周
+                        else if isDoubleWeek && w % 2 == 0
+                        {
+                            result.insert(w)
+                        }
+                        // 没有单双周标记，添加所有周
+                        else if !isSingleWeek && !isDoubleWeek
+                        {
+                            result.insert(w)
+                        }
+                    }
                 }
             }
-            else if let singleWeek = Int(segment.trimmingCharacters(in: .whitespaces))
+            else if let singleWeek = Int(cleanSegment)
             {
-                // 处理单周格式 "5"
+                // 处理单周格式 "5"、"12"、"18" 等
+                // 单周或没有标记都直接添加
                 result.insert(singleWeek)
             }
         }
@@ -79,7 +114,7 @@ struct Course: Identifiable, Decodable
 
 // MARK: - 课表查询类
 
-class CourseQuery: NSObject, URLSessionTaskDelegate
+class ScheduleQuery: NSObject, URLSessionTaskDelegate
 {
     private let step1And2URL = "https://cas-paas.hzau.edu.cn/cas/login?service=http%3A%2F%2Fbyjxyt.hzau.edu.cn%2Fswlogin"
     private let courseQueryURL = "http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151"
@@ -288,7 +323,7 @@ class CourseQuery: NSObject, URLSessionTaskDelegate
 
             // 解析 JSON
             let decoder = JSONDecoder()
-            let response = try decoder.decode(CourseResponse.self, from: data)
+            let response = try decoder.decode(ScheduleResponse.self, from: data)
 
             print("✅ 课表查询成功，共 \(response.kbList.count) 门课程")
 

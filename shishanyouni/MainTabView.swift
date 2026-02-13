@@ -16,6 +16,14 @@ struct MainTabView: View
     {
         TabView
         {
+            NavigationStack
+            {
+                ScheduleView()
+            }
+            .tabItem
+            {
+                Label("课表", systemImage: "calendar")
+            }
             // 首页
             NavigationStack
             {

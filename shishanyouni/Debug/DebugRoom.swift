@@ -117,7 +117,7 @@ struct DebugRoom: View
 
                 Button("测试查询课表接口")
                 {
-                    let coursequery: CourseQuery = CourseQuery()
+                    let coursequery: ScheduleQuery = ScheduleQuery()
                     Task
                     {
                         do
@@ -133,7 +133,7 @@ struct DebugRoom: View
                             let courses = try await coursequery.fetchCourses(
                                 cookie: result,
                                 xnm: "2025", // 2025学年
-                                xqm: "12" // 12=下学期，3=上学期
+                                xqm: "3" // 12=下学期，3=上学期
                             )
 
                             print("✅ 成功获取 \(courses.count) 门课程")
@@ -173,6 +173,54 @@ struct DebugRoom: View
                         }
                     }
                 }
+                
+                Button("测试考试查询接口")
+                {
+                    let examquery: ExamQuery = ExamQuery()
+                    let coursequery: ScheduleQuery = ScheduleQuery()
+                    Task
+                    {
+                        do
+                        {
+                            print("测试成绩接口...")
+                            let result: String = try await coursequery.loginAndGetCookie(
+                                username: userinfo.username,
+                                rsaPassword: userinfo.encryptedResult
+                            )
+                            print("成功获取 Cookie: \(result)")
+
+                            // 2. 查询课表
+                            let courses = try await examquery.fetchExams(
+                                cookie: result,
+                                xnm: "2025", // 2025学年
+                                xqm: "3" // 12=下学期，3=上学期
+                            )
+
+                            print("成功获取 \(courses.count) 门考试")
+
+                        }
+                        catch let error as NSError
+                        {
+                            print("❌ 失败了！")
+                            print("错误域: \(error.domain)")
+                            print("错误代码: \(error.code)")
+                            print("错误描述: \(error.localizedDescription)")
+                            if let userInfo = error.userInfo as? [String: Any]
+                            {
+                                print("详细信息:")
+                                for (key, value) in userInfo
+                                {
+                                    print("  \(key): \(value)")
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            print("❌ 未知错误: \(error)")
+                        }
+                    }
+                }
+                
                 Spacer(minLength: 0)
                     .sheet(isPresented: $showWeb)
                     {
