@@ -7,6 +7,9 @@ struct HomeView: View
     // 控制页面跳转状态
     @State private var navigateToGrades = false
     @State private var navigateDebugRoom = false
+    @State private var navigateToExams = false
+    @State private var navigateToNanhuRun = false
+    @State private var navigateToPhysicalTest = false
 
     @EnvironmentObject var userinfo: userInfo
 
@@ -24,22 +27,29 @@ struct HomeView: View
             {
                 LazyVGrid(columns: columns, spacing: 20)
                 {
-                    // 按钮 1
                     MenuGridItem(title: "Debug页面", icon: "ladybug.fill", color: .orange)
                     {
                         navigateDebugRoom = true
                     }
-
-                    // 按钮 2
+                    
                     MenuGridItem(title: "成绩查询", icon: "graduationcap.fill", color: .blue)
                     {
                         navigateToGrades = true
                     }
-
-                    // 按钮 3 (占位示例)
+                    
                     MenuGridItem(title: "考试查询", icon: "pencil.line", color: .green)
                     {
-                        // TODO: 校园卡逻辑
+                        navigateToExams = true
+                    }
+                    
+                    MenuGridItem(title: "环湖跑查询", icon: "figure.run", color: .brown)
+                    {
+                        navigateToNanhuRun = true
+                    }
+                    
+                    MenuGridItem(title: "体测查询", icon: "figure.run.square.stack.fill", color: .red)
+                    {
+                        navigateToPhysicalTest = true
                     }
                 }
                 .padding()
@@ -47,6 +57,9 @@ struct HomeView: View
             .navigationTitle("首页")
             .navigationDestination(isPresented: $navigateToGrades) { GradeInquiry() }
             .navigationDestination(isPresented: $navigateDebugRoom) { DebugRoom() }
+            .navigationDestination(isPresented: $navigateToExams) {ExamView()}
+            .navigationDestination(isPresented: $navigateToNanhuRun) {NanhuRunView()}
+            .navigationDestination(isPresented: $navigateToPhysicalTest) {PhysicalTestView()}
         }
     }
 }

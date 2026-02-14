@@ -29,12 +29,15 @@ struct GradeInquiry: View
     {
         ZStack(alignment: .bottom)
         {
-            // 底层的成绩列表 - 改用 List
             ZStack
             {
+                Color(uiColor: .systemGroupedBackground)
+                    .ignoresSafeArea()
+
                 if Grades.count == 0
                 {
-                    VStack {
+                    VStack
+                    {
                         Spacer()
                         Text("未查询到任何成绩")
                             .font(.title2)
@@ -46,16 +49,20 @@ struct GradeInquiry: View
                 }
                 else
                 {
-                    List(Grades) { item in
+                    List(Grades)
+                    { item in
                         GradeCard(grade: item)
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                             .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    .background(Color.clear)
                     .blur(radius: isLoading ? 3 : 0)
                     // 给底部留出空隙，防止最后一个卡片被按钮遮住
-                    .safeAreaInset(edge: .bottom) {
+                    .safeAreaInset(edge: .bottom)
+                    {
                         Color.clear.frame(height: 90)
                     }
                 }
@@ -159,8 +166,9 @@ struct GradeCard: View
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         )
     }
 }
@@ -186,21 +194,25 @@ struct BottomButtonView: View
 
     var body: some View
     {
-        HStack(spacing: 20)
+        HStack(spacing: 15)
         {
             // 学期选择按钮
             Button(action: { showPicker = true })
             {
                 HStack
                 {
-                    Text("\(selectedYear) \(selectedTerm == "3" ? "上" : "下")")
+                    Text("\(formatYearAbbreviation(selectedYear)) \(selectedTerm == "3" ? "上" : "下")")
+                        .font(.system(size: 14, weight: .bold))
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 10, weight: .bold))
                 }
             }
-            .padding()
-            .background(Color(.tertiarySystemBackground))
-            .foregroundColor(.blue)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color(.systemBackground).opacity(0.9))
             .clipShape(Capsule())
-            
+            .optionalLiquidGlass()
+
             // 查询按钮
             Button(action: {
                 print("查询中...")
@@ -237,51 +249,35 @@ struct BottomButtonView: View
 
             })
             {
-                Text("查询成绩")
-                    .font(.headline)
-                    .padding()
-                    .background(Color.blue)
+                Text("查询")
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(Color.blue)
+                    .clipShape(Capsule())
             }
+            .optionalLiquidGlass()
             .clipShape(Capsule())
 
             // 预留的统计按钮
             Button(action: { print("去统计页") })
             {
                 Image(systemName: "chart.bar.fill")
-                    .font(.headline)
-                    .padding()
+                    .font(.system(size: 15, weight: .bold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
                     .background(Color.blue.opacity(0.15))
                     .foregroundColor(.blue)
                     .clipShape(Capsule())
             }
+            .optionalLiquidGlass()
         }
-        .padding()
-        .background(
-            ZStack {
-                // 毛玻璃液态效果
-                RoundedRectangle(cornerRadius: 64)
-                    .fill(.ultraThinMaterial)
-                
-                // 边框增强立体感
-                RoundedRectangle(cornerRadius: 64)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.3),
-                                Color.white.opacity(0.1)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 0.5
-                    )
-            }
-            .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: -8)
-            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: -2)
-        )
+        .padding(.vertical, 12)
+        .padding(.horizontal, 15)
+        .glassBackground(cornerRadius: 64)
         .padding(.horizontal, 20)
-        .padding(.bottom, 10)
+        .padding(.bottom, 25)
         .sheet(isPresented: $showPicker)
         {
             VStack
@@ -294,7 +290,20 @@ struct BottomButtonView: View
                 {
                     Picker("年份", selection: $selectedYear)
                     {
-                        ForEach(years, id: \.self) { Text($0 + "学年").tag($0) }
+                        ForEach(years, id: \.self)
+                        { year in
+                            // 将字符串转为 Int 算下一年，再拼接起来
+                            if let yearInt = Int(year)
+                            {
+                                Text("\(year)-\(String(yearInt + 1))学年")
+                                    .tag(year)
+                            }
+                            else
+                            {
+                                Text("\(year)学年")
+                                    .tag(year)
+                            }
+                        }
                     }
                     .pickerStyle(.wheel)
 
@@ -309,13 +318,29 @@ struct BottomButtonView: View
                 {
                     showPicker = false
                 }
+                .optionalLiquidGlass()
                 .buttonStyle(.borderedProminent)
                 .padding(.bottom)
+                
             }
             .presentationDetents([.height(300)])
         }
+        
+    }
+
+    private func formatYearAbbreviation(_ year: String) -> String
+    {
+        if let yearInt = Int(year)
+        {
+            let start = yearInt % 100 // 25
+            let end = (yearInt + 1) % 100 // 26
+            return String(format: "%02d-%02d", start, end)
+        }
+        return year
     }
 }
+
+
 
 #Preview
 {

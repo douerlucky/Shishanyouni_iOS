@@ -53,3 +53,58 @@ struct MainTabView: View
     MainTabView()
         .environmentObject(userInfo())
 }
+
+extension View
+{
+    @ViewBuilder
+    func optionalLiquidGlass() -> some View
+    {
+        if #available(iOS 26.0, *)
+        {
+            self
+                .glassEffect(.clear)
+        }
+        else
+        {
+            self // 老系统什么都不加
+        }
+    }
+    
+    func glassBackground(cornerRadius: CGFloat = 64) -> some View {
+          self.modifier(GlassBackground(cornerRadius: cornerRadius))
+      }
+}
+
+struct GlassBackground: ViewModifier {
+    var cornerRadius: CGFloat = 64
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                Group {
+                    if #available(iOS 26.0, *) {
+                        Color.clear
+                            .glassEffect(.regular)
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: cornerRadius)
+                                .fill(.ultraThinMaterial)
+                            RoundedRectangle(cornerRadius: cornerRadius)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.3),
+                                            Color.white.opacity(0.1),
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                        }
+                    }
+                }
+            )
+    }
+}

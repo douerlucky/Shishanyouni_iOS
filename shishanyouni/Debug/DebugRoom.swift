@@ -221,6 +221,44 @@ struct DebugRoom: View
                     }
                 }
                 
+                Button("测试南湖跑查询接口")
+                {
+                    let nanhurunquery: GymCloudQuery = GymCloudQuery()
+                    Task
+                    {
+                        do
+                        {
+                            print("测试成绩接口...")
+                            let result: String = try await nanhurunquery.loginAndGetRunCookie(
+                                username: userinfo.username,
+                                rsaPassword: userinfo.encryptedResult
+                            )
+                            print("成功获取 Cookie: \(result)")
+                            let circles = try await nanhurunquery.fetchRunScores(cookie: result)
+                            print(circles)
+                        }
+                        catch let error as NSError
+                        {
+                            print("❌ 失败了！")
+                            print("错误域: \(error.domain)")
+                            print("错误代码: \(error.code)")
+                            print("错误描述: \(error.localizedDescription)")
+                            if let userInfo = error.userInfo as? [String: Any]
+                            {
+                                print("详细信息:")
+                                for (key, value) in userInfo
+                                {
+                                    print("  \(key): \(value)")
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            print("❌ 未知错误: \(error)")
+                        }
+                    }
+                }
+                
                 Spacer(minLength: 0)
                     .sheet(isPresented: $showWeb)
                     {

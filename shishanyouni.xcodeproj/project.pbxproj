@@ -25,7 +25,9 @@
 
 /* Begin PBXFileReference section */
 		FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE4D98162F330FB40087BCAE /* shishanyouni.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shishanyouni.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,7 +108,21 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE0CDFE52F3FA546003F208B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE25E0212F389407005F9B7C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE28DF372F40437700814E65 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -298,8 +314,16 @@
 					ProjectRef = FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */;
 				},
 				{
+					ProductGroup = FE28DF372F40437700814E65 /* Products */;
+					ProjectRef = FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FE25E0212F389407005F9B7C /* Products */;
 					ProjectRef = FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE0CDFE52F3FA546003F208B /* Products */;
+					ProjectRef = FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE77A01E2F37BC800045B79D /* Products */;

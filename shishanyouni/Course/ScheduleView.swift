@@ -19,7 +19,8 @@ struct ScheduleView: View
     @State var nowDisplayWeek: Int = -1
 
     @State private var inputWeek: String = ""
-
+    @FocusState private var isWeekFieldFocused: Bool
+    
     // 滑动手势相关
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
@@ -139,7 +140,10 @@ struct ScheduleView: View
                                         .padding(.vertical, 8)
                                         .background(Color.blue)
                                         .clipShape(Capsule())
+                                        
                                 }
+                                
+                                .optionalLiquidGlass()
                             }
 
                             if nowDisplayWeek < 1
@@ -160,6 +164,7 @@ struct ScheduleView: View
                                             .clipShape(Capsule())
                                     }
                                 }
+                                .optionalLiquidGlass()
                             }
                         }
                         .opacity(nowDisplayWeek != calculateCurrentWeek() || nowDisplayWeek < 1 ? 1 : 0)
@@ -171,6 +176,8 @@ struct ScheduleView: View
                         HStack(spacing: 20)
                         {
                             Button(action: {
+                                isWeekFieldFocused = false
+                                inputWeek = ""
                                 nowDisplayWeek -= 1
                                 updateDatesForDisplayWeek()
 
@@ -179,6 +186,7 @@ struct ScheduleView: View
                                 Image(systemName: "chevron.left.circle.fill")
                                     .font(.system(size: 40))
                             }
+                            .optionalLiquidGlass()
 
                             VStack(spacing: 4)
                             {
@@ -204,10 +212,10 @@ struct ScheduleView: View
                                                 .multilineTextAlignment(.center)
                                                 .frame(width: 36, height: 28)
                                                 .background(Color(.systemGray6))
-                                                .clipShape(Capsule()) // 比胶囊形更像传统输入框
+                                                .clipShape(Capsule())
                                                 .foregroundColor(.primary)
-                                                .onTapGesture
-                                                {
+                                                .focused($isWeekFieldFocused) // 绑定焦点
+                                                .onTapGesture {
                                                     inputWeek = ""
                                                 }
                                                 .onSubmit
@@ -225,6 +233,8 @@ struct ScheduleView: View
                                                             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                                         }
                                                         .fontWeight(.bold)
+                                                        .optionalLiquidGlass()
+                                                        
                                                     }
                                                 }
 
@@ -260,6 +270,8 @@ struct ScheduleView: View
                             .frame(width: 80)
 
                             Button(action: {
+                                isWeekFieldFocused = false
+                                inputWeek = ""
                                 nowDisplayWeek += 1
                                 updateDatesForDisplayWeek()
 
@@ -268,12 +280,11 @@ struct ScheduleView: View
                                 Image(systemName: "chevron.right.circle.fill")
                                     .font(.system(size: 40))
                             }
+                            .optionalLiquidGlass()
                         }
                         .padding(.vertical, 10)
                         .padding(.horizontal, 20)
-                        .background(.regularMaterial)
-                        .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+                        .glassBackground(cornerRadius: 64)
                     }
                     .padding(.bottom, 20)
                 }
