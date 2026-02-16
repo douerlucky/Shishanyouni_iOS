@@ -26,6 +26,7 @@
 /* Begin PBXFileReference section */
 		FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -52,6 +53,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		FE1070332F434CE7001EB50D /* Exam */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Exam;
+			sourceTree = "<group>";
+		};
 		FE4D98182F330FB40087BCAE /* shishanyouni */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -116,6 +122,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE106FBB2F4328BF001EB50D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE25E0212F389407005F9B7C /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -156,6 +169,7 @@
 			children = (
 				FE779FE22F37BC580045B79D /* SwiftyRSA_Src */,
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
+				FE1070332F434CE7001EB50D /* Exam */,
 				FE4D98262F330FB60087BCAE /* shishanyouniTests */,
 				FE4D98302F330FB60087BCAE /* shishanyouniUITests */,
 				FE4D98172F330FB40087BCAE /* Products */,
@@ -223,6 +237,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				FE1070332F434CE7001EB50D /* Exam */,
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
 				FE779FE22F37BC580045B79D /* SwiftyRSA_Src */,
 			);
@@ -352,6 +367,10 @@
 				{
 					ProductGroup = FEFF05742F39F740009EA8F0 /* Products */;
 					ProjectRef = FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE106FBB2F4328BF001EB50D /* Products */;
+					ProjectRef = FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE61BDA22F3A42F70082A9F9 /* Products */;

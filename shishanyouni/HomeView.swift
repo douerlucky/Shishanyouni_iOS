@@ -11,6 +11,15 @@ struct HomeView: View
     @State private var navigateToNanhuRun = false
     @State private var navigateToPhysicalTest = false
     @State private var navigateToAllCoueseSearch = false
+    @State private var navigateToSchoolCalender = false
+    @State private var navigateToBus = false
+    @State private var navigateElectricity = false
+
+    @State private var date: String = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d" // 只要日期数字
+        return formatter.string(from: Date())
+    }()
 
     @EnvironmentObject var userinfo: userInfo
 
@@ -32,30 +41,42 @@ struct HomeView: View
                     {
                         navigateDebugRoom = true
                     }
-                    
+
                     MenuGridItem(title: "成绩查询", icon: "graduationcap.fill", color: .blue)
                     {
                         navigateToGrades = true
                     }
-                    
+
                     MenuGridItem(title: "考试查询", icon: "pencil.line", color: .green)
                     {
                         navigateToExams = true
                     }
-                    
+
                     MenuGridItem(title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: .yellow)
                     {
                         navigateToAllCoueseSearch = true
                     }
-                    
+
                     MenuGridItem(title: "环湖跑查询", icon: "figure.run", color: .brown)
                     {
                         navigateToNanhuRun = true
                     }
-                    
+
                     MenuGridItem(title: "体测查询", icon: "figure.run.square.stack.fill", color: .red)
                     {
                         navigateToPhysicalTest = true
+                    }
+                    MenuGridItem(title: "宿舍电费", icon: "gauge.with.needle.fill", color: .indigo)
+                    {
+                        navigateElectricity = true
+                    }
+                    MenuGridItem(title: "校历查询", icon: date + ".calendar", color: .cyan)
+                    {
+                        navigateToSchoolCalender = true
+                    }
+                    MenuGridItem(title: "校车查询", icon: "bus", color: .pink)
+                    {
+                        navigateToBus = true
                     }
                 }
                 .padding()
@@ -63,13 +84,15 @@ struct HomeView: View
             .navigationTitle("首页")
             .navigationDestination(isPresented: $navigateToGrades) { GradeInquiry() }
             .navigationDestination(isPresented: $navigateDebugRoom) { DebugRoom() }
-            .navigationDestination(isPresented: $navigateToExams) {ExamView()}
-            .navigationDestination(isPresented: $navigateToNanhuRun) {NanhuRunView()}
-            .navigationDestination(isPresented: $navigateToPhysicalTest) {PhysicalTestView()}
-            .navigationDestination(isPresented: $navigateToAllCoueseSearch)
-            {
-                AllCourseView()
-            }
+            .navigationDestination(isPresented: $navigateToExams) { ExamView() }
+            .navigationDestination(isPresented: $navigateToNanhuRun) { NanhuRunView() }
+            .navigationDestination(isPresented: $navigateToPhysicalTest) { PhysicalTestView() }
+            .navigationDestination(isPresented: $navigateToAllCoueseSearch) { AllCourseView() }
+            .navigationDestination(isPresented: $navigateToSchoolCalender) { SchoolCalendarView() }
+            .navigationDestination(isPresented: $navigateToBus)
+            { SchoolBusView() }
+            .navigationDestination(isPresented: $navigateElectricity)
+            { ElectricityView() }
         }
     }
 }

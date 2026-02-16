@@ -152,7 +152,7 @@ struct AllCourseView: View
                
             }
             .navigationTitle("课程搜索")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.automatic)
             .toolbar(.hidden, for: .tabBar)
             .sheet(isPresented: $showPicker)
             {

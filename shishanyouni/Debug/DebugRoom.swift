@@ -259,6 +259,43 @@ struct DebugRoom: View
                     }
                 }
                 
+                Button("测试电费查询接口")
+                {
+                    let electrictyquery: ElectricityQuery = ElectricityQuery()
+                    Task
+                    {
+                        do
+                        {
+                            print("测试接口...")
+                            let result: String = try await electrictyquery.loginAndGetToken(
+                                username: userinfo.username,
+                                rsaPassword: userinfo.encryptedResult
+                            )
+                            print("成功获取 Token: \(result)")
+                    
+                        }
+                        catch let error as NSError
+                        {
+                            print("❌ 失败了！")
+                            print("错误域: \(error.domain)")
+                            print("错误代码: \(error.code)")
+                            print("错误描述: \(error.localizedDescription)")
+                            if let userInfo = error.userInfo as? [String: Any]
+                            {
+                                print("详细信息:")
+                                for (key, value) in userInfo
+                                {
+                                    print("  \(key): \(value)")
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            print("❌ 未知错误: \(error)")
+                        }
+                    }
+                }
+                
                 Spacer(minLength: 0)
                     .sheet(isPresented: $showWeb)
                     {

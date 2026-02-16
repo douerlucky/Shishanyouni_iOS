@@ -12,6 +12,7 @@ struct MainTabView: View
 {
     @EnvironmentObject var userinfo: userInfo
 
+
     var body: some View
     {
         TabView
@@ -69,25 +70,33 @@ extension View
             self // 老系统什么都不加
         }
     }
-    
-    func glassBackground(cornerRadius: CGFloat = 64) -> some View {
-          self.modifier(GlassBackground(cornerRadius: cornerRadius))
-      }
+
+    func glassBackground(cornerRadius: CGFloat = 64) -> some View
+    {
+        modifier(GlassBackground(cornerRadius: cornerRadius))
+    }
 }
 
-struct GlassBackground: ViewModifier {
+struct GlassBackground: ViewModifier
+{
     var cornerRadius: CGFloat = 64
 
-    func body(content: Content) -> some View {
+    func body(content: Content) -> some View
+    {
         content
             .background(
-                Group {
-                    if #available(iOS 26.0, *) {
+                Group
+                {
+                    if #available(iOS 26.0, *)
+                    {
                         Color.clear
                             .glassEffect(.regular)
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                    } else {
-                        ZStack {
+                    }
+                    else
+                    {
+                        ZStack
+                        {
                             RoundedRectangle(cornerRadius: cornerRadius)
                                 .fill(.ultraThinMaterial)
                             RoundedRectangle(cornerRadius: cornerRadius)
