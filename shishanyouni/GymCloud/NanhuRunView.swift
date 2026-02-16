@@ -22,7 +22,7 @@ struct NanhuRunView: View
 
     var body: some View
     {
-        ZStack
+        ZStack()
         {
             // 背景颜色
             Color(uiColor: .systemGroupedBackground)
@@ -78,6 +78,12 @@ struct NanhuRunView: View
                             .cornerRadius(20)
                     )
                 }
+            }
+
+            VStack
+            {
+                Spacer()
+                NanhuRunQueryButton(fetchNanhuRunData: { fetchData() })
             }
         }
         .navigationTitle("环湖跑成绩")
@@ -190,6 +196,37 @@ struct BlurView: UIViewRepresentable
     }
 
     func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
+}
+
+struct NanhuRunQueryButton: View
+{
+    var fetchNanhuRunData: () -> Void
+
+    var body: some View
+    {
+        HStack(spacing: 20)
+        {
+            // 2. 刷新/查询按钮（中间核心位置）
+            Button(action: {
+                fetchNanhuRunData()
+            })
+            {
+                Text("同步数据")
+                    .font(.headline)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 25)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .clipShape(Capsule())
+            }
+            .optionalLiquidGlass()
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
+        .glassBackground(cornerRadius: 64)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 30) // 距离底部安全区域的距离
+    }
 }
 
 #Preview

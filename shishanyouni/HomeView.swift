@@ -10,6 +10,7 @@ struct HomeView: View
     @State private var navigateToExams = false
     @State private var navigateToNanhuRun = false
     @State private var navigateToPhysicalTest = false
+    @State private var navigateToAllCoueseSearch = false
 
     @EnvironmentObject var userinfo: userInfo
 
@@ -42,6 +43,11 @@ struct HomeView: View
                         navigateToExams = true
                     }
                     
+                    MenuGridItem(title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: .yellow)
+                    {
+                        navigateToAllCoueseSearch = true
+                    }
+                    
                     MenuGridItem(title: "环湖跑查询", icon: "figure.run", color: .brown)
                     {
                         navigateToNanhuRun = true
@@ -60,6 +66,10 @@ struct HomeView: View
             .navigationDestination(isPresented: $navigateToExams) {ExamView()}
             .navigationDestination(isPresented: $navigateToNanhuRun) {NanhuRunView()}
             .navigationDestination(isPresented: $navigateToPhysicalTest) {PhysicalTestView()}
+            .navigationDestination(isPresented: $navigateToAllCoueseSearch)
+            {
+                AllCourseView()
+            }
         }
     }
 }

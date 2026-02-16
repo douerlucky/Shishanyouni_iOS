@@ -30,6 +30,7 @@
 		FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE3B40EF2F417D0C00C34896 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE4D98162F330FB40087BCAE /* shishanyouni.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shishanyouni.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D98232F330FB60087BCAE /* shishanyouniTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D982D2F330FB60087BCAE /* shishanyouniUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -137,6 +138,13 @@
 			sourceTree = "<group>";
 		};
 		FE38613E2F3CCF2400E0E1C9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE3B40F02F417D0C00C34896 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -316,6 +324,10 @@
 				{
 					ProductGroup = FE28DF372F40437700814E65 /* Products */;
 					ProjectRef = FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE3B40F02F417D0C00C34896 /* Products */;
+					ProjectRef = FE3B40EF2F417D0C00C34896 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE25E0212F389407005F9B7C /* Products */;

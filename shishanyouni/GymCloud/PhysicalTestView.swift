@@ -71,11 +71,11 @@ struct PhysicalTestView: View
                                         .font(.system(size: 16))
                                         .foregroundColor(.secondary.opacity(0.8))
 
-                                    HStack
+                                    HStack()
                                     {
                                         Text(score.gradeLevel)
 
-                                        Label(score.className, systemImage: "person.2.fill")
+                                        Text(score.className)
                                     }
                                 }
                             }

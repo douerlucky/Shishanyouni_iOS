@@ -20,7 +20,7 @@ struct ScheduleView: View
 
     @State private var inputWeek: String = ""
     @FocusState private var isWeekFieldFocused: Bool
-    
+
     // 滑动手势相关
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
@@ -89,7 +89,7 @@ struct ScheduleView: View
                                 CourseGridView(courses: courses, nowdisplayWeek: nowDisplayWeek)
                             }
                             .padding(10)
-                            .padding(.bottom,140)
+                            .padding(.bottom, 140)
                         }
                         .gesture(
                             DragGesture()
@@ -140,9 +140,8 @@ struct ScheduleView: View
                                         .padding(.vertical, 8)
                                         .background(Color.blue)
                                         .clipShape(Capsule())
-                                        
                                 }
-                                
+
                                 .optionalLiquidGlass()
                             }
 
@@ -215,7 +214,8 @@ struct ScheduleView: View
                                                 .clipShape(Capsule())
                                                 .foregroundColor(.primary)
                                                 .focused($isWeekFieldFocused) // 绑定焦点
-                                                .onTapGesture {
+                                                .onTapGesture
+                                                {
                                                     inputWeek = ""
                                                 }
                                                 .onSubmit
@@ -234,7 +234,6 @@ struct ScheduleView: View
                                                         }
                                                         .fontWeight(.bold)
                                                         .optionalLiquidGlass()
-                                                        
                                                     }
                                                 }
 
