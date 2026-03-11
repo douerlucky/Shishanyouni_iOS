@@ -24,6 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -38,6 +39,7 @@
 		FE61BDA12F3A42F70082A9F9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FEADE0B02F607CB200C87F6D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -108,6 +110,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		FE006B312F6085FC00FD1943 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE05C25A2F3E4483009522D6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -201,6 +210,13 @@
 			sourceTree = "<group>";
 		};
 		FE77A01E2F37BC800045B79D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FEADE0B12F607CB200C87F6D /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -353,6 +369,10 @@
 					ProjectRef = FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */;
 				},
 				{
+					ProductGroup = FE006B312F6085FC00FD1943 /* Products */;
+					ProjectRef = FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FE77A01E2F37BC800045B79D /* Products */;
 					ProjectRef = FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */;
 				},
@@ -379,6 +399,10 @@
 				{
 					ProductGroup = FE38613E2F3CCF2400E0E1C9 /* Products */;
 					ProjectRef = FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FEADE0B12F607CB200C87F6D /* Products */;
+					ProjectRef = FEADE0B02F607CB200C87F6D /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE05C25A2F3E4483009522D6 /* Products */;
@@ -584,13 +608,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SQ2W9UN4WB;
+				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "狮山没我";
+				INFOPLIST_KEY_CFBundleDisplayName = "狮山有我";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -602,8 +627,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = douerlucky.shishanyouni;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -615,13 +641,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SQ2W9UN4WB;
+				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "狮山没我";
+				INFOPLIST_KEY_CFBundleDisplayName = "狮山有我";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -633,8 +660,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = douerlucky.shishanyouni;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

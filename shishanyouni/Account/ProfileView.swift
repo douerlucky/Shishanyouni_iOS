@@ -19,7 +19,7 @@ struct ProfileView: View
 
         switch hour
         {
-        case 0 ..< 5: return "凌晨好, 还在卷吗?"
+        case 0 ..< 5: return "凌晨好, 还在卷吗"
         case 5 ..< 9: return "早上好"
         case 9 ..< 11: return "上午好"
         case 11 ..< 13: return "中午好"
@@ -149,7 +149,7 @@ struct ProfileView: View
             }
         }
         .listStyle(.insetGrouped) // 🌟 必须是这个样式才有圆角卡片感
-        .navigationTitle("个人")
+        .navigationTitle("我的")
     }
 }
 

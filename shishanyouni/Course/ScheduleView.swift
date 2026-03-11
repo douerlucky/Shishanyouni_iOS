@@ -671,8 +671,8 @@ struct MergedCourseCard: View
             Color(red: 0.4, green: 0.2, blue: 0.5), // 茄紫
             Color(red: 0.6, green: 0.2, blue: 0.3), // 酒红
         ]
-        let hash = abs(course.jxb_id.hashValue)
-        return colors[hash % colors.count]
+        let index = course.colorIndex ?? 0
+        return colors[index % colors.count]
     }
 }
 

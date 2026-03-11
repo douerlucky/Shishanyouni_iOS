@@ -113,6 +113,7 @@ struct AllCourseView: View
                         // 建议在这里加一点点阴影，防止在 List 上看不清
                         .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
                     }
+                    .optionalLiquidGlass()
 
                     // 2. 底部搜索框
                     HStack

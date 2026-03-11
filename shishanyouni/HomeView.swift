@@ -37,10 +37,10 @@ struct HomeView: View
             {
                 LazyVGrid(columns: columns, spacing: 20)
                 {
-                    MenuGridItem(title: "Debug页面", icon: "ladybug.fill", color: .orange)
-                    {
-                        navigateDebugRoom = true
-                    }
+//                    MenuGridItem(title: "Debug页面", icon: "ladybug.fill", color: .orange)
+//                    {
+//                        navigateDebugRoom = true
+//                    }
 
                     MenuGridItem(title: "成绩查询", icon: "graduationcap.fill", color: .blue)
                     {

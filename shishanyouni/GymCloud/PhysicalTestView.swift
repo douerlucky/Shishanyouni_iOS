@@ -36,7 +36,7 @@ struct PhysicalTestView: View
 
     private let gymQuery = GymCloudQuery()
 
-    let years = ["2025-2026", "2024-2025", "2023-2024", "2022-2023"]
+    let years = ["2026-2027","2025-2026", "2024-2025", "2023-2024", "2022-2023"]
 
     var body: some View
     {

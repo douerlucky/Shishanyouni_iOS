@@ -29,6 +29,8 @@ struct Course: Identifiable, Decodable, Encodable
     let jxbzc: String? // 上课班级（分号分隔）
     let zcd: String? // 周次（如"4-5周,7-8周"）
     let xqjmc: String? // 星期几中文（如"星期一"）
+    
+    var colorIndex: Int? = 0 //用于固定保存颜色的索引
 
     // 使用教学班ID作为唯一标识
     var id: String

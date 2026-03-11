@@ -28,7 +28,14 @@ struct LoginView: View
         {
             VStack(spacing: 16)
             {
+                Image("login")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 128, height: 128)
+                    .cornerRadius(32)
                 Text("使用信息门户的学号和密码来进行登录")
+                    .foregroundColor(.secondary)
+                    
 
                 VStack(spacing: 16)
                 {

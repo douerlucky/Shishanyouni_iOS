@@ -26,7 +26,7 @@ struct ScheduleSettingView: View
 
     // 导入选择器相关状态
     @State private var selectedYear = "2025-2026"
-    @State private var selectedSemester = "秋季学期"
+    @State private var selectedSemester = "春季学期"
 
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
 
@@ -35,6 +35,10 @@ struct ScheduleSettingView: View
 
     init(semesterStartDate: Binding<Date>, courses: Binding<[Course]>)
     {
+        let components = DateComponents(year: 2026, month: 3, day: 2)
+        let defaultDate = Calendar.current.date(from: components) ?? Date()
+            // 注意：给 @State 变量在 init 里直接赋值需要访问它的 _ 包装器
+        self._tempStartDate = State(initialValue: defaultDate)
         _semesterStartDate = semesterStartDate
         _courses = courses
         // 不自动填充日期，使用当前日期作为DatePicker的初始值
@@ -299,11 +303,31 @@ struct ScheduleSettingView: View
                 xqm: xqm
             )
 
+            var processedCourses = fetchedCourses
+            var uniqueCourseMap: [String: Int] = [:]
+            var currentColorIndex = 0
+            for i in 0 ..< processedCourses.count
+            {
+                let courseName = processedCourses[i].kcmc // 以课程名作为同色依据
+                if let existingIndex = uniqueCourseMap[courseName]
+                {
+                    // 同一门课（比如一周上两次）使用相同的颜色索引
+                    processedCourses[i].colorIndex = existingIndex
+                }
+                else
+                {
+                    // 新课程，分配新颜色索引并递增
+                    processedCourses[i].colorIndex = currentColorIndex
+                    uniqueCourseMap[courseName] = currentColorIndex
+                    currentColorIndex += 1
+                }
+            }
+
             importedCoursesCount = fetchedCourses.count
-            courses = fetchedCourses
+            courses = processedCourses
 
             // 保存课表到本地
-            saveCourses(fetchedCourses)
+            saveCourses(processedCourses)
 
             importAlertMessage = "课表导入成功\n已获取 \(importedCoursesCount) 门课程\n请记得调整开学时间"
             showImportAlert = true
