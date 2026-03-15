@@ -3,7 +3,7 @@
 //  shishanyouni
 //
 //  Created by douer_lucky on 2026/2/10.
-//
+//  updated by lancang on 2026/3/15
 
 import SwiftUI
 
@@ -17,6 +17,12 @@ struct ScheduleView: View
     @State private var courses: [Course] = []
     @State var datesCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
     @State var nowDisplayWeek: Int = -1
+    //新增
+    @State private var showAddCourse = false
+    @State private var selectedCourse: Course?
+    @State private var showEditCourse = false
+    
+    
 
     @State private var inputWeek: String = ""
     @FocusState private var isWeekFieldFocused: Bool
@@ -52,7 +58,19 @@ struct ScheduleView: View
             }
         )
     }
-
+    
+    //保存函数
+    private func saveCourses() {
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(courses)
+            UserDefaults.standard.set(data, forKey: "saved_courses")
+            print("✅ 课程保存成功，共 \(courses.count) 门")
+        } catch {
+            print("❌ 课程保存失败: \(error)")
+        }
+    }
+    
     var body: some View
     {
         NavigationStack
@@ -85,8 +103,21 @@ struct ScheduleView: View
                                     .frame(width: 60)
                                     .background(Color(.secondarySystemBackground).opacity(0.5))
                                     .clipShape(Capsule())
-
-                                CourseGridView(courses: courses, nowdisplayWeek: nowDisplayWeek)
+                                //修改
+                                CourseGridView(
+                                    courses: courses,
+                                    nowdisplayWeek: nowDisplayWeek,
+                                    onDeleteCourse: { course in
+                                        if let index = courses.firstIndex(where: { $0.id == course.id }) {
+                                            courses.remove(at: index)
+                                            saveCourses()
+                                        }
+                                    },
+                                    onEditCourse: { course in
+                                        selectedCourse = course
+                                        showEditCourse = true
+                                    }
+                                )
                             }
                             .padding(10)
                             .padding(.bottom, 140)
@@ -300,6 +331,15 @@ struct ScheduleView: View
                             .fontWeight(.medium)
                     }
                 }
+                // 新增：手动添加课程按钮
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            showAddCourse = true
+                        }) {
+                            Image(systemName: "plus.circle")
+                                .fontWeight(.medium)
+                        }
+                    }
             }
             .sheet(isPresented: $showSettings)
             {
@@ -308,6 +348,21 @@ struct ScheduleView: View
                     courses: $courses
                 )
                 .environmentObject(userinfo)
+            }
+            .sheet(isPresented: $showEditCourse) {
+                if let course = selectedCourse {
+                    if course.isManual {
+                        ManualCourseEditorView(courses: $courses, mode: .edit(course))
+                    } else {
+                        // 如果是导入的课程，显示提示
+                        Text("导入的课程不能编辑")
+                            .presentationDetents([.height(200)])
+                    }
+                }
+            }
+            // 新增：手动添加课程的 sheet
+            .sheet(isPresented: $showAddCourse) {
+                ManualCourseEditorView(courses: $courses, mode: .add)
             }
             .onAppear
             {
@@ -483,7 +538,10 @@ struct CourseGridView: View
 {
     let courses: [Course]
     let nowdisplayWeek: Int
-
+    
+    var onDeleteCourse: ((Course) -> Void)?
+    var onEditCourse: ((Course) -> Void)?
+    
     var body: some View
     {
         HStack(spacing: 0)
@@ -508,7 +566,10 @@ struct CourseGridView: View
                             {
                                 if isFirstPeriod(course: course, period: period)
                                 {
-                                    MergedCourseCard(course: course)
+                                    MergedCourseCard(
+                                        course: course,
+                                        onDelete: { onDeleteCourse?(course)},
+                                        onEdit: {onEditCourse?(course)} )
                                 }
                             }
                             else
@@ -570,6 +631,13 @@ struct CourseGridView: View
 struct MergedCourseCard: View
 {
     let course: Course
+    
+    //  新增
+    var onDelete: (() -> Void)?
+    var onEdit: (() -> Void)?
+    
+    
+    
     private let cellHeight: CGFloat = 70
     private let cellPadding: CGFloat = 1
 
@@ -617,6 +685,19 @@ struct MergedCourseCard: View
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
+        // add
+        .contextMenu {
+            if course.isManual {
+                Button(action: { onEdit?() }) {
+                    Label("编辑", systemImage: "pencil")
+                }
+                
+                Button(role: .destructive, action: { onDelete?() }) {
+                    Label("删除", systemImage: "trash")
+                }
+            }
+        }
+        
         .frame(height: totalHeight)
         .padding(1)
     }
@@ -751,6 +832,7 @@ struct TimeSlotView: View
         .frame(height: cellHeight)
     }
 }
+
 
 #Preview
 {

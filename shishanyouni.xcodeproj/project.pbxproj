@@ -24,6 +24,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A503295E2F66810900917FD3 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		A5032A062F6694EE00917FD3 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -110,6 +112,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A503295F2F66810900917FD3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A5032A072F6694EE00917FD3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE006B312F6085FC00FD1943 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -349,16 +365,40 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = FE6847852F3A33B500BC709F /* Products */;
-					ProjectRef = FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */;
-				},
-				{
 					ProductGroup = FE28DF372F40437700814E65 /* Products */;
 					ProjectRef = FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE3B40F02F417D0C00C34896 /* Products */;
 					ProjectRef = FE3B40EF2F417D0C00C34896 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE006B312F6085FC00FD1943 /* Products */;
+					ProjectRef = FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE77A01E2F37BC800045B79D /* Products */;
+					ProjectRef = FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE106FBB2F4328BF001EB50D /* Products */;
+					ProjectRef = FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = A5032A072F6694EE00917FD3 /* Products */;
+					ProjectRef = A5032A062F6694EE00917FD3 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE38613E2F3CCF2400E0E1C9 /* Products */;
+					ProjectRef = FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE05C25A2F3E4483009522D6 /* Products */;
+					ProjectRef = FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE6847852F3A33B500BC709F /* Products */;
+					ProjectRef = FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE25E0212F389407005F9B7C /* Products */;
@@ -369,12 +409,8 @@
 					ProjectRef = FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */;
 				},
 				{
-					ProductGroup = FE006B312F6085FC00FD1943 /* Products */;
-					ProjectRef = FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */;
-				},
-				{
-					ProductGroup = FE77A01E2F37BC800045B79D /* Products */;
-					ProjectRef = FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */;
+					ProductGroup = A503295F2F66810900917FD3 /* Products */;
+					ProjectRef = A503295E2F66810900917FD3 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FEFF050F2F39F24C009EA8F0 /* Products */;
@@ -389,24 +425,12 @@
 					ProjectRef = FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */;
 				},
 				{
-					ProductGroup = FE106FBB2F4328BF001EB50D /* Products */;
-					ProjectRef = FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */;
-				},
-				{
 					ProductGroup = FE61BDA22F3A42F70082A9F9 /* Products */;
 					ProjectRef = FE61BDA12F3A42F70082A9F9 /* SwiftyRSA.xcodeproj */;
 				},
 				{
-					ProductGroup = FE38613E2F3CCF2400E0E1C9 /* Products */;
-					ProjectRef = FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */;
-				},
-				{
 					ProductGroup = FEADE0B12F607CB200C87F6D /* Products */;
 					ProjectRef = FEADE0B02F607CB200C87F6D /* SwiftyRSA.xcodeproj */;
-				},
-				{
-					ProductGroup = FE05C25A2F3E4483009522D6 /* Products */;
-					ProjectRef = FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */;
 				},
 			);
 			projectRoot = "";
