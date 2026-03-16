@@ -70,6 +70,7 @@ class userInfo: ObservableObject
     // 清除保存的数据（退出登录时使用）
     func clearUserInfo()
     {
+        
         // 清除 Keychain 中的密码
         KeychainHelper.shared.delete(for: username)
 

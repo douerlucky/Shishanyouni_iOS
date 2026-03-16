@@ -17,7 +17,6 @@ struct DebugRoom: View
 
     @EnvironmentObject var userinfo: userInfo
 
-    // 登录入口
     private let loginURL = URL(string: "https://cas-paas.hzau.edu.cn/cas/login?service=https://portal-paas.hzau.edu.cn/")!
 
     var body: some View
@@ -31,27 +30,6 @@ struct DebugRoom: View
                     showWeb = true
                 }
                 .buttonStyle(.borderedProminent)
-
-//                Button("导出 Cookie（登录后点）")
-//                {
-//                    guard let web = webViewRef
-//                    else
-//                    {
-//                        cookieInput = "WebView 还没创建"
-//                        return
-//                    }
-//                    CookieUtil.getJSessionID(from: web)
-//                    { js in
-//                        // 🌟 核心修复：确保在主线程更新 UI，并安全处理 vm
-//                        DispatchQueue.main.async
-//                        {
-//                            let result = js ?? "未找到 JSESSIONID"
-//                            self.vm.globalCookie = result // 更新全局状态
-//                            self.cookieInput = result // 更新本地显示（如果你还要用的话）
-//                            print("Cookie 已更新: \(result)")
-//                        }
-//                    }
-//                }
 
                 ScrollView
                 {
@@ -78,6 +56,7 @@ struct DebugRoom: View
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+
                     Text("🔐 RSA 加密实验室")
                         .font(.headline)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -89,8 +68,6 @@ struct DebugRoom: View
 
                     Button("执行 RSA 加密")
                     {
-                        // 调用你在 RSA.swift 里写的函数
-
                         userinfo.performEncryption()
                         print("✅ 加密成功!")
                         print(userinfo.encryptedResult)
@@ -113,114 +90,61 @@ struct DebugRoom: View
                     userinfo.debugprint()
                 }
 
-                // 替换 DebugRoom.swift 中的 "测试查询课表接口" 按钮代码为：
+                // MARK: - 课表接口测试（lion API，无需 CAS）
 
                 Button("测试查询课表接口")
                 {
-                    let coursequery: ScheduleQuery = ScheduleQuery()
                     Task
                     {
                         do
                         {
                             print("🚀 开始测试课表接口...")
-                            let result: String = try await coursequery.loginAndGetCookie(
+                            let (courses, startDate) = try await ScheduleService.fetchCourses(
                                 username: userinfo.username,
-                                rsaPassword: userinfo.encryptedResult
+                                password: userinfo.plainPassword,
+                                year:     "2025",
+                                term:     "2"
                             )
-                            print("✅ 成功获取 Cookie: \(result)")
-
-                            // 2. 查询课表
-                            let courses = try await coursequery.fetchCourses(
-                                cookie: result,
-                                xnm: "2025", // 2025学年
-                                xqm: "3" // 12=下学期，3=上学期
-                            )
-
                             print("✅ 成功获取 \(courses.count) 门课程")
-
-                            // 3. 遍历课程信息
-                            for course in courses
-                            {
-                                print("""
-                                   课程: \(course.kcmc)
-                                   ID: \(course.jxb_id)
-                                   时间: \(course.xqjmc ?? "周\(course.xqj)") \(course.formattedJcs)
-                                   教室: \(course.cdmc ?? "无")
-                                   老师: \(course.xm ?? "未知") (\(course.zcmc ?? ""))
-                                   班级: \(course.classList.joined(separator: ", "))
-                                   周次: \(course.zcd ?? "")
-                                """)
-                            }
-                        }
-                        catch let error as NSError
-                        {
-                            print("❌ 失败了！")
-                            print("错误域: \(error.domain)")
-                            print("错误代码: \(error.code)")
-                            print("错误描述: \(error.localizedDescription)")
-                            if let userInfo = error.userInfo as? [String: Any]
-                            {
-                                print("详细信息:")
-                                for (key, value) in userInfo
-                                {
-                                    print("  \(key): \(value)")
-                                }
-                            }
+                            print("📅 开学日期: \(startDate.map { "\($0)" } ?? "未返回")")
                         }
                         catch
                         {
-                            print("❌ 未知错误: \(error)")
+                            debugPrintError(error)
                         }
                     }
                 }
-                
+
+                // MARK: - 考试接口测试（lion API，无需 CAS）
+
                 Button("测试考试查询接口")
                 {
-                    let examquery: ExamQuery = ExamQuery()
-                    let coursequery: ScheduleQuery = ScheduleQuery()
-                    Task
-                    {
-                        do
-                        {
-                            print("测试成绩接口...")
-                            let result: String = try await coursequery.loginAndGetCookie(
-                                username: userinfo.username,
-                                rsaPassword: userinfo.encryptedResult
-                            )
-                            print("成功获取 Cookie: \(result)")
-
-                            // 2. 查询课表
-                            let courses = try await examquery.fetchExams(
-                                cookie: result,
-                                xnm: "2025", // 2025学年
-                                xqm: "3" // 12=下学期，3=上学期
-                            )
-
-                            print("成功获取 \(courses.count) 门考试")
-
-                        }
-                        catch let error as NSError
-                        {
-                            print("❌ 失败了！")
-                            print("错误域: \(error.domain)")
-                            print("错误代码: \(error.code)")
-                            print("错误描述: \(error.localizedDescription)")
-                            if let userInfo = error.userInfo as? [String: Any]
-                            {
-                                print("详细信息:")
-                                for (key, value) in userInfo
-                                {
-                                    print("  \(key): \(value)")
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            print("❌ 未知错误: \(error)")
-                        }
-                    }
+//                    Task
+//                    {
+//                        do
+//                        {
+//                            print("🚀 开始测试考试接口...")
+//                            let exams = try await ExamService.fetchExams(
+//                                username: userinfo.username,
+//                                password: userinfo.plainPassword,
+//                                year:     "2025",
+//                                term:     "2"
+//                            )
+//                            print("✅ 成功获取 \(exams.count) 条考试安排")
+//                            for exam in exams
+//                            {
+//                                print("  • \(exam.kcmc)  \(exam.examDate) \(exam.examTime)  \(exam.cdmc ?? "无场地")")
+//                            }
+//                        }
+//                        catch
+//                        {
+//                            debugPrintError(error)
+//                        }
+//                    }
                 }
-                
+
+                // MARK: - 南湖跑接口测试（保持原有逻辑）
+
                 Button("测试南湖跑查询接口")
                 {
                     let nanhurunquery: GymCloudQuery = GymCloudQuery()
@@ -228,37 +152,24 @@ struct DebugRoom: View
                     {
                         do
                         {
-                            print("测试成绩接口...")
-                            let result: String = try await nanhurunquery.loginAndGetRunCookie(
+                            print("🚀 开始测试南湖跑接口...")
+                            let cookie = try await nanhurunquery.loginAndGetRunCookie(
                                 username: userinfo.username,
                                 rsaPassword: userinfo.encryptedResult
                             )
-                            print("成功获取 Cookie: \(result)")
-                            let circles = try await nanhurunquery.fetchRunScores(cookie: result)
+                            print("✅ 成功获取 Cookie: \(cookie)")
+                            let circles = try await nanhurunquery.fetchRunScores(cookie: cookie)
                             print(circles)
-                        }
-                        catch let error as NSError
-                        {
-                            print("❌ 失败了！")
-                            print("错误域: \(error.domain)")
-                            print("错误代码: \(error.code)")
-                            print("错误描述: \(error.localizedDescription)")
-                            if let userInfo = error.userInfo as? [String: Any]
-                            {
-                                print("详细信息:")
-                                for (key, value) in userInfo
-                                {
-                                    print("  \(key): \(value)")
-                                }
-                            }
                         }
                         catch
                         {
-                            print("❌ 未知错误: \(error)")
+                            debugPrintError(error)
                         }
                     }
                 }
-                
+
+                // MARK: - 电费接口测试（保持原有逻辑）
+
                 Button("测试电费查询接口")
                 {
                     let electrictyquery: ElectricityQuery = ElectricityQuery()
@@ -266,42 +177,25 @@ struct DebugRoom: View
                     {
                         do
                         {
-                            print("测试接口...")
-                            let result: String = try await electrictyquery.loginAndGetToken(
+                            print("🚀 开始测试电费接口...")
+                            let token = try await electrictyquery.loginAndGetToken(
                                 username: userinfo.username,
                                 rsaPassword: userinfo.encryptedResult
                             )
-                            print("成功获取 Token: \(result)")
-                    
-                        }
-                        catch let error as NSError
-                        {
-                            print("❌ 失败了！")
-                            print("错误域: \(error.domain)")
-                            print("错误代码: \(error.code)")
-                            print("错误描述: \(error.localizedDescription)")
-                            if let userInfo = error.userInfo as? [String: Any]
-                            {
-                                print("详细信息:")
-                                for (key, value) in userInfo
-                                {
-                                    print("  \(key): \(value)")
-                                }
-                            }
+                            print("✅ 成功获取 Token: \(token)")
                         }
                         catch
                         {
-                            print("❌ 未知错误: \(error)")
+                            debugPrintError(error)
                         }
                     }
                 }
-                
+
                 Spacer(minLength: 0)
                     .sheet(isPresented: $showWeb)
                     {
                         NavigationStack
                         {
-                            // 登录窗口
                             WebView(url: loginURL, webViewRef: $webViewRef)
                                 .navigationTitle("HZAU Login")
                                 .navigationBarTitleDisplayMode(.inline)
@@ -315,6 +209,22 @@ struct DebugRoom: View
                         }
                     }
             }
+        }
+    }
+
+    // MARK: - 统一错误打印
+
+    private func debugPrintError(_ error: Error)
+    {
+        if let nsErr = error as? NSError
+        {
+            print("❌ 失败！错误域: \(nsErr.domain)  代码: \(nsErr.code)")
+            print("   描述: \(nsErr.localizedDescription)")
+            for (k, v) in nsErr.userInfo { print("   \(k): \(v)") }
+        }
+        else
+        {
+            print("❌ 未知错误: \(error)")
         }
     }
 }

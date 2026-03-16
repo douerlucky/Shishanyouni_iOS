@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+let scheduleCellHeight: CGFloat = 58 // 全局课表单元格高度
+
 struct ScheduleView: View
 {
     @EnvironmentObject var userinfo: userInfo
@@ -17,12 +19,10 @@ struct ScheduleView: View
     @State private var courses: [Course] = []
     @State var datesCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
     @State var nowDisplayWeek: Int = -1
-    //新增
+    // 新增
     @State private var showAddCourse = false
     @State private var selectedCourse: Course?
     @State private var showEditCourse = false
-    
-    
 
     @State private var inputWeek: String = ""
     @FocusState private var isWeekFieldFocused: Bool
@@ -30,6 +30,9 @@ struct ScheduleView: View
     // 滑动手势相关
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
+
+    // 保存本周课表为图片
+    @State private var showSaveSuccess = false
 
     @State var semesterStartDate: Date = {
         var components = DateComponents()
@@ -42,6 +45,8 @@ struct ScheduleView: View
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
 
     let calendar = Calendar.current
+    let minWeek = -9 // 最多能滑到开学前10周
+    let maxWeek = 30 // 最多30周
 
     private var weekBinding: Binding<String>
     {
@@ -58,19 +63,23 @@ struct ScheduleView: View
             }
         )
     }
-    
-    //保存函数
-    private func saveCourses() {
-        do {
+
+    // 保存函数
+    private func saveCourses()
+    {
+        do
+        {
             let encoder = JSONEncoder()
             let data = try encoder.encode(courses)
             UserDefaults.standard.set(data, forKey: "saved_courses")
             print("✅ 课程保存成功，共 \(courses.count) 门")
-        } catch {
+        }
+        catch
+        {
             print("❌ 课程保存失败: \(error)")
         }
     }
-    
+
     var body: some View
     {
         NavigationStack
@@ -103,12 +112,13 @@ struct ScheduleView: View
                                     .frame(width: 60)
                                     .background(Color(.secondarySystemBackground).opacity(0.5))
                                     .clipShape(Capsule())
-                                //修改
+                                // 修改
                                 CourseGridView(
                                     courses: courses,
                                     nowdisplayWeek: nowDisplayWeek,
                                     onDeleteCourse: { course in
-                                        if let index = courses.firstIndex(where: { $0.id == course.id }) {
+                                        if let index = courses.firstIndex(where: { $0.id == course.id })
+                                        {
                                             courses.remove(at: index)
                                             saveCourses()
                                         }
@@ -136,14 +146,16 @@ struct ScheduleView: View
                                     if value.translation.width < -threshold
                                     {
                                         // 向左滑动 - 下一周
-                                        nowDisplayWeek += 1
+                                        nowDisplayWeek = min(nowDisplayWeek + 1, maxWeek)
                                         updateDatesForDisplayWeek()
+                                        UINotificationFeedbackGenerator().notificationOccurred(.success)
                                     }
                                     else if value.translation.width > threshold
                                     {
                                         // 向右滑动 - 上一周
-                                        nowDisplayWeek -= 1
+                                        nowDisplayWeek = max(nowDisplayWeek - 1, minWeek)
                                         updateDatesForDisplayWeek()
+                                        UINotificationFeedbackGenerator().notificationOccurred(.success)
                                     }
 
                                     dragOffset = 0
@@ -162,6 +174,7 @@ struct ScheduleView: View
                                 Button(action: {
                                     nowDisplayWeek = calculateCurrentWeek()
                                     updateDatesForDisplayWeek()
+                                    UINotificationFeedbackGenerator().notificationOccurred(.success)
                                 })
                                 {
                                     Text("跳转至本周")
@@ -181,6 +194,7 @@ struct ScheduleView: View
                                 Button(action: {
                                     nowDisplayWeek = 1
                                     updateDatesForDisplayWeek()
+                                    UINotificationFeedbackGenerator().notificationOccurred(.success)
                                 })
                                 {
                                     if !courses.isEmpty
@@ -210,12 +224,15 @@ struct ScheduleView: View
                                 inputWeek = ""
                                 nowDisplayWeek -= 1
                                 updateDatesForDisplayWeek()
+                                UINotificationFeedbackGenerator().notificationOccurred(.success)
 
                             })
                             {
                                 Image(systemName: "chevron.left.circle.fill")
                                     .font(.system(size: 40))
+                                    .foregroundColor(nowDisplayWeek <= minWeek ? .gray : .blue)
                             }
+                            .disabled(nowDisplayWeek <= minWeek)
                             .optionalLiquidGlass()
 
                             VStack(spacing: 4)
@@ -244,29 +261,26 @@ struct ScheduleView: View
                                                 .background(Color(.systemGray6))
                                                 .clipShape(Capsule())
                                                 .foregroundColor(.primary)
-                                                .focused($isWeekFieldFocused) // 绑定焦点
-                                                .onTapGesture
-                                                {
-                                                    inputWeek = ""
-                                                }
-                                                .onSubmit
-                                                {
-                                                    handleWeekJump()
-                                                }
-                                                .toolbar
-                                                {
-                                                    ToolbarItemGroup(placement: .keyboard)
-                                                    {
+                                                .focused($isWeekFieldFocused)
+                                                .textFieldStyle(.plain)
+                                                .toolbar {
+                                                    ToolbarItemGroup(placement: .keyboard) {
                                                         Spacer()
-                                                        Button("完成")
-                                                        {
+                                                        Button("完成") {
+                                                            isWeekFieldFocused = false
                                                             handleWeekJump()
-                                                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                                            UINotificationFeedbackGenerator().notificationOccurred(.success)
                                                         }
-                                                        .fontWeight(.bold)
-                                                        .optionalLiquidGlass()
+                                                        .foregroundColor(.blue)
                                                     }
                                                 }
+                                                .onTapGesture {
+                                                    inputWeek = ""
+                                                }
+                                                .onSubmit {
+                                                    handleWeekJump()
+                                                }
+
 
                                             Text("周")
                                                 .font(.system(size: 16, weight: .bold, design: .rounded))
@@ -304,12 +318,15 @@ struct ScheduleView: View
                                 inputWeek = ""
                                 nowDisplayWeek += 1
                                 updateDatesForDisplayWeek()
+                                UINotificationFeedbackGenerator().notificationOccurred(.success)
 
                             })
                             {
                                 Image(systemName: "chevron.right.circle.fill")
                                     .font(.system(size: 40))
+                                    .foregroundColor(nowDisplayWeek >= maxWeek ? .gray : .blue)
                             }
+                            .disabled(nowDisplayWeek >= maxWeek)
                             .optionalLiquidGlass()
                         }
                         .padding(.vertical, 10)
@@ -331,15 +348,37 @@ struct ScheduleView: View
                             .fontWeight(.medium)
                     }
                 }
-                // 新增：手动添加课程按钮
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            showAddCourse = true
-                        }) {
-                            Image(systemName: "plus.circle")
-                                .fontWeight(.medium)
+                // 保存到相册
+                ToolbarItem(placement: .navigationBarTrailing)
+                {
+                    Button(action: {
+                        exportScheduleAsImage(
+                            courses: courses,
+                            week: nowDisplayWeek,
+                            datesCurWeek: datesCurWeek,
+                            month: nowDisplayMonth
+                        )
+                        {
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                            showSaveSuccess = true
                         }
+                    })
+                    {
+                        Image(systemName: "square.and.arrow.down")
+                            .fontWeight(.medium)
                     }
+                }
+                // 新增：手动添加课程按钮
+//                ToolbarItem(placement: .navigationBarTrailing)
+//                {
+//                    Button(action: {
+//                        showAddCourse = true
+//                    })
+//                    {
+//                        Image(systemName: "plus.circle")
+//                            .fontWeight(.medium)
+//                    }
+//                }
             }
             .sheet(isPresented: $showSettings)
             {
@@ -349,11 +388,16 @@ struct ScheduleView: View
                 )
                 .environmentObject(userinfo)
             }
-            .sheet(isPresented: $showEditCourse) {
-                if let course = selectedCourse {
-                    if course.isManual {
+            .sheet(isPresented: $showEditCourse)
+            {
+                if let course = selectedCourse
+                {
+                    if course.isManual
+                    {
                         ManualCourseEditorView(courses: $courses, mode: .edit(course))
-                    } else {
+                    }
+                    else
+                    {
                         // 如果是导入的课程，显示提示
                         Text("导入的课程不能编辑")
                             .presentationDetents([.height(200)])
@@ -361,7 +405,8 @@ struct ScheduleView: View
                 }
             }
             // 新增：手动添加课程的 sheet
-            .sheet(isPresented: $showAddCourse) {
+            .sheet(isPresented: $showAddCourse)
+            {
                 ManualCourseEditorView(courses: $courses, mode: .add)
             }
             .onAppear
@@ -374,6 +419,12 @@ struct ScheduleView: View
                 self.today = getCurrentDate()
                 self.nowMonth = getCurrentMonth()
             }
+        }
+        .alert("保存成功", isPresented: $showSaveSuccess)
+        {
+            Button("好的", role: .cancel) { }
+        } message: {
+            Text("已成功将本周课表保存到相册")
         }
     }
 
@@ -538,10 +589,10 @@ struct CourseGridView: View
 {
     let courses: [Course]
     let nowdisplayWeek: Int
-    
+
     var onDeleteCourse: ((Course) -> Void)?
     var onEditCourse: ((Course) -> Void)?
-    
+
     var body: some View
     {
         HStack(spacing: 0)
@@ -568,14 +619,14 @@ struct CourseGridView: View
                                 {
                                     MergedCourseCard(
                                         course: course,
-                                        onDelete: { onDeleteCourse?(course)},
-                                        onEdit: {onEditCourse?(course)} )
+                                        onDelete: { onDeleteCourse?(course) },
+                                        onEdit: { onEditCourse?(course) })
                                 }
                             }
                             else
                             {
                                 Color.clear
-                                    .frame(height: 70)
+                                    .frame(height: scheduleCellHeight)
                                     .padding(1)
                             }
                         }
@@ -588,35 +639,18 @@ struct CourseGridView: View
 
     private func isFirstPeriod(course: Course, period: Int) -> Bool
     {
-        let jcsParts = course.jcs.split(separator: "-")
-        guard let startPeriod = Int(jcsParts[0]) else { return false }
-        if period == startPeriod
-        {
-            return true
-        }
-        return false
+        return period == course.start
     }
 
     private func getCourse(for dayOfWeek: Int, period: Int, week: Int) -> Course?
     {
         for course in courses
         {
-            guard Int(course.xqj) == dayOfWeek
-            else
-            {
-                continue
-            }
+            guard course.day == dayOfWeek else { continue }
 
-            let jcsParts = course.jcs.split(separator: "-")
-            if jcsParts.count == 2,
-               let startjcs = Int(jcsParts[0]),
-               let endjcs = Int(jcsParts[1])
+            if period >= course.start && period <= course.endPeriod && course.parsedWeeks.contains(week)
             {
-                // 必须同时满足：节次匹配 AND 周次匹配
-                if period >= startjcs && period <= endjcs && course.parsedWeeks.contains(week)
-                {
-                    return course
-                }
+                return course
             }
         }
         return nil
@@ -631,14 +665,12 @@ struct CourseGridView: View
 struct MergedCourseCard: View
 {
     let course: Course
-    
+
     //  新增
     var onDelete: (() -> Void)?
     var onEdit: (() -> Void)?
-    
-    
-    
-    private let cellHeight: CGFloat = 70
+
+    private let cellHeight: CGFloat = scheduleCellHeight
     private let cellPadding: CGFloat = 1
 
     var body: some View
@@ -651,12 +683,12 @@ struct MergedCourseCard: View
 
             VStack(spacing: 8)
             {
-                Text(course.kcmc)
+                Text(course.name)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
 
-                if let location = course.cdmc
+                if let location = course.room
                 {
                     VStack(spacing: 4)
                     {
@@ -669,7 +701,7 @@ struct MergedCourseCard: View
                     .foregroundColor(.white)
                 }
 
-                if let teacher = course.xm
+                if let teacher = course.teacher
                 {
                     VStack(spacing: 4)
                     {
@@ -686,30 +718,29 @@ struct MergedCourseCard: View
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
         // add
-        .contextMenu {
-            if course.isManual {
-                Button(action: { onEdit?() }) {
+        .contextMenu
+        {
+            if course.isManual
+            {
+                Button(action: { onEdit?() })
+                {
                     Label("编辑", systemImage: "pencil")
                 }
-                
-                Button(role: .destructive, action: { onDelete?() }) {
+
+                Button(role: .destructive, action: { onDelete?() })
+                {
                     Label("删除", systemImage: "trash")
                 }
             }
         }
-        
+
         .frame(height: totalHeight)
         .padding(1)
     }
 
     private var courseSpans: Int
     {
-        let jcsParts = course.jcs.split(separator: "-")
-        guard jcsParts.count == 2,
-              let start = Int(jcsParts[0]),
-              let end = Int(jcsParts[1])
-        else { return 1 }
-        return end - start + 1
+        course.step
     }
 
     private var totalHeight: CGFloat
@@ -752,7 +783,7 @@ struct MergedCourseCard: View
             Color(red: 0.4, green: 0.2, blue: 0.5), // 茄紫
             Color(red: 0.6, green: 0.2, blue: 0.3), // 酒红
         ]
-        let index = course.colorIndex ?? 0
+        let index = course.colorRandom
         return colors[index % colors.count]
     }
 }
@@ -764,7 +795,7 @@ struct EmptyCell: View
         RoundedRectangle(cornerRadius: 8)
             .strokeBorder(Color.gray.opacity(0.15), lineWidth: 0.5)
             .background(Color(.systemGray6))
-            .frame(height: 70)
+            .frame(height: scheduleCellHeight)
             .padding(1)
             .cornerRadius(12)
     }
@@ -811,7 +842,7 @@ struct TimeScheduleView: View
 struct TimeSlotView: View
 {
     let period: ClassPeriod
-    private let cellHeight: CGFloat = 70
+    private let cellHeight: CGFloat = scheduleCellHeight
 
     var body: some View
     {
@@ -832,7 +863,6 @@ struct TimeSlotView: View
         .frame(height: cellHeight)
     }
 }
-
 
 #Preview
 {

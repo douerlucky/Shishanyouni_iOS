@@ -61,7 +61,7 @@ class ExamQuery
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
-        
+
         // 3. 构建参数
         let params = [
             "xnm": xnm, // 学年 (如 2025)

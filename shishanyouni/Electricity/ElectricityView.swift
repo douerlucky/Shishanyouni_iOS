@@ -434,6 +434,7 @@ struct ElectricityView: View
                     self.electricityRecords = records
                     self.isLoading = false
                 }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
             catch { await showError(error) }
         }
@@ -445,7 +446,15 @@ struct ElectricityView: View
         {
             isLoading = false
             alertTitle = "错误"
-            alertMessage = error.localizedDescription
+            if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+            {
+                self.alertMessage = "好像忘记了登录，请先去登录吧！"
+            }
+            else
+            {
+                alertMessage = error.localizedDescription
+            }
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
             showAlert = true
         }
     }

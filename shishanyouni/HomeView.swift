@@ -70,10 +70,22 @@ struct HomeView: View
                     {
                         navigateElectricity = true
                     }
-                    MenuGridItem(title: "校历查询", icon: date + ".calendar", color: .cyan)
+                    if #available(iOS 26.0, *)
                     {
-                        navigateToSchoolCalender = true
+                        MenuGridItem(title: "校历查询", icon: date + ".calendar", color: .cyan)
+                        {
+                            navigateToSchoolCalender = true
+                        }
                     }
+                    else
+                    {
+                        MenuGridItem(title: "校历查询", icon: "calendar", color: .cyan)
+                        {
+                            navigateToSchoolCalender = true
+                        }
+                    }
+                    
+
                     MenuGridItem(title: "校车查询", icon: "bus", color: .pink)
                     {
                         navigateToBus = true

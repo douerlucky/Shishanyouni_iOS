@@ -68,44 +68,35 @@ struct ProfileView: View
                         .background(Color.blue) // 蓝色背景
                         .cornerRadius(6)
 
-                    VStack(alignment: .leading)
+                    NavigationLink
                     {
-                        Text("学号")
-                            .font(.body)
-                        if userinfo.username.isEmpty
+                        LoginView()
+                    } label:
+                    {
+                        VStack(alignment: .leading)
                         {
-                            Text("未登录")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                        else
-                        {
-                            Text(userinfo.username)
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
+                            Text("学号")
+                                .font(.body)
+                            if userinfo.username.isEmpty
+                            {
+                                Text("未登录")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            else
+                            {
+                                Text(userinfo.username)
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
                 }
             }
 
-            // 第二组：设置与跳转
+            // 第二组：设置
             Section(header: Text("账号设置"))
             {
-                NavigationLink
-                {
-                    LoginView()
-                } label: {
-                    HStack(spacing: 15)
-                    {
-                        Image(systemName: "slider.horizontal.3")
-                            .foregroundColor(.white)
-                            .frame(width: 30, height: 30)
-                            .background(Color.gray) // 灰色背景
-                            .cornerRadius(6)
-
-                        Text("账号设置")
-                    }
-                }
                 Button(action: {
                     // 1. 先把当前的昵称同步给临时变量
                     tempNickname = userinfo.nickname
@@ -133,6 +124,22 @@ struct ProfileView: View
                             .foregroundColor(Color(.systemGray3))
                     }
                 }
+                NavigationLink
+                {
+                    AboutUs()
+                } label: {
+                    HStack(spacing: 15)
+                    {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.green)
+                            .cornerRadius(6)
+                        Text("关于狮山有你iOS")
+                            .foregroundColor(.primary)
+                        Spacer()
+                    }
+                }
             }
             .alert("个性化设置", isPresented: $showNicknameAlert)
             {
@@ -148,7 +155,7 @@ struct ProfileView: View
                 Text("请输入你想使用的昵称")
             }
         }
-        .listStyle(.insetGrouped) // 🌟 必须是这个样式才有圆角卡片感
+        .listStyle(.insetGrouped)
         .navigationTitle("我的")
     }
 }

@@ -119,6 +119,7 @@ struct NanhuRunView: View
                 {
                     self.runScores = scores
                     self.isLoading = false
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }
             }
             catch
@@ -127,8 +128,16 @@ struct NanhuRunView: View
                 {
                     self.isLoading = false
                     self.alertTitle = "获取失败"
-                    self.alertMessage = error.localizedDescription
+                    if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+                    {
+                        self.alertMessage = "好像忘记了登录，请先去登录吧！"
+                    }
+                    else
+                    {
+                        self.alertMessage = error.localizedDescription
+                    }
                     self.showAlert = true
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }
             }
         }

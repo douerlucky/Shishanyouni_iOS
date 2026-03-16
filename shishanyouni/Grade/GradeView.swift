@@ -1,5 +1,5 @@
 //
-//  GradeInquiry.swift
+//  GradeView.swift
 //  shishanyouni
 //
 //  Created by douer_lucky on 2026/2/7.
@@ -10,20 +10,17 @@ import SwiftUI
 struct GradeInquiry: View
 {
     @EnvironmentObject var userinfo: userInfo
-    @State var cookie: String = ""
     @State var Grades: [Grade] = []
+    @State private var isLoading = false
 
-    @State private var isLoading = false // 是否加载
-
-    // 弹窗
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
 
     @State var selectedYear = "2025"
-    @State var selectedTerm = "3" // 默认选秋季
+    @State var selectedTerm = "1" // 默认第一学期
 
-    var gradeQuery: GradeQuery = GradeQuery() // 成绩查询器
+    let gradeService = GradeService()
 
     var body: some View
     {
@@ -34,7 +31,7 @@ struct GradeInquiry: View
                 Color(uiColor: .systemGroupedBackground)
                     .ignoresSafeArea()
 
-                if Grades.count == 0
+                if Grades.isEmpty
                 {
                     VStack
                     {
@@ -49,8 +46,7 @@ struct GradeInquiry: View
                 }
                 else
                 {
-                    List(Grades)
-                    { item in
+                    List(Grades) { item in
                         GradeCard(grade: item)
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                             .listRowSeparator(.hidden)
@@ -60,7 +56,6 @@ struct GradeInquiry: View
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
                     .blur(radius: isLoading ? 3 : 0)
-                    // 给底部留出空隙，防止最后一个卡片被按钮遮住
                     .safeAreaInset(edge: .bottom)
                     {
                         Color.clear.frame(height: 90)
@@ -71,10 +66,9 @@ struct GradeInquiry: View
                 {
                     VStack(spacing: 15)
                     {
-                        ProgressView() // 苹果自带的菊花转动
+                        ProgressView()
                             .scaleEffect(1.5)
                             .tint(.blue)
-
                         Text("正在查询成绩")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
@@ -86,7 +80,6 @@ struct GradeInquiry: View
                 }
             }
 
-            // 浮动按钮栏
             BottomButtonView(
                 isLoading: $isLoading,
                 Grades: $Grades,
@@ -95,7 +88,7 @@ struct GradeInquiry: View
                 alertMessage: $alertMessage,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
-                gradeQuery: gradeQuery
+                gradeService: gradeService
             )
         }
         .navigationTitle("成绩查询")
@@ -110,6 +103,8 @@ struct GradeInquiry: View
     }
 }
 
+// MARK: - 成绩卡片
+
 struct GradeCard: View
 {
     let grade: Grade
@@ -118,49 +113,36 @@ struct GradeCard: View
     {
         VStack(spacing: 8)
         {
-            // 课程名称行
-            HStack
+            // 课程名称 + 课程性质标签
+            HStack(alignment: .firstTextBaseline)
             {
                 Text(grade.kcmc)
                     .font(.title2)
                     .fontWeight(.semibold)
                 Spacer()
+                if let type = grade.kcxzmc, !type.isEmpty
+                {
+                    Text(type)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(.tertiarySystemFill))
+                        .clipShape(Capsule())
+                }
             }
 
-            // 成绩、学分、绩点详情行
+            // 成绩 / 学分 / 绩点
             HStack
             {
-                VStack
-                {
-                    Text(grade.cj)
-                        .font(.title3)
-                        .fontWeight(.medium)
-                    Text("成绩")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                GradeStatColumn(value: grade.cj,  label: "成绩")
                 Spacer()
-                VStack
-                {
-                    Text(grade.xf)
-                        .font(.title3)
-                        .fontWeight(.medium)
-                    Text("学分")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                GradeStatColumn(value: grade.xf,  label: "学分")
                 Spacer()
-                VStack
-                {
-                    Text(grade.jd)
-                        .font(.title3)
-                        .fontWeight(.medium)
-                    Text("绩点")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                GradeStatColumn(value: grade.jd,  label: "绩点")
             }
             .padding(.horizontal, 12)
+
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -173,6 +155,27 @@ struct GradeCard: View
     }
 }
 
+private struct GradeStatColumn: View
+{
+    let value: String
+    let label: String
+
+    var body: some View
+    {
+        VStack(spacing: 2)
+        {
+            Text(value)
+                .font(.title3)
+                .fontWeight(.medium)
+            Text(label)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+// MARK: - 底部浮动按钮栏
+
 struct BottomButtonView: View
 {
     @Binding var isLoading: Bool
@@ -184,13 +187,10 @@ struct BottomButtonView: View
     @Binding var selectedTerm: String
     @State private var showPicker = false
     @EnvironmentObject var userinfo: userInfo
-    let gradeQuery: GradeQuery
+    let gradeService: GradeService
 
     let years = ["2022", "2023", "2024", "2025"]
-    let terms = [
-        ("上学期", "3"),
-        ("下学期", "12"),
-    ]
+    let terms = [("第一学期", "1"), ("第二学期", "2")]
 
     var body: some View
     {
@@ -201,7 +201,7 @@ struct BottomButtonView: View
             {
                 HStack
                 {
-                    Text("\(formatYearAbbreviation(selectedYear)) \(selectedTerm == "3" ? "上" : "下")")
+                    Text("\(formatYearAbbreviation(selectedYear)) \(selectedTerm == "1" ? "一" : "二")")
                         .font(.system(size: 14, weight: .bold))
                     Image(systemName: "chevron.up")
                         .font(.system(size: 10, weight: .bold))
@@ -215,38 +215,44 @@ struct BottomButtonView: View
 
             // 查询按钮
             Button(action: {
-                print("查询中...")
                 isLoading = true
-
                 Task
                 {
                     defer { isLoading = false }
                     do
                     {
-                        let cookie = try await gradeQuery.loginAndGetCookie(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
-                        Grades = await gradeQuery.fetchGrades(cookie: cookie, xnm: selectedYear, xqm: selectedTerm)
-
+                        Grades = try await gradeService.fetchGrades(
+                            username: userinfo.username,
+                            password: userinfo.plainPassword,
+                            xnm: selectedYear,
+                            xqm: selectedTerm
+                        )
                         await MainActor.run
                         {
-                            // 成功弹窗
-                            self.alertTitle = "查询成功"
-                            self.alertMessage = "一共找到了 \(Grades.count) 门课的成绩"
-                            self.showAlert = true
+                            alertTitle   = "查询成功"
+                            alertMessage = "一共找到了 \(Grades.count) 门课的成绩"
+                            showAlert    = true
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
                         }
                     }
                     catch
                     {
-                        print("出错了")
                         await MainActor.run
                         {
-                            // 失败
-                            self.alertTitle = "哎呀,出错了"
-                            self.alertMessage = error.localizedDescription
-                            self.showAlert = true
+                            alertTitle   = "哎呀，出错了"
+                            if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+                            {
+                                self.alertMessage = "好像忘记了登录，请先去登录吧！"
+                            }
+                            else
+                            {
+                                alertMessage = error.localizedDescription
+                            }
+                            UINotificationFeedbackGenerator().notificationOccurred(.error)
+                            showAlert    = true
                         }
                     }
                 }
-
             })
             {
                 Text("查询")
@@ -260,7 +266,7 @@ struct BottomButtonView: View
             .optionalLiquidGlass()
             .clipShape(Capsule())
 
-            // 预留的统计按钮
+            // 统计按钮（预留）
             Button(action: { print("去统计页") })
             {
                 Image(systemName: "chart.bar.fill")
@@ -290,18 +296,14 @@ struct BottomButtonView: View
                 {
                     Picker("年份", selection: $selectedYear)
                     {
-                        ForEach(years, id: \.self)
-                        { year in
-                            // 将字符串转为 Int 算下一年，再拼接起来
-                            if let yearInt = Int(year)
+                        ForEach(years, id: \.self) { year in
+                            if let y = Int(year)
                             {
-                                Text("\(year)-\(String(yearInt + 1))学年")
-                                    .tag(year)
+                                Text("\(year)-\(String(y + 1))学年").tag(year)
                             }
                             else
                             {
-                                Text("\(year)学年")
-                                    .tag(year)
+                                Text("\(year)学年").tag(year)
                             }
                         }
                     }
@@ -314,37 +316,27 @@ struct BottomButtonView: View
                     .pickerStyle(.wheel)
                 }
 
-                Button("确定")
-                {
-                    showPicker = false
-                }
-                .optionalLiquidGlass()
-                .buttonStyle(.borderedProminent)
-                .padding(.bottom)
-                
+                Button("确定") { showPicker = false }
+                    .optionalLiquidGlass()
+                    .buttonStyle(.borderedProminent)
+                    .padding(.bottom)
             }
             .presentationDetents([.height(300)])
         }
-        
     }
 
     private func formatYearAbbreviation(_ year: String) -> String
     {
-        if let yearInt = Int(year)
+        if let y = Int(year)
         {
-            let start = yearInt % 100 // 25
-            let end = (yearInt + 1) % 100 // 26
-            return String(format: "%02d-%02d", start, end)
+            return String(format: "%02d-%02d", y % 100, (y + 1) % 100)
         }
         return year
     }
 }
 
-
-
 #Preview
 {
-    let previewUserInfo = userInfo()
     GradeInquiry()
-        .environmentObject(previewUserInfo)
+        .environmentObject(userInfo())
 }

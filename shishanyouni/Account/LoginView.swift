@@ -26,16 +26,19 @@ struct LoginView: View
     {
         ZStack
         {
-            VStack(spacing: 16)
+            VStack(spacing: 32)
             {
-                Image("login")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 128, height: 128)
-                    .cornerRadius(32)
-                Text("使用信息门户的学号和密码来进行登录")
-                    .foregroundColor(.secondary)
-                    
+                VStack(spacing:32)
+                {
+                    Image("login")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 128, height: 128)
+                        .cornerRadius(32)
+                    Text("使用信息门户的学号和密码来进行登录")
+                        .foregroundColor(.secondary)
+                }
+
 
                 VStack(spacing: 16)
                 {
@@ -95,8 +98,10 @@ struct LoginView: View
                 Toggle("记住密码", isOn: $rememberPassword)
                     .frame(width: 150)
                     .padding(.top, 8)
+                
 
-                Button("登录")
+
+                Button
                 {
                     if username.isEmpty
                     {
@@ -131,7 +136,7 @@ struct LoginView: View
                                         self.alertTitle = "登录成功"
                                         self.alertMessage = "可以正常使用啦"
                                         self.showAlert = true
-
+                                        UINotificationFeedbackGenerator().notificationOccurred(.success)
                                         if rememberPassword
                                         {
                                             userinfo.username = username
@@ -143,7 +148,13 @@ struct LoginView: View
                                         {
                                             userinfo.clearUserInfo()
                                         }
+                                        
                                     }
+                                    
+                                    Task {
+                                            await AccountBinder().bind(username: username, password: password)
+                                        }
+                                    
 
                                 case let .failure(reason):
                                     print("登录失败，原因是：\(reason)")
@@ -153,21 +164,32 @@ struct LoginView: View
                                         self.alertTitle = "出现错误"
                                         self.alertMessage = "用户名或密码有错误"
                                         self.showAlert = true
+                                        UINotificationFeedbackGenerator().notificationOccurred(.error)
                                     }
                                 }
                             }
                             catch
                             {
                                 print("查询失败")
+                                UINotificationFeedbackGenerator().notificationOccurred(.error)
                             }
                         }
                     }
                 }
-                .buttonStyle(.automatic)
+            label:
+                {
+                    Text("登录")
+                            .fontWeight(.bold)
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: 300)
+                            .padding(.vertical, 12)
+                            .background(Color.blue)
+                            .clipShape(Capsule())
+                }
+                .optionalLiquidGlass()
                 .padding()
-                .foregroundColor(.white)
-                .background(Color(.systemBlue))
-                .clipShape(Capsule())
+                
 
                 if !userinfo.username.isEmpty
                 {
@@ -196,7 +218,7 @@ struct LoginView: View
                 }
             }
             .blur(radius: isLoading ? 3 : 0)
-
+            
             // 加载提示 - 居中显示
             if isLoading
             {

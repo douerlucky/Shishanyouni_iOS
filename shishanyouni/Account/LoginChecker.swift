@@ -7,6 +7,56 @@
 
 import Foundation
 
+struct BindResponse: Codable {
+    let msg: String
+    let code: Int
+    let data: String?
+    let timestamp: Int64
+    let fail: Bool
+    let success: Bool
+}
+
+class AccountBinder {
+    private let bindURL = "https://lion.hzau.edu.cn/app/ios/bind"
+
+    func bind(username: String, password: String, type: Int = 0) async {
+        guard let url = URL(string: bindURL) else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "username": username,
+            "password": password,
+            "type": type
+        ]
+
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else { return }
+        request.httpBody = bodyData
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            if let http = response as? HTTPURLResponse {
+                print("[AccountBinder] 状态码: \(http.statusCode)")
+            }
+
+            let result = try JSONDecoder().decode(BindResponse.self, from: data)
+
+            if result.success {
+                print("[AccountBinder] 绑定成功: \(result.msg)")
+            } else {
+                // 绑定失败不影响主流程，静默处理
+                print("[AccountBinder] 绑定失败 (code \(result.code)): \(result.msg)")
+            }
+
+        } catch {
+            print("[AccountBinder] 请求异常: \(error.localizedDescription)")
+        }
+    }
+}
+
 enum LoginResult {
     case success
     case failure(message: String)
@@ -150,6 +200,7 @@ class LoginChecker: NSObject, URLSessionTaskDelegate {
         } else if httpResponse2.statusCode == 302 {
             // 302 表示登录成功
             print("登录成功！")
+            
             if let location = httpResponse2.allHeaderFields["Location"] as? String {
                 print("重定向到: \(location)")
             }

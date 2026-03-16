@@ -1,3 +1,4 @@
+
 import SwiftUI
 
 struct ExamView: View
@@ -257,7 +258,7 @@ struct ExamBottomControlBar: View
         .padding(.horizontal, 15)
         .glassBackground(cornerRadius: 64)
         .padding(.bottom, 25)
-        
+
         .sheet(isPresented: $showPicker)
         {
             VStack(spacing: 20)
@@ -314,7 +315,7 @@ struct ExamBottomControlBar: View
 
     private func formatYearAbbreviation(_ year: String) -> String
     {
-        
+
         if let yearInt = Int(year)
         {
             let start = yearInt % 100
@@ -366,6 +367,7 @@ struct ExamBottomControlBar: View
                         self.alertMessage = "该学期未查询到考试安排"
                         self.showAlert = true
                     }
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }
             }
             catch
@@ -374,7 +376,16 @@ struct ExamBottomControlBar: View
                 {
                     self.isLoading = false
                     self.alertTitle = "查询失败"
-                    self.alertMessage = error.localizedDescription
+                    if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+                    {
+                        self.alertMessage = "好像忘记了登录，请先去登录吧！"
+                    }
+                    else
+                    {
+                        self.alertMessage = error.localizedDescription
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    
                     self.showAlert = true
                 }
             }

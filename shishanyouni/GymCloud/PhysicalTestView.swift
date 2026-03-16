@@ -234,7 +234,9 @@ struct PhysicalTestView: View
                         self.alertTitle = "提示"
                         self.alertMessage = "该时段暂无体测数据"
                         self.showAlert = true
+                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
                     }
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }
             }
             catch
@@ -243,8 +245,16 @@ struct PhysicalTestView: View
                 {
                     self.isLoading = false
                     self.alertTitle = "查询失败"
-                    self.alertMessage = error.localizedDescription
+                    if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+                    {
+                        self.alertMessage = "好像忘记了登录，请先去登录吧！"
+                    }
+                    else
+                    {
+                        self.alertMessage = error.localizedDescription
+                    }
                     self.showAlert = true
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }
             }
         }
