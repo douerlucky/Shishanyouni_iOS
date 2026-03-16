@@ -29,6 +29,7 @@
 		FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE0FAC442F616B3600F918D5 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -40,7 +41,9 @@
 		FE4D982D2F330FB60087BCAE /* shishanyouniUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE61BDA12F3A42F70082A9F9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE6D54EB2F64252E0063F464 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE8735F22F67C126007D0181 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEADE0B02F607CB200C87F6D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -57,11 +60,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		FE1070332F434CE7001EB50D /* Exam */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Exam;
-			sourceTree = "<group>";
-		};
 		FE4D98182F330FB40087BCAE /* shishanyouni */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -147,6 +145,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE0FAC452F616B3600F918D5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE106FBB2F4328BF001EB50D /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -194,7 +199,6 @@
 			children = (
 				FE779FE22F37BC580045B79D /* SwiftyRSA_Src */,
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
-				FE1070332F434CE7001EB50D /* Exam */,
 				FE4D98262F330FB60087BCAE /* shishanyouniTests */,
 				FE4D98302F330FB60087BCAE /* shishanyouniUITests */,
 				FE4D98172F330FB40087BCAE /* Products */,
@@ -225,7 +229,21 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE6D54EC2F64252E0063F464 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FE77A01E2F37BC800045B79D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE8735F32F67C126007D0181 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -269,7 +287,6 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				FE1070332F434CE7001EB50D /* Exam */,
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
 				FE779FE22F37BC580045B79D /* SwiftyRSA_Src */,
 			);
@@ -350,11 +367,11 @@
 				};
 			};
 			buildConfigurationList = FE4D98112F330FB40087BCAE /* Build configuration list for PBXProject "shishanyouni" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = FE4D980D2F330FB40087BCAE;
 			minimizedProjectReferenceProxies = 1;
@@ -393,6 +410,10 @@
 					ProjectRef = FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */;
 				},
 				{
+					ProductGroup = FE8735F32F67C126007D0181 /* Products */;
+					ProjectRef = FE8735F22F67C126007D0181 /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FE05C25A2F3E4483009522D6 /* Products */;
 					ProjectRef = FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */;
 				},
@@ -417,12 +438,20 @@
 					ProjectRef = FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */;
 				},
 				{
+					ProductGroup = FE6D54EC2F64252E0063F464 /* Products */;
+					ProjectRef = FE6D54EB2F64252E0063F464 /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FE3860C72F3AFA9500E0E1C9 /* Products */;
 					ProjectRef = FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FEFF05742F39F740009EA8F0 /* Products */;
 					ProjectRef = FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE0FAC452F616B3600F918D5 /* Products */;
+					ProjectRef = FE0FAC442F616B3600F918D5 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE61BDA22F3A42F70082A9F9 /* Products */;
@@ -634,12 +663,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "狮山有我";
+				INFOPLIST_KEY_CFBundleDisplayName = "狮山有你";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -650,7 +680,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -667,12 +697,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "狮山有我";
+				INFOPLIST_KEY_CFBundleDisplayName = "狮山有你";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -683,7 +714,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
