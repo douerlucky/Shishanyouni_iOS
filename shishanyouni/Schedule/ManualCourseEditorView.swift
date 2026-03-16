@@ -230,7 +230,20 @@ struct ManualCourseEditorView: View {
         }
     }
 }
+struct ManualCourseEditorPreview: View {
+    @State private var courses: [Course] = []
+    
+    var body: some View {
+        NavigationStack {
+            ManualCourseEditorView(courses: $courses, mode: .add)
+        }
+    }
+}
 
+#Preview("可输入的预览") {
+    ManualCourseEditorPreview()
+        .environmentObject(userInfo())
+}
 // MARK: - 预览
 
 #Preview("添加模式") {

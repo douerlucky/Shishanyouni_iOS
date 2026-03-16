@@ -33,6 +33,7 @@ struct ScheduleView: View
 
     // 保存本周课表为图片
     @State private var showSaveSuccess = false
+    @State private var longPressedCell: (day: Int,period: Int)?
 
     @State var semesterStartDate: Date = {
         var components = DateComponents()
@@ -113,6 +114,7 @@ struct ScheduleView: View
                                     .background(Color(.secondarySystemBackground).opacity(0.5))
                                     .clipShape(Capsule())
                                 // 修改
+                                // 修改这一部分
                                 CourseGridView(
                                     courses: courses,
                                     nowdisplayWeek: nowDisplayWeek,
@@ -126,6 +128,21 @@ struct ScheduleView: View
                                     onEditCourse: { course in
                                         selectedCourse = course
                                         showEditCourse = true
+                                    },
+                                    // 新增：长按空白单元格回调
+                                    onLongPressEmptyCell: { dayOfWeek, period in
+                                        // 创建预填充的课程数据
+                                        let newCourse = Course.createManualCourse(
+                                            name: "",
+                                            weekday: dayOfWeek,
+                                            startPeriod: period,
+                                            endPeriod: period + 1, // 默认2节课
+                                            weeks: [nowDisplayWeek], // 默认当前周
+                                            location: nil,
+                                            teacher: nil
+                                        )
+                                        selectedCourse = newCourse
+                                        showAddCourse = true
                                     }
                                 )
                             }
@@ -405,9 +422,16 @@ struct ScheduleView: View
                 }
             }
             // 新增：手动添加课程的 sheet
+            // 修改这一部分
             .sheet(isPresented: $showAddCourse)
             {
-                ManualCourseEditorView(courses: $courses, mode: .add)
+                if let course = selectedCourse, course.name.isEmpty {
+                    // 如果是长按空白单元格创建的预填充课程，传递编辑模式
+                    ManualCourseEditorView(courses: $courses, mode: .edit(course))
+                } else {
+                    // 正常的添加模式
+                    ManualCourseEditorView(courses: $courses, mode: .add)
+                }
             }
             .onAppear
             {
@@ -592,6 +616,8 @@ struct CourseGridView: View
 
     var onDeleteCourse: ((Course) -> Void)?
     var onEditCourse: ((Course) -> Void)?
+    // 新增：长按空白单元格添加课程的回调
+    var onLongPressEmptyCell: ((Int, Int) -> Void)? // (dayOfWeek, period)
 
     var body: some View
     {
@@ -604,8 +630,13 @@ struct CourseGridView: View
                     VStack(spacing: 0)
                     {
                         ForEach(1 ... 12, id: \.self)
-                        { _ in
+                        { period in
                             EmptyCell()
+                                // 新增：为空白单元格添加长按手势
+                                .onLongPressGesture(minimumDuration: 0.5) {
+                                    onLongPressEmptyCell?(dayOfWeek, period)
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                }
                         }
                     }
 
@@ -661,7 +692,6 @@ struct CourseGridView: View
         return course.parsedWeeks.contains(week)
     }
 }
-
 struct MergedCourseCard: View
 {
     let course: Course
@@ -722,10 +752,10 @@ struct MergedCourseCard: View
         {
             if course.isManual
             {
-                Button(action: { onEdit?() })
-                {
-                    Label("编辑", systemImage: "pencil")
-                }
+//                Button(action: { onEdit?() })
+//                {
+//                    Label("编辑", systemImage: "pencil")
+//                }
 
                 Button(role: .destructive, action: { onDelete?() })
                 {
