@@ -29,23 +29,31 @@ struct ScheduleSettingView: View {
     @State private var isImporting           = false
     @State private var importedCount         = 0
 
+    // 导入时询问是否同时清除手动课程
+    @State private var pendingImportResult: (courses: [Course], startDate: Date?)? = nil
+    @State private var showClearManualOnImportAlert = false
+
+    // 三种清除方案
+    @State private var showClearImportedConfirmation = false
+    @State private var showClearManualConfirmation   = false
+    @State private var showClearAllConfirmation      = false
+
     // 导入学期选择
     @State private var selectedYear     = "2025"       // 学年起始年份
     @State private var selectedTerm     = "2"          // "1"=秋季, "2"=春季
 
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
 
-    /// 学年显示列表（picker 用）
+    /// 学年显示列表
     private let availableYears  = ["2023", "2024", "2025", "2026"]
     private let terms           = [("秋季学期", "1"), ("春季学期", "2")]
 
-    // MARK: - body
 
     var body: some View {
         NavigationStack {
             Form {
 
-                // ── 学期开学日期 ──
+                // 学期开学日期
                 Section {
                     DatePicker(
                         "本学期开学日期",
@@ -61,7 +69,7 @@ struct ScheduleSettingView: View {
                     Text("学期设置")
                 }
 
-                // ── 课表导入 ──
+                // 课表导入
                 Section {
                     Button {
                         showImportPicker = true
@@ -86,24 +94,51 @@ struct ScheduleSettingView: View {
                     Text("课表导入")
                 }
 
-                // ── 清空课表 ──
-                if !courses.isEmpty {
-                    Section {
-                        Button(role: .destructive) {
-                            showClearConfirmation = true
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Text("清空课表").fontWeight(.semibold)
-                                Spacer()
-                            }
+                // 清除课程
+                Section {
+                    Button(role: .destructive) {
+                        showClearImportedConfirmation = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("清除导入的课程").fontWeight(.semibold)
+                            Spacer()
                         }
-                    } footer: {
-                        Text("当前已有 \(courses.count) 门课程").font(.caption)
                     }
-                }
+                    .disabled(courses.filter { !$0.isManual }.isEmpty)
 
-                // ── 保存设置 ──
+                    Button(role: .destructive) {
+                        showClearManualConfirmation = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("清除手动添加的课程").fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                    .disabled(courses.filter { $0.isManual }.isEmpty)
+
+                    Button(role: .destructive) {
+                        showClearAllConfirmation = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("清除所有课程").fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                    .disabled(courses.isEmpty)
+
+                } header: {
+                    Text("清除课程")
+                } footer: {
+                    let importedCount = courses.filter { !$0.isManual }.count
+                    let manualCount   = courses.filter {  $0.isManual }.count
+                    Text("导入课程 \(importedCount) 门 · 手动课程 \(manualCount) 门").font(.caption)
+                }
+                .listRowSeparator(.hidden)
+
+                // 保存设置
                 Section {
                     Button {
                         saveSettings()
@@ -124,7 +159,7 @@ struct ScheduleSettingView: View {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
                 }
             }
-            // ── 弹窗 ──
+            // 弹窗
             .sheet(isPresented: $showImportPicker) { importPickerView }
             .alert("设置已保存", isPresented: $showSaveConfirmation) {
                 Button("确定", role: .cancel) { dismiss() }
@@ -134,16 +169,47 @@ struct ScheduleSettingView: View {
             .alert(importAlertMessage, isPresented: $showImportAlert) {
                 Button("确定", role: .cancel) {}
             }
-            .alert("确认清空课表", isPresented: $showClearConfirmation) {
-                Button("取消", role: .cancel) {}
-                Button("清空", role: .destructive) { clearCourses() }
+            // 导入时询问是否同时清除手动课程
+            .alert("是否同时清除手动添加的课程？", isPresented: $showClearManualOnImportAlert) {
+                Button("清除", role: .destructive) {
+                    if let result = pendingImportResult {
+                        applyImport(result, keepManual: false)
+                    }
+                }
+                Button("保留") {
+                    if let result = pendingImportResult {
+                        applyImport(result, keepManual: true)
+                    }
+                }
+                Button("取消", role: .cancel) {
+                    pendingImportResult = nil
+                    isImporting = false
+                }
             } message: {
-                Text("此操作将删除所有已导入的课程，是否继续？")
+                Text("点击「保留」将保留手动课程，仅替换导入课程；点击「清除」将删除所有课程后重新导入。")
+            }
+            // 三种清除确认
+            .alert("确认清除导入的课程", isPresented: $showClearImportedConfirmation) {
+                Button("取消", role: .cancel) {}
+                Button("清除", role: .destructive) { clearImportedCourses() }
+            } message: {
+                Text("将删除所有自动导入的课程，手动添加的课程不受影响。")
+            }
+            .alert("确认清除手动添加的课程", isPresented: $showClearManualConfirmation) {
+                Button("取消", role: .cancel) {}
+                Button("清除", role: .destructive) { clearManualCourses() }
+            } message: {
+                Text("将删除所有手动添加的课程，导入课程不受影响。")
+            }
+            .alert("确认清除所有课程", isPresented: $showClearAllConfirmation) {
+                Button("取消", role: .cancel) {}
+                Button("清除", role: .destructive) { clearAllCourses() }
+            } message: {
+                Text("此操作将删除全部课程，包括导入和手动添加的，无法恢复。")
             }
         }
     }
 
-    // MARK: - 导入选择器视图
 
     private var importPickerView: some View {
         NavigationStack {
@@ -221,29 +287,25 @@ struct ScheduleSettingView: View {
                 term:     selectedTerm
             )
 
-            courses       = result.courses
             importedCount = result.courses.count
-            persistCourses(result.courses)
 
-            // 若 API 返回了开学日期，自动填入日期选择器
-            if let apiDate = result.startDate {
-                tempStartDate       = apiDate
-                hasUserSelectedDate = true
-                importAlertMessage  = "课表导入成功\n已获取 \(importedCount) 条排课\n开学日期已自动填写为 \(formatDate(apiDate))，请确认后保存"
+            // 若存在手动课程，先询问是否清除
+            let hasManual = courses.contains { $0.isManual }
+            if hasManual {
+                pendingImportResult = result
+                showClearManualOnImportAlert = true
+                // isImporting 等弹窗回调里再置 false
             } else {
-                importAlertMessage  = "课表导入成功\n已获取 \(importedCount) 条排课\n请手动设置开学日期后保存"
+                applyImport(result, keepManual: false)
             }
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-            showImportAlert = true
 
         } catch {
             print("❌ 导入失败: \(error)")
             importAlertMessage = "课表导入失败\n\(error.localizedDescription)"
             showImportAlert    = true
             UINotificationFeedbackGenerator().notificationOccurred(.error)
+            isImporting = false
         }
-
-        isImporting = false
     }
 
     // MARK: - 持久化
@@ -258,10 +320,41 @@ struct ScheduleSettingView: View {
         }
     }
 
-    private func clearCourses() {
+    /// 将拉取结果写入 courses，keepManual 决定是否保留手动课程
+    private func applyImport(_ result: (courses: [Course], startDate: Date?), keepManual: Bool) {
+        let manual = keepManual ? courses.filter { $0.isManual } : []
+        courses = manual + result.courses
+        persistCourses(courses)
+
+        if let apiDate = result.startDate {
+            tempStartDate       = apiDate
+            hasUserSelectedDate = true
+            importAlertMessage  = "课表导入成功\n已获取 \(result.courses.count) 条排课\n开学日期已自动填写为 \(formatDate(apiDate))，请确认后保存"
+        } else {
+            importAlertMessage  = "课表导入成功\n已获取 \(result.courses.count) 条排课\n请手动设置开学日期后保存"
+        }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        showImportAlert = true
+        pendingImportResult = nil
+        isImporting = false
+    }
+
+    private func clearImportedCourses() {
+        courses = courses.filter { $0.isManual }
+        persistCourses(courses)
+        print("✅ 已清除导入课程，保留手动课程 \(courses.count) 门")
+    }
+
+    private func clearManualCourses() {
+        courses = courses.filter { !$0.isManual }
+        persistCourses(courses)
+        print("✅ 已清除手动课程，保留导入课程 \(courses.count) 门")
+    }
+
+    private func clearAllCourses() {
         courses = []
         UserDefaults.standard.removeObject(forKey: "saved_courses")
-        print("✅ 课表已清空")
+        print("✅ 所有课程已清空")
     }
 
     // MARK: - 工具函数
