@@ -752,10 +752,10 @@ struct MergedCourseCard: View
         {
             if course.isManual
             {
-//                Button(action: { onEdit?() })
-//                {
-//                    Label("编辑", systemImage: "pencil")
-//                }
+                Button(action: { onEdit?() })
+                {
+                    Label("编辑", systemImage: "pencil")
+                }
 
                 Button(role: .destructive, action: { onDelete?() })
                 {

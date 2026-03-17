@@ -5,6 +5,7 @@
 //  Created by 寒海澜沧 on 2026/3/15.
 
 import SwiftUI
+import Foundation
 
 enum CourseEditorMode {
     case add
@@ -25,6 +26,29 @@ enum CourseEditorMode {
     }
 }
 
+struct SimpleWeekButton: View {
+    let week: Int
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: {
+            DispatchQueue.main.async {
+                action()
+            }
+        }) {
+            Text("\(week)")
+                .font(.caption)
+                .frame(width: 35, height: 35)
+                .background(isSelected ? Color.blue : Color.gray.opacity(0.2))
+                .foregroundColor(isSelected ? .white : .primary)
+                .clipShape(Circle())
+        }
+        .buttonStyle(BorderlessButtonStyle())
+        .contentShape(Rectangle())
+    }
+}
+
 struct ManualCourseEditorView: View {
     @Environment(\.dismiss) var dismiss
     @Binding var courses: [Course]
@@ -32,13 +56,13 @@ struct ManualCourseEditorView: View {
     let mode: CourseEditorMode
 
     // 表单数据
-    @State private var courseName: String
-    @State private var selectedWeekday: Int
-    @State private var startPeriod: Int
-    @State private var endPeriod: Int
-    @State private var location: String
-    @State private var teacherName: String
-    @State private var selectedWeeks: Set<Int>
+    @State private var courseName: String = ""
+    @State private var selectedWeekday: Int = 1
+    @State private var startPeriod: Int = 1
+    @State private var endPeriod: Int = 2
+    @State private var location: String = ""
+    @State private var teacherName: String = ""
+    @State private var selectedWeeks: Set<Int> = []
 
     let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     let periods  = Array(1...12)
@@ -50,13 +74,7 @@ struct ManualCourseEditorView: View {
 
         switch mode {
         case .add:
-            _courseName      = State(initialValue: "")
-            _selectedWeekday = State(initialValue: 1)
-            _location        = State(initialValue: "")
-            _teacherName     = State(initialValue: "")
-            _selectedWeeks   = State(initialValue: [])
-            _startPeriod     = State(initialValue: 1)
-            _endPeriod       = State(initialValue: 2)
+            break
 
         case .edit(let course):
             _courseName      = State(initialValue: course.name)
@@ -88,12 +106,28 @@ struct ManualCourseEditorView: View {
                                 Text("第\(p)节").tag(p)
                             }
                         }
+                        .onChange(of: startPeriod) { newValue in
+                            if newValue > endPeriod {
+                                endPeriod = newValue
+                            }
+                        }
                         Text("至")
                         Picker("结束节次", selection: $endPeriod) {
                             ForEach(periods, id: \.self) { p in
                                 Text("第\(p)节").tag(p)
                             }
                         }
+                        .onChange(of: endPeriod) { newValue in
+                            if newValue < startPeriod {
+                                startPeriod = newValue
+                            }
+                        }
+                    }
+
+                    if startPeriod > endPeriod {
+                        Text("开始节次不能大于结束节次")
+                            .font(.caption)
+                            .foregroundColor(.red)
                     }
 
                     TextField("教室（可选）", text: $location)
@@ -104,14 +138,23 @@ struct ManualCourseEditorView: View {
                 Section("上课周次") {
                     HStack {
                         Button("全选")    { selectedWeeks = Set(1...maxWeek) }.buttonStyle(.bordered)
-                        Button("全部清空") { selectedWeeks.removeAll()        }.buttonStyle(.bordered)
                         Button("本学期")  { selectedWeeks = Set(1...20)       }.buttonStyle(.bordered)
+                        Button("单周")   { selectedWeeks = Set(stride(from: 1, through: maxWeek, by: 2)) }.buttonStyle(.bordered)
+                        Button("双周")   { selectedWeeks = Set(stride(from: 2, through: maxWeek, by: 2)) }.buttonStyle(.bordered)
+                    }
+                    .font(.caption)
+
+                    HStack {
+                        Button("全部清空") { selectedWeeks.removeAll() }.buttonStyle(.bordered)
+                        Button("1-8周")  { selectedWeeks = Set(1...8)  }.buttonStyle(.bordered)
+                        Button("9-16周") { selectedWeeks = Set(9...16) }.buttonStyle(.bordered)
+                        Button("17-20周") { selectedWeeks = Set(17...20) }.buttonStyle(.bordered)
                     }
                     .font(.caption)
 
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
                         ForEach(1...maxWeek, id: \.self) { week in
-                            WeekButton(
+                             SimpleWeekButton(
                                 week: week,
                                 isSelected: selectedWeeks.contains(week),
                                 action: {
@@ -155,7 +198,9 @@ struct ManualCourseEditorView: View {
                 }
             }
             .navigationTitle(mode.title)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
