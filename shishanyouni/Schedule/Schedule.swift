@@ -257,11 +257,11 @@ enum ScheduleError: LocalizedError
     }
 }
 
-// MARK: - Color ↔ Hex 互转自定义课程颜色使用
+//Color Hex 互转自定义课程颜色使用
 
 extension Color
 {
-    /// 从十六进制字符串构造颜色，支持 "#RRGGBB" 或 "RRGGBB"
+    // 从十六进制字符串构造颜色，支持 "#RRGGBB" 或 "RRGGBB"
     init?(hex: String)
     {
         let hex = hex.trimmingCharacters(in: .init(charactersIn: "#"))
@@ -273,7 +273,7 @@ extension Color
         )
     }
 
-    /// 转为 "#RRGGBB" 字符串
+    // 转为 "#RRGGBB" 字符串
     func toHex() -> String?
     {
         guard let components = UIColor(self).cgColor.components,
