@@ -150,6 +150,7 @@ struct ProfileView: View
                 Button("确定")
                 {
                     userinfo.nickname = tempNickname // 同步回全局变量
+                    userinfo.saveUserInfo()
                 }
             } message: {
                 Text("请输入你想使用的昵称")

@@ -38,6 +38,7 @@ class userInfo: ObservableObject
                 performEncryption()
                 print("✅ 已自动加载学号: \(username)")
             }
+            nickname = UserDefaults.standard.string(forKey: "saved_nickname") ?? ""
         }
     }
 
@@ -56,6 +57,8 @@ class userInfo: ObservableObject
 
         // 保存密码到 Keychain
         let success = KeychainHelper.shared.save(password: plainPassword, for: username)
+        
+        UserDefaults.standard.set(nickname, forKey: "saved_nickname")
 
         if success
         {
@@ -82,6 +85,7 @@ class userInfo: ObservableObject
         username = ""
         plainPassword = ""
         encryptedResult = ""
+        nickname = ""
 
         print("已清除保存的学号和密码")
     }

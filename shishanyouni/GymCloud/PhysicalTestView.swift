@@ -327,7 +327,7 @@ struct DetailCard: View
             HStack
             {
                 Spacer()
-                MiniScoreBadge(score: Double(detail.score)!)
+                MiniScoreBadge(score: Double(detail.score) ?? 0)
                 Spacer()
             }
 

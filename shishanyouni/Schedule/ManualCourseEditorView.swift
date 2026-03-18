@@ -73,6 +73,8 @@ struct ManualCourseEditorView: View
     @State private var location: String = ""
     @State private var teacherName: String = ""
     @State private var selectedWeeks: Set<Int> = []
+    @State private var selectedColor: Color = .blue
+    @State private var hasCustomColor: Bool = false
 
     let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     let periods = Array(1 ... 12)
@@ -98,6 +100,10 @@ struct ManualCourseEditorView: View
             _selectedWeeks = State(initialValue: Set(course.weekList))
             _startPeriod = State(initialValue: course.start)
             _endPeriod = State(initialValue: course.endPeriod)
+            if let hex = course.customColorHex, let c = Color(hex: hex) {
+                _selectedColor = State(initialValue: c)
+                _hasCustomColor = State(initialValue: true)
+            }
         }
     }
 
@@ -110,7 +116,13 @@ struct ManualCourseEditorView: View
                 // 基本信息
                 Section("课程信息")
                 {
-                    TextField("课程名称", text: $courseName)
+                    HStack
+                    {
+                        Text("课程名称")
+                        Spacer()
+                        TextField("输入课程名称", text: $courseName)
+                            .multilineTextAlignment(.trailing)
+                    }
 
                     Picker("星期", selection: $selectedWeekday)
                     {
@@ -157,8 +169,40 @@ struct ManualCourseEditorView: View
                             .foregroundColor(.red)
                     }
 
-                    TextField("教室（可选）", text: $location)
-                    TextField("教师（可选）", text: $teacherName)
+                    HStack
+                    {
+                        Text("教室")
+                        Spacer()
+                        TextField("可选", text: $location)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    HStack
+                    {
+                        Text("教师")
+                        Spacer()
+                        TextField("可选", text: $teacherName)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    HStack
+                    {
+                        Text("课程颜色")
+                        Spacer()
+                        if hasCustomColor
+                        {
+                            Button("重置")
+                            {
+                                hasCustomColor = false
+                            }
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.trailing, 6)
+                        }
+                        ColorPicker("", selection: $selectedColor, supportsOpacity: false)
+                            .labelsHidden()
+                            .onChange(of: selectedColor) { _ in hasCustomColor = true }
+                    }
                 }
 
                 // 周次选择
@@ -295,6 +339,7 @@ struct ManualCourseEditorView: View
 
     private func addNewCourse()
     {
+        let hex = hasCustomColor ? selectedColor.toHex() : nil
         let newCourse = Course.createManualCourse(
             name: courseName,
             weekday: selectedWeekday,
@@ -302,7 +347,8 @@ struct ManualCourseEditorView: View
             endPeriod: endPeriod,
             weeks: selectedWeeks,
             location: location.isEmpty ? nil : location,
-            teacher: teacherName.isEmpty ? nil : teacherName
+            teacher: teacherName.isEmpty ? nil : teacherName,
+            customColorHex: hex
         )
         courses.append(newCourse)
         print("✅ 课程添加成功: \(courseName)")
@@ -326,7 +372,8 @@ struct ManualCourseEditorView: View
             weeks: weeksText,
             term: editing.term,
             colorRandom: editing.colorRandom,
-            isManual: true
+            customColorHex: hasCustomColor ? selectedColor.toHex() : nil,
+            isManual: editing.isManual
         )
         courses[index] = updated
         print("✅ 课程更新成功: \(courseName)")

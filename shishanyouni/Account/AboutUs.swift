@@ -26,13 +26,13 @@ struct AboutUs: View {
                 // 核心信息表格区（仿系统设置的表格样式）
                 VStack(spacing: 0) {
                     // 表格行1：版本号
-                    infoRow(title: "当前版本", content: "0.1 beta 3")
+                    infoRow(title: "当前版本", content: "0.1 beta 4")
                     
                     // 分割线
                     Divider()
                     
                     // 表格行2：构建时间
-                    infoRow(title: "构建时间", content: "2026年3月16日")
+                    infoRow(title: "构建时间", content: "2026年3月18日")
                     
                     // 分割线
                     Divider()
@@ -67,7 +67,7 @@ struct AboutUs: View {
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                 .padding(.horizontal, 16)
                 
-                Text("后端数据由狮山有你工作室提供")
+                Text("部分后端数据由狮山有你工作室提供")
                     .foregroundColor(.gray)
                 
                 // 简介和工作室说明

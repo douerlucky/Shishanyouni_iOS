@@ -4,7 +4,8 @@
 //
 //  Created by douer_lucky on 2026/2/10.
 //  Rewritten by lancang on 2026/3/18
-//  全部在同一个 VStack 层级，全文件零 ZStack
+
+//  全部在同一个 VStack 层级
 //  课程卡片用 VStack + .background，不用 ZStack 叠层
 
 import SwiftUI
@@ -102,7 +103,7 @@ struct ScheduleView: View
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
 
-                // 课表主体 + 底部控制条（底部控制条浮在上面，这里的 ZStack 不是课表网格的，是页面布局的）
+                // 课表主体 + 底部控制条
                 pageBodyView
             }
             .toolbar
@@ -132,7 +133,8 @@ struct ScheduleView: View
                             week: nowDisplayWeek,
                             datesCurWeek: datesCurWeek,
                             month: nowDisplayMonth
-                        ) {
+                        )
+                        {
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                             showSaveSuccess = true
                         }
@@ -152,10 +154,7 @@ struct ScheduleView: View
             }
             .sheet(item: $editCourseContext)
             { course in
-                if course.isManual
-                { ManualCourseEditorView(courses: $courses, mode: .edit(course)) }
-                else
-                { Text("导入的课程不能编辑").presentationDetents([.height(200)]) }
+                ManualCourseEditorView(courses: $courses, mode: .edit(course))
             }
             .sheet(item: $addCourseContext)
             { context in
@@ -181,7 +180,7 @@ struct ScheduleView: View
         }
     }
 
-    // MARK: - 页面主体（ScrollView + 底部浮动控制条）
+    // 页面主体
 
     @ViewBuilder
     private var pageBodyView: some View
@@ -225,11 +224,13 @@ struct ScheduleView: View
                 }
                 .gesture(
                     DragGesture()
-                        .onChanged { value in
+                        .onChanged
+                        { value in
                             isDragging = true
                             dragOffset = value.translation.width * 0.5
                         }
-                        .onEnded { value in
+                        .onEnded
+                        { value in
                             let threshold: CGFloat = 30
                             if value.translation.width < -threshold
                             {
@@ -258,7 +259,7 @@ struct ScheduleView: View
         }
     }
 
-    // MARK: - 底部控制条
+    // 底部控制条
 
     @ViewBuilder
     private var bottomControlBar: some View
@@ -423,7 +424,7 @@ struct ScheduleView: View
         }
     }
 
-    // MARK: - 工具方法
+    // 工具
 
     private func handleWeekJump()
     {
@@ -438,10 +439,13 @@ struct ScheduleView: View
         if savedTimestamp > 0 { semesterStartDate = Date(timeIntervalSince1970: savedTimestamp) }
         if let data = UserDefaults.standard.data(forKey: "saved_courses")
         {
-            do {
+            do
+            {
                 courses = try JSONDecoder().decode([Course].self, from: data)
                 print("✅ 已加载 \(courses.count) 门课程")
-            } catch {
+            }
+            catch
+            {
                 print("❌ 课表加载失败: \(error)")
                 courses = []
             }
@@ -482,7 +486,7 @@ struct ScheduleView: View
     }
 }
 
-// MARK: - WeekHeaderView
+// 星期头
 
 struct WeekHeaderView: View
 {
@@ -516,13 +520,12 @@ struct WeekHeaderView: View
     }
 }
 
-// MARK: - CourseGridView
-// 核心规则：
-// 1. 每天一个 VStack，从第1节到第12节顺序渲染
-// 2. 课程起始节次 → 渲染课程卡片(跨多节高度)，跳过后续被占节次
-// 3. 空白节次 → 渲染空白格子
-// 4. 所有元素在同一个 VStack 里，同一层级，无任何重叠
-// 5. 课程卡片内部也不用 ZStack，用 .background 实现背景色
+// CourseGridView
+// 每天一个 VStack，从第1节到第12节顺序渲染
+// 课程起始节次渲染课程卡片，跳过后续被占节次
+// 空白节次渲染空白格子
+// 所有元素在同一个vstack里，同一层级无任何重叠
+// 课程卡片内部用background 没有ZStack了
 
 struct CourseGridView: View
 {
@@ -543,7 +546,7 @@ struct CourseGridView: View
             ForEach(1 ... 7, id: \.self)
             { day in
                 let dayCourses = coursesForDay(day)
-                // ⚠️ 把 day 传进去，这样空白格子的 day 一定是正确的
+                // 把day传进去，这样空白格子的day一定是正确的
                 let slots = buildSlots(day: day, dayCourses: dayCourses)
 
                 VStack(spacing: 0)
@@ -552,8 +555,8 @@ struct CourseGridView: View
                     { slot in
                         switch slot.kind
                         {
-                        case let .course(course):
-                            courseCardView(course: course)
+                        case let .course(course, conflicts):
+                            courseCardView(course: course, conflicts: conflicts)
 
                         case let .empty(emptyDay, period):
                             emptyCellView(day: emptyDay, period: period)
@@ -575,7 +578,8 @@ struct CourseGridView: View
 
     enum SlotKind
     {
-        case course(Course)
+        /// winner 全宽显示，conflicts 为同时段被压住的课程（不渲染卡片，仅 Preview 展示）
+        case course(Course, conflicts: [Course])
         case empty(day: Int, period: Int)
     }
 
@@ -584,16 +588,18 @@ struct CourseGridView: View
         return courses.filter { $0.day == day && $0.parsedWeeks.contains(nowdisplayWeek) }
     }
 
-    /// 从第1节到第12节顺序扫描，生成渲染列表
-    /// day 参数从外层 ForEach 传入，保证空白格子的 day 永远正确
+    // 从第1节到第12节顺序扫描，生成渲染列表
+    // day从外层ForEach传入，保证空白格子的day永远正确
     private func buildSlots(day: Int, dayCourses: [Course]) -> [RenderSlot]
     {
-        // 起始节次 -> 课程
-        var startMap: [Int: Course] = [:]
-        for course in dayCourses
+        // 将冲突解析结果映射到 startPeriod
+        // key = 胜者的 start，value = (winner, [conflicts])
+        var startMap: [Int: (Course, [Course])] = [:]
+        let resolved = resolveConflictsForDay(dayCourses)
+        for (winner, conflicts) in resolved
         {
-            startMap[course.start] = course
-            print("📌 day\(day) 课程[\(course.name)] start=\(course.start) end=\(course.endPeriod) step=\(course.step)")
+            startMap[winner.start] = (winner, conflicts)
+            print("📌 day\(day) 课程[\(winner.name)] start=\(winner.start) end=\(winner.endPeriod) conflicts=\(conflicts.map(\.name))")
         }
 
         var slots: [RenderSlot] = []
@@ -601,14 +607,14 @@ struct CourseGridView: View
 
         while period <= 12
         {
-            if let course = startMap[period]
+            if let (winner, conflicts) = startMap[period]
             {
-                print("🟢 day\(day) period=\(period) → 课程[\(course.name)]，跳到\(course.endPeriod + 1)")
+                print("🟢 day\(day) period=\(period) → 课程[\(winner.name)]，跳到\(winner.endPeriod + 1)")
                 slots.append(RenderSlot(
-                    id: "c_\(course.id)_\(period)",
-                    kind: .course(course)
+                    id: "c_\(winner.id)_\(period)",
+                    kind: .course(winner, conflicts: conflicts)
                 ))
-                period = course.endPeriod + 1
+                period = winner.endPeriod + 1
             }
             else
             {
@@ -624,7 +630,84 @@ struct CourseGridView: View
         return slots
     }
 
-    // MARK: - 空白格子（同一层级，单个 View，一个 contextMenu）
+    // MARK: - 冲突检测与解析
+
+    /// 两课程时间段是否有任意重叠
+    private func overlaps(_ a: Course, _ b: Course) -> Bool
+    {
+        a.start <= b.endPeriod && b.start <= a.endPeriod
+    }
+
+    /// 包含型和贯穿型的统一胜者选择：节数长者优先，相同则导入课优先
+    private func winner(_ a: Course, _ b: Course) -> Course
+    {
+        if a.step != b.step { return a.step > b.step ? a : b }
+        return a.isManual ? b : a
+    }
+
+    /// 解析单天课程的所有冲突，返回 [(展示的胜者, [被压住的课程])]
+    /// 无冲突的课程以空 conflicts 列表返回
+    private func resolveConflictsForDay(_ courses: [Course]) -> [(Course, [Course])]
+    {
+        guard courses.count > 1
+        else
+        {
+            return courses.map { ($0, []) }
+        }
+
+        // 按 start 升序排列
+        let sorted = courses.sorted { $0.start < $1.start }
+
+        // 用 Union-Find 思路：将所有互相重叠的课程归入同一组
+        var groupID = Array(0 ..< sorted.count) // 每个元素的组号
+        func find(_ i: Int) -> Int
+        {
+            var i = i
+            while groupID[i] != i { i = groupID[i] }
+            return i
+        }
+        func union(_ i: Int, _ j: Int)
+        {
+            groupID[find(i)] = find(j)
+        }
+
+        for i in 0 ..< sorted.count
+        {
+            for j in (i + 1) ..< sorted.count
+            {
+                if overlaps(sorted[i], sorted[j]) { union(i, j) }
+            }
+        }
+
+        // 按组收集
+        var groups: [Int: [Course]] = [:]
+        for (idx, course) in sorted.enumerated()
+        {
+            let g = find(idx)
+            groups[g, default: []].append(course)
+        }
+
+        // 每组选出胜者
+        var result: [(Course, [Course])] = []
+        for (_, group) in groups
+        {
+            if group.count == 1
+            {
+                result.append((group[0], []))
+            }
+            else
+            {
+                let w = group.reduce(group[0]) { winner($0, $1) }
+                let losers = group.filter { $0.id != w.id }
+                result.append((w, losers))
+                print("🏆 冲突组胜者[\(w.name)] step=\(w.step) isManual=\(w.isManual)，压住\(losers.map(\.name))")
+            }
+        }
+
+        return result
+    }
+
+    // 空白格子
 
     @ViewBuilder
     private func emptyCellView(day: Int, period: Int) -> some View
@@ -657,7 +740,8 @@ struct CourseGridView: View
                         .font(.headline)
                 }
                 .padding(20)
-                .onAppear {
+                .onAppear
+                {
                     print("📋 [上下文菜单打开] 空白格子 day=\(day) period=\(period)")
                 }
             }
@@ -666,7 +750,7 @@ struct CourseGridView: View
     // MARK: - 课程卡片（同一层级，无 ZStack，用 .background 实现背景色）
 
     @ViewBuilder
-    private func courseCardView(course: Course) -> some View
+    private func courseCardView(course: Course, conflicts: [Course] = []) -> some View
     {
         let spans = CGFloat(course.step)
         let cardHeight = spans * scheduleCellHeight + (spans - 1) * 2
@@ -674,20 +758,52 @@ struct CourseGridView: View
 
         VStack(spacing: 4)
         {
-            Spacer(minLength: 4)
+            Spacer(minLength: 2)
 
-            Text(course.name)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
+            if course.name.count <= 5
+            {
+                Text(course.name)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
+            else if course.name.count > 5 && course.name.count <= 10
+            {
+                Text(course.name)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
+            else
+            {
+                Text(course.name)
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
 
             if let location = course.room
             {
                 VStack(spacing: 2)
                 {
-                    Image(systemName: "location.fill").font(.system(size: 8))
-                    Text(location).font(.system(size: 10)).multilineTextAlignment(.center).lineLimit(2)
+                    if location.count <= 7
+                    {
+                        Image(systemName: "location.fill").font(.system(size: 8))
+                        Text(location).font(.system(size: 10)).multilineTextAlignment(.center).lineLimit(2)
+                    }
+                    else
+                    {
+                        // 前4个字符
+                        Text(location.prefix(4))
+                            .font(.system(size: 8))
+                            .multilineTextAlignment(.center)
+
+                        // 剩余部分（从第4个字符开始，对应 [4:]）
+                        Text(String(location.dropFirst(4))) // 关键：dropFirst(4) 跳过前4个字符
+                            .font(.system(size: 7))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(1)
+                    }
                 }
                 .foregroundColor(.white)
             }
@@ -696,16 +812,34 @@ struct CourseGridView: View
             {
                 VStack(spacing: 2)
                 {
-                    Image(systemName: "person.fill").font(.system(size: 8))
-                    Text(teacher)
-                        .font(.system(size: teacher.count >= 3 ? 10 : 12))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(1)
+                    if teacher.count <= 2
+                    {
+                        Image(systemName: "person.fill").font(.system(size: 8))
+                        Text(teacher)
+                            .font(.system(size: 12))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(1)
+                    }
+                    else if teacher.count >= 3 && teacher.count <= 4
+                    {
+                        Image(systemName: "person.fill").font(.system(size: 8))
+                        Text(teacher)
+                            .font(.system(size: 9))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(1)
+                    }
+                    else
+                    {
+                        Text(teacher)
+                            .font(.system(size: 8))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                    }
                 }
                 .foregroundColor(.white)
             }
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 2)
         }
         .padding(.horizontal, 4)
         .frame(maxWidth: .infinity)
@@ -715,19 +849,28 @@ struct CourseGridView: View
                 .fill(color)
                 .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
         )
+        .overlay(alignment: .topTrailing)
+        {
+            if !conflicts.isEmpty
+            {
+                Text("\(conflicts.count + 1)")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 16, height: 16)
+                    .background(Circle().fill(Color.orange))
+                    .padding(4)
+            }
+        }
         .padding(1)
         .contentShape(Rectangle())
         .contextMenu
         {
-            if course.isManual
+            Button
             {
-                Button
-                {
-                    print("🔵 课程长按 → 编辑 [\(course.name)]")
-                    onEditCourse?(course)
-                } label: {
-                    Label("编辑", systemImage: "pencil")
-                }
+                print("🔵 课程长按 → 编辑 [\(course.name)]")
+                onEditCourse?(course)
+            } label: {
+                Label("编辑", systemImage: "pencil")
             }
 
             Button
@@ -746,8 +889,9 @@ struct CourseGridView: View
                 Label("删除", systemImage: "trash")
             }
         } preview: {
-            CourseCardPreview(course: course, week: nowdisplayWeek)
-                .onAppear {
+            CourseCardPreview(course: course, week: nowdisplayWeek, conflicts: conflicts)
+                .onAppear
+                {
                     print("📋 [上下文菜单打开] 课程卡片 name=[\(course.name)] day=\(course.day) start=\(course.start) end=\(course.endPeriod) isManual=\(course.isManual) id=\(course.id)")
                 }
         }
@@ -757,6 +901,12 @@ struct CourseGridView: View
 
     private func courseColor(for course: Course) -> Color
     {
+        // 优先使用用户自定义颜色
+        if let hex = course.customColorHex, let custom = Color(hex: hex)
+        {
+            return custom
+        }
+
         let colors: [Color] = [
             .blue, .green, .orange, .purple,
             .pink, .red, .yellow, .gray,
@@ -791,6 +941,7 @@ struct CourseCardPreview: View
 {
     let course: Course
     let week: Int
+    var conflicts: [Course] = []
 
     private let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
@@ -849,6 +1000,75 @@ struct CourseCardPreview: View
         .padding(.vertical, 16)
         .frame(width: 320)
         .background(Color(.systemBackground))
+
+        // 被压住的冲突课程列表
+        if !conflicts.isEmpty
+        {
+            let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+            ForEach(conflicts, id: \.id)
+            { c in
+                Divider().padding(.horizontal, 20)
+
+                HStack(spacing: 16)
+                {
+                    VStack(alignment: .center, spacing: 6)
+                    {
+                        Text("第 \(week) 周")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundColor(.secondary)
+                        Text("第\(c.start)–\(c.endPeriod)节")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        Text(weekdays[c.day - 1])
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(width: 72)
+                    .padding(.vertical, 4)
+
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.25))
+                        .frame(width: 1)
+                        .padding(.vertical, 4)
+
+                    VStack(alignment: .leading, spacing: 8)
+                    {
+                        Label("同时段其他课程", systemImage: "square.on.square")
+                            .font(.system(size: 12))
+                            .foregroundColor(.orange.opacity(0.8))
+                        Text(c.name)
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                        if let room = c.room, !room.isEmpty
+                        {
+                            Label(room, systemImage: "location.fill")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        if let teacher = c.teacher, !teacher.isEmpty
+                        {
+                            Label(teacher, systemImage: "person.fill")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+
+                        if c.isManual
+                        {
+                            Label("手动添加", systemImage: "hand.tap.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.blue.opacity(0.8))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .frame(width: 320)
+                .background(Color(.systemBackground))
+            }
+        }
     }
 }
 
