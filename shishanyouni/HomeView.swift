@@ -14,6 +14,7 @@ struct HomeView: View
     @State private var navigateToSchoolCalender = false
     @State private var navigateToBus = false
     @State private var navigateElectricity = false
+    @State private var navigateToClassroom = false
     @State private var navigateToEvents = false
 
     @State private var date: String = {
@@ -57,6 +58,14 @@ struct HomeView: View
                     {
                         navigateToAllCoueseSearch = true
                     }
+                    MenuGridItem(title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: .yellow)
+                    {
+                        navigateToAllCoueseSearch = true
+                    }
+                    MenuGridItem(title: "空教室查询", icon: "door.left.hand.open", color: .purple)
+                    {
+                        navigateToClassroom = true
+                    }
 
                     MenuGridItem(title: "环湖跑查询", icon: "figure.run", color: .brown)
                     {
@@ -85,17 +94,15 @@ struct HomeView: View
                             navigateToSchoolCalender = true
                         }
                     }
-                    
-
                     MenuGridItem(title: "校车查询", icon: "bus", color: .pink)
                     {
                         navigateToBus = true
                     }
                     
-                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
-                    {
-                        navigateToEvents = true
-                    }
+//                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
+//                    {
+//                        navigateToEvents = true
+//                    }
                 }
                 .padding()
             }
@@ -111,6 +118,8 @@ struct HomeView: View
             { SchoolBusView() }
             .navigationDestination(isPresented: $navigateElectricity)
             { ElectricityView() }
+            .navigationDestination(isPresented: $navigateToClassroom)
+            { ClassroomView() }
             .navigationDestination(isPresented: $navigateToEvents)
             { EventListView() }
         }

@@ -51,7 +51,7 @@ struct NanhuRunView: View
                             RunScoreCard(score: score)
                         }
                     }
-                    .padding()
+                    .padding(.bottom,120)
                 }
             }
 
