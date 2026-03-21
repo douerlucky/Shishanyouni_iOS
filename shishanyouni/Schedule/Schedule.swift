@@ -259,6 +259,12 @@ enum ScheduleError: LocalizedError
 
 //Color Hex 互转自定义课程颜色使用
 
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
 extension Color
 {
     // 从十六进制字符串构造颜色，支持 "#RRGGBB" 或 "RRGGBB"
@@ -276,7 +282,15 @@ extension Color
     // 转为 "#RRGGBB" 字符串
     func toHex() -> String?
     {
-        guard let components = UIColor(self).cgColor.components,
+        #if canImport(UIKit)
+        let uiColor = UIColor(self)
+        #elseif canImport(AppKit)
+        let uiColor = NSColor(self)
+        #else
+        return nil
+        #endif
+        
+        guard let components = uiColor.cgColor.components,
               components.count >= 3 else { return nil }
         let r = Int(components[0] * 255)
         let g = Int(components[1] * 255)

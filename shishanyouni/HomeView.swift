@@ -14,6 +14,7 @@ struct HomeView: View
     @State private var navigateToSchoolCalender = false
     @State private var navigateToBus = false
     @State private var navigateElectricity = false
+    @State private var navigateToEvents = false
 
     @State private var date: String = {
         let formatter = DateFormatter()
@@ -90,6 +91,11 @@ struct HomeView: View
                     {
                         navigateToBus = true
                     }
+                    
+                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
+                    {
+                        navigateToEvents = true
+                    }
                 }
                 .padding()
             }
@@ -105,6 +111,8 @@ struct HomeView: View
             { SchoolBusView() }
             .navigationDestination(isPresented: $navigateElectricity)
             { ElectricityView() }
+            .navigationDestination(isPresented: $navigateToEvents)
+            { EventListView() }
         }
     }
 }
