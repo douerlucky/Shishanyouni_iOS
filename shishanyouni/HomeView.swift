@@ -58,10 +58,6 @@ struct HomeView: View
                     {
                         navigateToAllCoueseSearch = true
                     }
-                    MenuGridItem(title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: .yellow)
-                    {
-                        navigateToAllCoueseSearch = true
-                    }
                     MenuGridItem(title: "空教室查询", icon: "door.left.hand.open", color: .purple)
                     {
                         navigateToClassroom = true
