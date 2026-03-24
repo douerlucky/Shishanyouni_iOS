@@ -40,115 +40,161 @@ struct PhysicalTestView: View
 
     var body: some View
     {
-        ZStack(alignment: .bottom)
+        NavigationStack
         {
-            Color(uiColor: .systemGroupedBackground)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0)
+            ZStack(alignment: .bottom)
             {
-                if let score = physicalScore
+
+                Color(uiColor: .systemGroupedBackground)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0)
                 {
-                    ScrollView
+                    if let score = physicalScore
                     {
-                        VStack(alignment: .leading, spacing: 25)
+                        ScrollView
                         {
-                            // 顶部总分大圆环
-                            HStack(spacing: 30)
+                            VStack(alignment: .leading, spacing: 25)
                             {
-                                MainScoreRing(score: Double(score.totalScore) ?? 0,totalGrade: score.totalGrade)
-                                    .frame(width: 128, height: 128)
-
-                                VStack(alignment: .leading, spacing: 8)
+                                NavigationLink(destination: PhysicalTestCalculatorView()) {
+                                    HStack(spacing: 16) {
+                                        // 左侧计算器图标（带背景圆环）
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.blue.opacity(0.1))
+                                                .frame(width: 48, height: 48)
+                                            
+                                            Image(systemName: "plus.forwardslash.minus")
+                                                .font(.system(size: 20, weight: .bold))
+                                                .foregroundColor(.blue)
+                                        }
+                                        
+                                        // 中间文字说明
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("体测计算器")
+                                                .font(.system(size: 18, weight: .bold))
+                                                .foregroundColor(.primary)
+                                            
+                                            Text("在体测结果出来之前，先自己预估一下吧！")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(.secondary.opacity(0.8))
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        // 右侧箭头
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.secondary.opacity(0.5))
+                                    }
+                                    .padding()
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                                    )
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.top, 10) // 距离顶部的间距
+                                
+                                // 顶部总分大圆环
+                                HStack(spacing: 30)
                                 {
-                                    
+                                    MainScoreRing(score: Double(score.totalScore) ?? 0,totalGrade: score.totalGrade)
+                                        .frame(width: 128, height: 128)
 
-                                    Text("测试年度: \(score.testYear)")
-                                        .font(.system(size: 20, weight: .bold))
-                                        .foregroundColor(.secondary)
-
-                                    Text("结果更新时间:\n\(score.updateTime)")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.secondary.opacity(0.8))
-
-                                    HStack()
+                                    VStack(alignment: .leading, spacing: 8)
                                     {
-                                        Text(score.gradeLevel)
+                                        
 
-                                        Text(score.className)
+                                        Text("测试年度: \(score.testYear)")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundColor(.secondary)
+
+                                        Text("结果更新时间:\n\(score.updateTime)")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.secondary.opacity(0.8))
+
+                                        HStack()
+                                        {
+                                            Text(score.gradeLevel)
+
+                                            Text(score.className)
+                                        }
                                     }
                                 }
-                            }
-                            .padding(20)
-                            .frame(maxWidth:.infinity)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
-                                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                            )
-                            .padding(.horizontal, 16)
-                            
+                                .padding(20)
+                                .frame(maxWidth:.infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                                )
+                                .padding(.horizontal, 16)
+                                
 
-                            // 单项数据网格两列布局
-                            VStack(alignment: .leading, spacing: 15)
-                            {
-                                Text("单项成绩")
-                                    .font(.title2.bold())
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal)
-
-                                let columns = [
-                                    GridItem(.flexible(), spacing: 16),
-                                    GridItem(.flexible())
-                                ]
-                                LazyVGrid(columns: columns, spacing: 16)
+                                // 单项数据网格两列布局
+                                VStack(alignment: .leading, spacing: 15)
                                 {
-                                    ForEach(score.details, id: \.project)
-                                    { detail in
-                                        DetailCard(detail: detail)
+                                    Text("单项成绩")
+                                        .font(.title2.bold())
+                                        .foregroundColor(.primary)
+                                        .padding(.horizontal)
+
+                                    let columns = [
+                                        GridItem(.flexible(), spacing: 16),
+                                        GridItem(.flexible())
+                                    ]
+                                    LazyVGrid(columns: columns, spacing: 16)
+                                    {
+                                        ForEach(score.details, id: \.project)
+                                        { detail in
+                                            DetailCard(detail: detail)
+                                        }
                                     }
+                                    .padding(.horizontal)
                                 }
-                                .padding(.horizontal)
                             }
+                            .padding(.bottom, 100)
                         }
-                        .padding(.bottom, 100)
+                    }
+                    else if !isLoading
+                    {
+                        emptyStateView
                     }
                 }
-                else if !isLoading
+
+                // 底部悬浮筛选按钮
+                PhysicalTestQueryButton(
+                    selectedYear: $selectedYear,
+                    showPicker: $showPicker,
+                    fetchPhysicalData: {
+                        fetchPhysicalData()
+                    }
+                )
+
+                if isLoading
                 {
-                    emptyStateView
+                    loadingOverlay
                 }
             }
-
-            // 底部悬浮筛选按钮
-            PhysicalTestQueryButton(
-                selectedYear: $selectedYear,
-                showPicker: $showPicker,
-                fetchPhysicalData: {
-                    fetchPhysicalData()
-                }
-            )
-
-            if isLoading
+            .navigationTitle("体测成绩")
+            .toolbar(.hidden, for: .tabBar)
+            .navigationBarTitleDisplayMode(.automatic)
+            .onAppear
             {
-                loadingOverlay
+                fetchPhysicalData()
+            }
+            .sheet(isPresented: $showPicker)
+            {
+                termPickerView
+            }
+            .alert(isPresented: $showAlert)
+            {
+                Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("确定")))
             }
         }
-        .navigationTitle("体测成绩")
-        .toolbar(.hidden, for: .tabBar)
-        .navigationBarTitleDisplayMode(.automatic)
-        .onAppear
-        {
-            fetchPhysicalData()
-        }
-        .sheet(isPresented: $showPicker)
-        {
-            termPickerView
-        }
-        .alert(isPresented: $showAlert)
-        {
-            Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("确定")))
-        }
+       
     }
 
     private var emptyStateView: some View

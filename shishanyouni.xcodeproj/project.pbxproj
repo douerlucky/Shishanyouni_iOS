@@ -48,6 +48,7 @@
 		FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE8735F22F67C126007D0181 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEADE0B02F607CB200C87F6D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FEDE3E522F72B74B001ECA69 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -281,6 +282,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FEDE3E532F72B74B001ECA69 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		FEFF050F2F39F24C009EA8F0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -480,6 +488,10 @@
 				{
 					ProductGroup = FEFF05742F39F740009EA8F0 /* Products */;
 					ProjectRef = FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FEDE3E532F72B74B001ECA69 /* Products */;
+					ProjectRef = FEDE3E522F72B74B001ECA69 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE0FAC452F616B3600F918D5 /* Products */;

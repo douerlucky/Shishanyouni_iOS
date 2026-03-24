@@ -95,10 +95,10 @@ struct HomeView: View
                         navigateToBus = true
                     }
                     
-                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
-                    {
-                        navigateToEvents = true
-                    }
+//                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
+//                    {
+//                        navigateToEvents = true
+//                    }
                 }
                 .padding()
             }

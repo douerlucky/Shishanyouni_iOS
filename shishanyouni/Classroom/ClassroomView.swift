@@ -171,8 +171,6 @@ struct FavoritesSectionView: View
             }
             else
             {
-
-
                 // 节次表头
                 HStack(spacing: 0)
                 {
@@ -194,12 +192,9 @@ struct FavoritesSectionView: View
                 }
                 .padding(.horizontal, 4)
 
-
-
                 ForEach(favoritesStore.favorites)
                 { fav in
                     FavoriteRoomRowView(fav: fav, favoritesStore: favoritesStore, cellHeight: cellHeight)
-
                 }
             }
         }
@@ -223,12 +218,24 @@ struct FavoriteRoomRowView: View
 
         HStack(spacing: 0)
         {
-            Text(fav.displayName)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundColor(.orange)
-                .frame(width: 52)
-                .frame(height: cellHeight)
-                .padding(.leading, 4)
+            if fav.displayName.count >= 8
+            {
+                Text(fav.displayName)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+                    .frame(width: 52)
+                    .frame(height: cellHeight)
+                    .padding(.leading, 4)
+            }
+            else
+            {
+                Text(fav.displayName)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(.orange)
+                    .frame(width: 52)
+                    .frame(height: cellHeight)
+                    .padding(.leading, 4)
+            }
 
             HStack(spacing: 0)
             {
@@ -264,8 +271,8 @@ struct FavoriteRoomRowView: View
                     !isReady
                         ? Color.secondary.opacity(0.07)
                         : isOccupied
-                            ? Color.red.opacity(0.1)
-                            : Color.green.opacity(0.15)
+                        ? Color.red.opacity(0.1)
+                        : Color.green.opacity(0.15)
                 )
 
             if !isReady
@@ -303,22 +310,44 @@ struct ClassroomRowView: View
         HStack(spacing: 0)
         {
             // 左侧教室名
-            Text(name)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundColor(isFav ? .orange : .secondary)
-                .frame(width: 52)
-                .frame(height: cellHeight)
-                .padding(.leading, 4)
-                .overlay(alignment: .topTrailing)
-                {
-                    if isFav
+            if name.count >= 8
+            {
+                Text(name)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(isFav ? .orange : .secondary)
+                    .frame(width: 52)
+                    .frame(height: cellHeight)
+                    .padding(.leading, 4)
+                    .overlay(alignment: .topTrailing)
                     {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 7))
-                            .foregroundColor(.orange)
-                            .offset(x: -2, y: 4)
+                        if isFav
+                        {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 7))
+                                .foregroundColor(.orange)
+                                .offset(x: -2, y: 4)
+                        }
                     }
-                }
+            }
+            else
+            {
+                Text(name)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(isFav ? .orange : .secondary)
+                    .frame(width: 52)
+                    .frame(height: cellHeight)
+                    .padding(.leading, 4)
+                    .overlay(alignment: .topTrailing)
+                    {
+                        if isFav
+                        {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 7))
+                                .foregroundColor(.orange)
+                                .offset(x: -2, y: 4)
+                        }
+                    }
+            }
 
             // 右侧占用矩阵
             HStack(spacing: 0)
@@ -403,7 +432,7 @@ struct ClassroomMatrixView: View
                     slotTitles: slotTitles,
                     cellHeight: cellHeight
                 )
-                
+
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
 
@@ -445,7 +474,6 @@ struct ClassroomMatrixView: View
                             }
                         }
                         .padding(.horizontal, 4)
-                        
 
                         // 按行渲染
                         VStack(spacing: 0)
@@ -463,15 +491,17 @@ struct ClassroomMatrixView: View
                                     name: name,
                                     isFav: isFav,
                                     cellHeight: cellHeight
-                                ) {
-                                    if isFav {
+                                )
+                                {
+                                    if isFav
+                                    {
                                         favoritesStore.remove(siteName: currentSiteName, arrayIndex: room.arrayIndex)
-                                    } else {
+                                    }
+                                    else
+                                    {
                                         favoritesStore.add(siteName: currentSiteName, arrayIndex: room.arrayIndex, displayName: name)
                                     }
                                 }
-                                
- 
                             }
                         }
                         .padding(.vertical, 6)
@@ -504,11 +534,11 @@ struct BottomClassroomButtonView: View
     @State private var showPicker = false
     let classroomService: ClassroomService
 
-    let buildings = ["一教", "二教", "三教", "四教"]
+    let buildings = ["一教", "二教", "三教", "四教", "襄阳校区二教"]
 
     var availableWings: [String]
     {
-        if selectedBuilding == "一教" || selectedBuilding == "二教" { return ["无"] }
+        if selectedBuilding == "一教" || selectedBuilding == "二教" || selectedBuilding == "襄阳校区二教" { return ["无"] }
         return ["A", "B", "C"]
     }
 
@@ -517,6 +547,7 @@ struct BottomClassroomButtonView: View
         if selectedBuilding == "一教" || selectedBuilding == "三教" { return 5 }
         if selectedBuilding == "二教" { return 4 }
         if selectedBuilding == "四教" { return selectedWing == "A" ? 4 : 5 }
+        if selectedBuilding == "襄阳校区二教" { return 2 }
         return 5
     }
 
@@ -558,16 +589,28 @@ struct BottomClassroomButtonView: View
             {
                 HStack(spacing: 4)
                 {
-                    Text(displayLocation)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                    if(displayLocation.count >= 8)
+                    {
+                        Text(displayLocation)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+
+                    }
+                    else
+                    {
+                        Text(displayLocation)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                     Image(systemName: "chevron.up")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundColor(.primary)
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 10)
             }
             .background(Color(.systemBackground).opacity(0.9))
@@ -680,10 +723,12 @@ struct PickerSheetView: View
                     .clipped()
                     .onChange(of: selectedBuilding)
                     { newValue in
-                        if newValue == "一教" || newValue == "二教" { selectedWing = "无" }
+                        if newValue == "一教" || newValue == "二教" || newValue == "襄阳校区二教" { selectedWing = "无" }
                         else if selectedWing == "无" { selectedWing = "A" }
                         validateFloor()
                     }
+
+                    let wingDisabled = selectedBuilding == "一教" || selectedBuilding == "二教" || selectedBuilding == "襄阳校区二教"
 
                     Picker("栋号", selection: $selectedWing)
                     {
@@ -693,18 +738,18 @@ struct PickerSheetView: View
                         }
                     }
                     .pickerStyle(.wheel)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 80)
                     .clipped()
                     .onChange(of: selectedWing) { _ in validateFloor() }
-                    .opacity((selectedBuilding == "一教" || selectedBuilding == "二教") ? 0.3 : 1.0)
-                    .disabled(selectedBuilding == "一教" || selectedBuilding == "二教")
+                    .opacity(wingDisabled ? 0.3 : 1.0)
+                    .disabled(wingDisabled)
 
                     Picker("楼层", selection: $selectedFloor)
                     {
                         ForEach(1 ... maxFloor, id: \.self) { Text("\($0) 楼").tag($0) }
                     }
                     .pickerStyle(.wheel)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 80)
                     .clipped()
                 }
                 .padding(.horizontal, 10)
