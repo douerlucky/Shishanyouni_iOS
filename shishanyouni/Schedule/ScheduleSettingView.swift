@@ -7,6 +7,8 @@
 //
 
 import SwiftUI
+import PhotosUI
+import UIKit
 
 struct ScheduleSettingView: View {
     @Environment(\.dismiss) var dismiss
@@ -14,6 +16,10 @@ struct ScheduleSettingView: View {
 
     @Binding var semesterStartDate: Date
     @Binding var courses: [Course]
+    
+    @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
+    @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
 
     @State private var tempStartDate: Date = {
         let components = DateComponents(year: 2026, month: 3, day: 2)
@@ -28,6 +34,7 @@ struct ScheduleSettingView: View {
     @State private var importAlertMessage    = ""
     @State private var isImporting           = false
     @State private var importedCount         = 0
+    @State private var selectedPhotoItem: PhotosPickerItem?
 
     // 导入时询问是否同时清除手动课程
     @State private var pendingImportResult: (courses: [Course], startDate: Date?)? = nil
@@ -137,6 +144,53 @@ struct ScheduleSettingView: View {
                     Text("导入课程 \(importedCount) 门 · 手动课程 \(manualCount) 门").font(.caption)
                 }
                 .listRowSeparator(.hidden)
+
+                // 背景图片
+                Section {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        HStack {
+                            Spacer()
+                            Text("选择背景图片").fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                    .onChange(of: selectedPhotoItem) { newItem in
+                        Task {
+                            if let data = try? await newItem?.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                saveBackgroundImage(image)
+                            }
+                        }
+                    }
+                    
+                    if !backgroundImageFilename.isEmpty {
+                        Button(role: .destructive) {
+                            clearBackgroundImage()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Text("清除背景图片").fontWeight(.semibold)
+                                Spacer()
+                            }
+                        }
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("背景透明度: \(Int(backgroundOpacity * 100))%")
+                            .font(.subheadline)
+                        Slider(value: $backgroundOpacity, in: 0.0...1.0, step: 0.05)
+                    }
+                    .padding(.vertical, 8)
+                    
+                    VStack(alignment: .leading) {
+                        Text("课表内容透明度: \(Int(scheduleContentOpacity * 100))%")
+                            .font(.subheadline)
+                        Slider(value: $scheduleContentOpacity, in: 0.0...1.0, step: 0.05)
+                    }
+                    .padding(.vertical, 8)
+                } header: {
+                    Text("背景图片")
+                }
 
                 // 保存设置
                 Section {
@@ -381,6 +435,34 @@ struct ScheduleSettingView: View {
         fmt.locale     = Locale(identifier: "zh_CN")
         fmt.dateFormat = "yyyy年MM月dd日 (EEEE)"
         return fmt.string(from: date)
+    }
+    
+    private func saveBackgroundImage(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let filename = "schedule_background_\(UUID().uuidString).jpg"
+        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(filename)
+        do {
+            try data.write(to: fileURL)
+            // 删除旧文件
+            if !backgroundImageFilename.isEmpty {
+                let oldURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent(backgroundImageFilename)
+                try? FileManager.default.removeItem(at: oldURL)
+            }
+            backgroundImageFilename = filename
+        } catch {
+            print("Failed to save background image: \(error)")
+        }
+    }
+    
+    private func clearBackgroundImage() {
+        if !backgroundImageFilename.isEmpty {
+            let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent(backgroundImageFilename)
+            try? FileManager.default.removeItem(at: fileURL)
+            backgroundImageFilename = ""
+        }
     }
 }
 

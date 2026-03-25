@@ -9,6 +9,7 @@
 //  课程卡片用 VStack + .background，不用 ZStack 叠层
 
 import SwiftUI
+import UIKit
 
 let scheduleCellHeight: CGFloat = 58
 
@@ -39,6 +40,7 @@ struct ScheduleView: View
     @State private var isDragging: Bool = false
 
     @State private var showSaveSuccess = false
+    @State private var backgroundImage: UIImage?
 
     @State private var addCourseContext: AddCourseContext?
     @State private var editCourseContext: Course?
@@ -53,6 +55,9 @@ struct ScheduleView: View
 
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
     @AppStorage("showBottomControls") private var showBottomControls: Bool = true
+    @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
+    @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
 
     let calendar = Calendar.current
     let minWeek = -9
@@ -105,6 +110,9 @@ struct ScheduleView: View
 
                 // 课表主体 + 底部控制条
                 pageBodyView
+            }
+            .onChange(of: backgroundImageFilename) { _ in
+                loadBackgroundImage()
             }
             .toolbar
             {
@@ -175,6 +183,16 @@ struct ScheduleView: View
     {
         ZStack(alignment: .bottom)
         {
+            if let backgroundImage = backgroundImage {
+                Color(.systemBackground)
+                    .overlay(
+                        Image(uiImage: backgroundImage)
+                            .resizable()
+                            .scaledToFit()
+                            .opacity(backgroundOpacity)
+                    )
+            }
+
             VStack
             {
                 ScrollView
@@ -206,6 +224,7 @@ struct ScheduleView: View
                                 addCourseContext = AddCourseContext(day: course.day, period: course.start)
                             }
                         )
+                        .opacity(scheduleContentOpacity)
                     }
                     .padding(10)
                     .padding(.bottom, 140)
@@ -298,18 +317,19 @@ struct ScheduleView: View
                                         .textFieldStyle(.plain)
                                         .toolbar
                                         {
-                                            ToolbarItemGroup(placement: .keyboard)
-                                            {
-                                                Spacer()
-                                                Button("完成")
-                                                {
-                                                    isWeekFieldFocused = false
-                                                    handleWeekJump()
-                                                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                                                }
-                                                .foregroundColor(.blue)
-                                            }
-                                        }
+                                             ToolbarItemGroup(placement: .keyboard)
+                                             {
+                                                 Spacer()
+                                                 Button("完成")
+                                                 {
+                                                     isWeekFieldFocused = false
+                                                     handleWeekJump()
+                                                     UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                                 }
+                                                 .foregroundColor(.blue)
+                                             }
+    
+     }
                                         .onTapGesture { inputWeek = "" }
                                         .onSubmit { handleWeekJump() }
 
@@ -458,6 +478,7 @@ struct ScheduleView: View
             }
         }
         else { courses = [] }
+        loadBackgroundImage()
     }
 
     func updateDatesForDisplayWeek()
@@ -1078,7 +1099,54 @@ struct CourseCardPreview: View
         }
     }
 }
-
+ 
+extension ScheduleView {
+    private func loadBackgroundImage() {
+        guard !backgroundImageFilename.isEmpty else {
+            backgroundImage = nil
+            return
+        }
+        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(backgroundImageFilename)
+        if let data = try? Data(contentsOf: fileURL),
+           let image = UIImage(data: data) {
+            backgroundImage = image
+        } else {
+            backgroundImage = nil
+        }
+    }
+    
+    private func saveBackgroundImage(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let filename = "schedule_background_\(UUID().uuidString).jpg"
+        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(filename)
+        do {
+            try data.write(to: fileURL)
+            // 删除旧文件
+            if !backgroundImageFilename.isEmpty {
+                let oldURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent(backgroundImageFilename)
+                try? FileManager.default.removeItem(at: oldURL)
+            }
+            backgroundImageFilename = filename
+            backgroundImage = image
+        } catch {
+            print("Failed to save background image: \(error)")
+        }
+    }
+    
+    private func clearBackgroundImage() {
+        if !backgroundImageFilename.isEmpty {
+            let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent(backgroundImageFilename)
+            try? FileManager.default.removeItem(at: fileURL)
+            backgroundImageFilename = ""
+        }
+        backgroundImage = nil
+    }
+}
+ 
 // MARK: - 时间轴
 
 struct ClassPeriod: Identifiable
