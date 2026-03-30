@@ -48,6 +48,13 @@ struct ScheduleSettingView: View {
     // 导入学期选择
     @State private var selectedYear     = "2025"       // 学年起始年份
     @State private var selectedTerm     = "2"          // "1"=秋季, "2"=春季
+    
+    @State private var hasSelectedPhoto = false
+    // 裁剪器：用 navigationDestination push 进去，不用 sheet
+    @State private var showCropper: Bool = false
+    @State private var photoToCrop: UIImage? = nil
+    
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
 
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
 
@@ -55,156 +62,14 @@ struct ScheduleSettingView: View {
     private let availableYears  = ["2023", "2024", "2025", "2026"]
     private let terms           = [("秋季学期", "1"), ("春季学期", "2")]
 
-
     var body: some View {
         NavigationStack {
             Form {
-
-                // 学期开学日期
-                Section {
-                    DatePicker(
-                        "本学期开学日期",
-                        selection: $tempStartDate,
-                        displayedComponents: [.date]
-                    )
-                    .environment(\.locale, Locale(identifier: "zh_CN"))
-                    .onChange(of: tempStartDate) { newValue in
-                        hasUserSelectedDate = true
-                        adjustToMonday(newValue)
-                    }
-                } header: {
-                    Text("学期设置")
-                }
-
-                // 课表导入
-                Section {
-                    Button {
-                        showImportPicker = true
-                    } label: {
-                        if userinfo.username.isEmpty {
-                            Text("请先在个人页面登录")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            HStack {
-                                Spacer()
-                                if isImporting { ProgressView().padding(.trailing, 8) }
-                                Text(isImporting ? "导入中…" : "导入课表")
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                        }
-                    }
-                    .disabled(userinfo.username.isEmpty || isImporting)
-                } header: {
-                    Text("课表导入")
-                }
-
-                // 清除课程
-                Section {
-                    Button(role: .destructive) {
-                        showClearImportedConfirmation = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("清除导入的课程").fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                    .disabled(courses.filter { !$0.isManual }.isEmpty)
-
-                    Button(role: .destructive) {
-                        showClearManualConfirmation = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("清除手动添加的课程").fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                    .disabled(courses.filter { $0.isManual }.isEmpty)
-
-                    Button(role: .destructive) {
-                        showClearAllConfirmation = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("清除所有课程").fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                    .disabled(courses.isEmpty)
-
-                } header: {
-                    Text("清除课程")
-                } footer: {
-                    let importedCount = courses.filter { !$0.isManual }.count
-                    let manualCount   = courses.filter {  $0.isManual }.count
-                    Text("导入课程 \(importedCount) 门 · 手动课程 \(manualCount) 门").font(.caption)
-                }
-                .listRowSeparator(.hidden)
-
-                // 背景图片
-                Section {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        HStack {
-                            Spacer()
-                            Text("选择背景图片").fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                    .onChange(of: selectedPhotoItem) { newItem in
-                        Task {
-                            if let data = try? await newItem?.loadTransferable(type: Data.self),
-                               let image = UIImage(data: data) {
-                                saveBackgroundImage(image)
-                            }
-                        }
-                    }
-                    
-                    if !backgroundImageFilename.isEmpty {
-                        Button(role: .destructive) {
-                            clearBackgroundImage()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Text("清除背景图片").fontWeight(.semibold)
-                                Spacer()
-                            }
-                        }
-                    }
-                    
-                    VStack(alignment: .leading) {
-                        Text("背景透明度: \(Int(backgroundOpacity * 100))%")
-                            .font(.subheadline)
-                        Slider(value: $backgroundOpacity, in: 0.0...1.0, step: 0.05)
-                    }
-                    .padding(.vertical, 8)
-                    
-                    VStack(alignment: .leading) {
-                        Text("课表内容透明度: \(Int(scheduleContentOpacity * 100))%")
-                            .font(.subheadline)
-                        Slider(value: $scheduleContentOpacity, in: 0.0...1.0, step: 0.05)
-                    }
-                    .padding(.vertical, 8)
-                } header: {
-                    Text("背景图片")
-                }
-
-                // 保存设置
-                Section {
-                    Button {
-                        saveSettings()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("保存设置").fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                    .disabled(!hasUserSelectedDate)
-                }
+                dateSection
+                importSection
+                clearSection
+                backgroundSection
+                saveSection
             }
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.inline)
@@ -212,59 +77,251 @@ struct ScheduleSettingView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
                 }
-            }
-            // 弹窗
-            .sheet(isPresented: $showImportPicker) { importPickerView }
-            .alert("设置已保存", isPresented: $showSaveConfirmation) {
-                Button("确定", role: .cancel) { dismiss() }
-            } message: {
-                Text("开学日期已更新为 \(formatDate(tempStartDate))")
-            }
-            .alert(importAlertMessage, isPresented: $showImportAlert) {
-                Button("确定", role: .cancel) {}
-            }
-            // 导入时询问是否同时清除手动课程
-            .alert("是否同时清除手动添加的课程？", isPresented: $showClearManualOnImportAlert) {
-                Button("清除", role: .destructive) {
-                    if let result = pendingImportResult {
-                        applyImport(result, keepManual: false)
+            }        .fullScreenCover(isPresented: $showCropper) {
+                if let photo = photoToCrop {
+                    ImageCropperView(image: photo) { cropped in
+                        saveBackgroundImage(cropped)
+                        hasSelectedPhoto = true
                     }
                 }
-                Button("保留") {
-                    if let result = pendingImportResult {
-                        applyImport(result, keepManual: true)
-                    }
-                }
-                Button("取消", role: .cancel) {
-                    pendingImportResult = nil
-                    isImporting = false
-                }
-            } message: {
-                Text("点击「保留」将保留手动课程，仅替换导入课程；点击「清除」将删除所有课程后重新导入。")
-            }
-            // 三种清除确认
-            .alert("确认清除导入的课程", isPresented: $showClearImportedConfirmation) {
-                Button("取消", role: .cancel) {}
-                Button("清除", role: .destructive) { clearImportedCourses() }
-            } message: {
-                Text("将删除所有自动导入的课程，手动添加的课程不受影响。")
-            }
-            .alert("确认清除手动添加的课程", isPresented: $showClearManualConfirmation) {
-                Button("取消", role: .cancel) {}
-                Button("清除", role: .destructive) { clearManualCourses() }
-            } message: {
-                Text("将删除所有手动添加的课程，导入课程不受影响。")
-            }
-            .alert("确认清除所有课程", isPresented: $showClearAllConfirmation) {
-                Button("取消", role: .cancel) {}
-                Button("清除", role: .destructive) { clearAllCourses() }
-            } message: {
-                Text("此操作将删除全部课程，包括导入和手动添加的，无法恢复。")
             }
         }
     }
 
+    // MARK: - 拆分后的 Section (解决编译器超时问题)
 
+    private var dateSection: some View {
+        Section {
+            DatePicker(
+                "本学期开学日期",
+                selection: $tempStartDate,
+                displayedComponents: [.date]
+            )
+            .environment(\.locale, Locale(identifier: "zh_CN"))
+            .onChange(of: tempStartDate) { newValue in
+                hasUserSelectedDate = true
+                adjustToMonday(newValue)
+            }
+            .listRowSeparator(.hidden) // 消除分隔线
+        } header: {
+            Text("学期设置")
+        }
+    }
+
+    private var importSection: some View {
+        Section {
+            Button {
+                showImportPicker = true
+            } label: {
+                if userinfo.username.isEmpty {
+                    Text("请先在个人页面登录")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    HStack {
+                        Spacer()
+                        if isImporting { ProgressView().padding(.trailing, 8) }
+                        Text(isImporting ? "导入中…" : "导入课表")
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                }
+            }
+            .disabled(userinfo.username.isEmpty || isImporting)
+            .listRowSeparator(.hidden) // 消除分隔线
+        } header: {
+            Text("课表导入")
+        }
+        // 把弹窗绑在对应的 Section 上，分解编译器的压力！
+        .sheet(isPresented: $showImportPicker) { importPickerView }
+        .alert(importAlertMessage, isPresented: $showImportAlert) {
+            Button("确定", role: .cancel) {}
+        }
+        .alert("是否同时清除手动添加的课程？", isPresented: $showClearManualOnImportAlert) {
+            Button("清除", role: .destructive) {
+                if let result = pendingImportResult {
+                    applyImport(result, keepManual: false)
+                }
+            }
+            Button("保留") {
+                if let result = pendingImportResult {
+                    applyImport(result, keepManual: true)
+                }
+            }
+            Button("取消", role: .cancel) {
+                pendingImportResult = nil
+                isImporting = false
+            }
+        } message: {
+            Text("点击「保留」将保留手动课程，仅替换导入课程；点击「清除」将删除所有课程后重新导入。")
+        }
+    }
+
+    private var clearSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showClearImportedConfirmation = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("清除导入的课程").fontWeight(.semibold)
+                    Spacer()
+                }
+            }
+            .disabled(courses.filter { !$0.isManual }.isEmpty)
+            .listRowSeparator(.hidden)
+
+            Button(role: .destructive) {
+                showClearManualConfirmation = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("清除手动添加的课程").fontWeight(.semibold)
+                    Spacer()
+                }
+            }
+            .disabled(courses.filter { $0.isManual }.isEmpty)
+            .listRowSeparator(.hidden)
+
+            Button(role: .destructive) {
+                showClearAllConfirmation = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("清除所有课程").fontWeight(.semibold)
+                    Spacer()
+                }
+            }
+            .disabled(courses.isEmpty)
+            .listRowSeparator(.hidden)
+
+        } header: {
+            Text("清除课程")
+        } footer: {
+            let importedCount = courses.filter { !$0.isManual }.count
+            let manualCount   = courses.filter {  $0.isManual }.count
+            Text("导入课程 \(importedCount) 门 · 手动课程 \(manualCount) 门").font(.caption)
+        }
+        .alert("确认清除导入的课程", isPresented: $showClearImportedConfirmation) {
+            Button("取消", role: .cancel) {}
+            Button("清除", role: .destructive) { clearImportedCourses() }
+        } message: {
+            Text("将删除所有自动导入的课程，手动添加的课程不受影响。")
+        }
+        .alert("确认清除手动添加的课程", isPresented: $showClearManualConfirmation) {
+            Button("取消", role: .cancel) {}
+            Button("清除", role: .destructive) { clearManualCourses() }
+        } message: {
+            Text("将删除所有手动添加的课程，导入课程不受影响。")
+        }
+        .alert("确认清除所有课程", isPresented: $showClearAllConfirmation) {
+            Button("取消", role: .cancel) {}
+            Button("清除", role: .destructive) { clearAllCourses() }
+        } message: {
+            Text("此操作将删除全部课程，包括导入和手动添加的，无法恢复。")
+        }
+    }
+
+    private var backgroundSection: some View {
+        Section {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                HStack {
+                    Spacer()
+                    Text("选择背景图片").fontWeight(.semibold)
+                    Spacer()
+                }
+            }
+            .onChange(of: selectedPhotoItem) { newItem in
+                // 增加守卫，防止我们下面置空时触发死循环
+                guard let item = newItem else { return }
+                
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        
+                        await MainActor.run {
+                            self.photoToCrop = image
+                        }
+                        
+                        // 关键修复 1：让代码“睡” 0.5 秒，等待 PhotosPicker 完全降下去
+                        try? await Task.sleep(nanoseconds: 500_000_000)
+                        
+                        await MainActor.run {
+                            self.showCropper = true
+                            // 关键修复 2：用完之后把选中项置空。
+                            // 这样如果你裁剪取消了，再选同一张图，onChange 才会再次触发！
+                            self.selectedPhotoItem = nil
+                        }
+                    }
+                }
+            }
+            .listRowSeparator(.hidden)
+            
+            if !backgroundImageFilename.isEmpty {
+                Button(role: .destructive) {
+                    clearBackgroundImage()
+                    hasSelectedPhoto = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("清除背景图片").fontWeight(.semibold)
+                        Spacer()
+                    }
+                }
+                .listRowSeparator(.hidden)
+            }
+            
+            VStack(alignment: .leading) {
+                Text("背景透明度: \(Int(backgroundOpacity * 100))%")
+                    .font(.subheadline)
+                Slider(value: $backgroundOpacity, in: 0.0...1.0, step: 0.05)
+            }
+            .padding(.vertical, 8)
+            .listRowSeparator(.hidden)
+            
+            VStack(alignment: .leading) {
+                Text("课表内容透明度: \(Int(scheduleContentOpacity * 100))%")
+                    .font(.subheadline)
+                Slider(value: $scheduleContentOpacity, in: 0.0...1.0, step: 0.05)
+            }
+            .padding(.vertical, 8)
+            .listRowSeparator(.hidden)
+            if #available(iOS 26.0, *)
+            {
+                Toggle("背景液态玻璃效果", isOn: $enableLiquidGlassEffect)
+            }
+            
+        } header: {
+                Text("背景图片")
+            
+        }
+
+    }
+
+    private var saveSection: some View {
+        Section {
+            Button {
+                saveSettings()
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("保存设置").fontWeight(.semibold)
+                    Spacer()
+                }
+            }
+            .disabled(!hasUserSelectedDate && !hasSelectedPhoto)
+            .listRowSeparator(.hidden)
+        }
+        .alert("设置已保存", isPresented: $showSaveConfirmation) {
+            Button("确定", role: .cancel) { dismiss() }
+        } message: {
+            Text("开学日期已更新为 \(formatDate(tempStartDate))")
+        }
+    }
+
+    // MARK: - Import Picker
+    
     private var importPickerView: some View {
         NavigationStack {
             VStack(spacing: 20) {
@@ -336,7 +393,7 @@ struct ScheduleSettingView: View {
         do {
             let result = try await ScheduleService.fetchCourses(
                 username: userinfo.username,
-                password: plainPassword,
+                password: userinfo.encryptedPasswordShishanyouni,
                 year:     selectedYear,
                 term:     selectedTerm
             )

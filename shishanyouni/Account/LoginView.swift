@@ -122,7 +122,7 @@ struct LoginView: View
                         Task
                         {
                             defer { isLoading = false }
-                            let cryptPassword = encryptPassword(password: password)
+                            let cryptPassword = encryptSchoolPassword(password: password)
                             do
                             {
                                 let result_status = try await loginChecker.checkLogin(username: username, password: cryptPassword!)
@@ -141,7 +141,8 @@ struct LoginView: View
                                         {
                                             userinfo.username = username
                                             userinfo.plainPassword = password
-                                            userinfo.performEncryption()
+                                            userinfo.performSchoolEncryption()
+                                            userinfo.performShishanyouniEncryption()
                                             userinfo.saveUserInfo()
                                         }
                                         else

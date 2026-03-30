@@ -12,7 +12,6 @@ struct MainTabView: View
 {
     @EnvironmentObject var userinfo: userInfo
 
-
     var body: some View
     {
         TabView
@@ -58,16 +57,23 @@ struct MainTabView: View
 extension View
 {
     @ViewBuilder
-    func optionalLiquidGlass() -> some View
+    func optionalLiquidGlass(enabled: Bool = true,cornerRadius: CGFloat = 64) -> some View
     {
         if #available(iOS 26.0, *)
         {
-            self
-                .glassEffect(.clear)
+            if(enabled)
+            {
+                self.glassEffect(.clear, in: RoundedRectangle(cornerRadius: cornerRadius))
+            }
+            else
+            {
+                self
+            }
+            
         }
         else
         {
-            self // 老系统什么都不加
+            self
         }
     }
 

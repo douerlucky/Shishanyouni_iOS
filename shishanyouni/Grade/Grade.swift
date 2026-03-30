@@ -49,23 +49,27 @@ class GradeService
     /// xqm: 学期（"1" 第一学期，"2" 第二学期）
     func fetchGrades(username: String, password: String, xnm: String, xqm: String) async throws -> [Grade]
     {
-        var components = URLComponents(string: baseURL)!
-        components.queryItems = [
-            URLQueryItem(name: "xnm",  value: xnm),
-            URLQueryItem(name: "xqm",  value: xqm),
-            URLQueryItem(name: "yhm",  value: username),
-            URLQueryItem(name: "mm",   value: password),
-            URLQueryItem(name: "type", value: "1"),
-        ]
+        print("收到的rsa密钥:", password)
 
-        guard let url = components.url else
+        guard let url = URL(string: baseURL) else
         {
             throw NSError(domain: "GradeService", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "URL 构建失败"])
         }
 
+        // 构建 JSON body
+        let body: [String: Any] = [
+            "xnm":  xnm,
+            "xqm":  xqm,
+            "yhm":  username,
+            "mm":   password,
+            "type": 1
+        ]
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -77,7 +81,7 @@ class GradeService
 
         let decoded = try JSONDecoder().decode(LionGradeResponse.self, from: data)
 
-        guard decoded.success == true else
+        guard decoded.code == 2 else
         {
             let msg = decoded.msg ?? "服务器返回未知错误"
             throw NSError(domain: "GradeService", code: decoded.code ?? -1,

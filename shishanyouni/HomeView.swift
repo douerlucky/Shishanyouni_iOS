@@ -16,6 +16,8 @@ struct HomeView: View
     @State private var navigateElectricity = false
     @State private var navigateToClassroom = false
     @State private var navigateToEvents = false
+    @State private var navigateToStrategy = false
+    @State private var navigateToClub = false
 
     @State private var date: String = {
         let formatter = DateFormatter()
@@ -94,6 +96,14 @@ struct HomeView: View
                     {
                         navigateToBus = true
                     }
+                    MenuGridItem(title: "攻略", icon: "info.bubble", color: .teal)
+                    {
+                        navigateToStrategy = true
+                    }
+                    MenuGridItem(title: "社团", icon: "person.2.fill", color: .gray)
+                    {
+                        navigateToClub = true
+                    }
                     
 //                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
 //                    {
@@ -118,6 +128,10 @@ struct HomeView: View
             { ClassroomView() }
             .navigationDestination(isPresented: $navigateToEvents)
             { EventListView() }
+                .navigationDestination(isPresented: $navigateToStrategy)
+                { AllStrategy() }
+                .navigationDestination(isPresented: $navigateToClub)
+                { AllClub() }
         }
     }
 }

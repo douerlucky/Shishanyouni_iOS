@@ -68,15 +68,15 @@ struct DebugRoom: View
 
                     Button("执行 RSA 加密")
                     {
-                        userinfo.performEncryption()
+                        userinfo.performSchoolEncryption()
                         print("✅ 加密成功!")
-                        print(userinfo.encryptedResult)
+                        print(userinfo.encryptedPasswordSchool)
                     }
                     .buttonStyle(.bordered)
 
                     Button("设定该学号密码")
                     {
-                        userinfo.performEncryption()
+                        userinfo.performSchoolEncryption()
                         userinfo.debugprint()
                     }
                     .buttonStyle(.bordered)
@@ -155,7 +155,7 @@ struct DebugRoom: View
                             print("🚀 开始测试南湖跑接口...")
                             let cookie = try await nanhurunquery.loginAndGetRunCookie(
                                 username: userinfo.username,
-                                rsaPassword: userinfo.encryptedResult
+                                rsaPassword: userinfo.encryptedPasswordSchool
                             )
                             print("✅ 成功获取 Cookie: \(cookie)")
                             let circles = try await nanhurunquery.fetchRunScores(cookie: cookie)
@@ -180,7 +180,7 @@ struct DebugRoom: View
                             print("🚀 开始测试电费接口...")
                             let token = try await electrictyquery.loginAndGetToken(
                                 username: userinfo.username,
-                                rsaPassword: userinfo.encryptedResult
+                                rsaPassword: userinfo.encryptedPasswordSchool
                             )
                             print("✅ 成功获取 Token: \(token)")
                         }

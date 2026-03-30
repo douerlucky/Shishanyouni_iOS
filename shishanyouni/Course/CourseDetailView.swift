@@ -108,7 +108,7 @@ struct CourseDetailView: View
             {
                 let cookie = try await scheduleQuery.loginAndGetCookie(
                     username: userinfo.username,
-                    rsaPassword: userinfo.encryptedResult
+                    rsaPassword: userinfo.encryptedPasswordSchool
                 )
                 // 使用 AllCourseQuery 里的新方法进行 POST 请求
                 let results = try await AllCourseQuery.shared.fetchCourseClasses(

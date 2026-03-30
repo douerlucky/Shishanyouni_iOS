@@ -109,7 +109,7 @@ struct NanhuRunView: View
                 // 1. 登录并获取双 Cookie
                 let cookie = try await runQuery.loginAndGetRunCookie(
                     username: userinfo.username,
-                    rsaPassword: userinfo.encryptedResult
+                    rsaPassword: userinfo.encryptedPasswordSchool
                 )
 
                 // 2. 获取成绩

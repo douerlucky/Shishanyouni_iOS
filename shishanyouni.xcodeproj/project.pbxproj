@@ -39,6 +39,8 @@
 		FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE3B40EF2F417D0C00C34896 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE45A9AD2F7A1DFB0082B7E4 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE45AA872F7A67F30082B7E4 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE4D98162F330FB40087BCAE /* shishanyouni.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shishanyouni.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D98232F330FB60087BCAE /* shishanyouniTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE4D982D2F330FB60087BCAE /* shishanyouniUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = shishanyouniUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -213,6 +215,20 @@
 			sourceTree = "<group>";
 		};
 		FE3B40F02F417D0C00C34896 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE45A9AE2F7A1DFB0082B7E4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE45AA882F7A67F30082B7E4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -474,6 +490,10 @@
 					ProjectRef = A577A4922F6E9291006EC90E /* SwiftyRSA.xcodeproj */;
 				},
 				{
+					ProductGroup = FE45AA882F7A67F30082B7E4 /* Products */;
+					ProjectRef = FE45AA872F7A67F30082B7E4 /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FEFF050F2F39F24C009EA8F0 /* Products */;
 					ProjectRef = FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */;
 				},
@@ -492,6 +512,10 @@
 				{
 					ProductGroup = FEDE3E532F72B74B001ECA69 /* Products */;
 					ProjectRef = FEDE3E522F72B74B001ECA69 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE45A9AE2F7A1DFB0082B7E4 /* Products */;
+					ProjectRef = FE45A9AD2F7A1DFB0082B7E4 /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE0FAC452F616B3600F918D5 /* Products */;
@@ -711,7 +735,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -745,7 +769,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

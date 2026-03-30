@@ -356,10 +356,34 @@ struct ManualCourseEditorView: View
 
     private func updateCourse(_ editing: Course)
     {
-        guard let index = courses.firstIndex(where: { $0.id == editing.id }) else { return }
+        // ── 0. 精确定位当前编辑的课程条目 ──
+        // 旧版本的 ID 可能存在重复（同名课程不同 step 生成了相同 ID），
+        // 因此除了 id 还要比对 day/start/step/weekList 确保找到正确条目。
+        guard let index = courses.firstIndex(where: {
+            $0.id == editing.id
+            && $0.day == editing.day
+            && $0.start == editing.start
+            && $0.step == editing.step
+            && $0.weekList == editing.weekList
+        }) ?? courses.firstIndex(where: { $0.id == editing.id }) // 兜底：仅按 id 匹配
+        else { return }
+
         let sortedWeeks = selectedWeeks.sorted()
         let weeksText = sortedWeeks.map { "\($0)" }.joined(separator: ",") + "周"
 
+        // ── 1. 判断颜色是否发生了变化 ──
+        let newColorHex: String? = hasCustomColor ? selectedColor.toHex() : nil
+        let oldColorHex = editing.customColorHex
+        let oldColorRandom = editing.colorRandom
+
+        let colorChanged: Bool = {
+            if newColorHex != oldColorHex { return true }
+            // 如果从自定义色"重置"回随机色，也算变化
+            if oldColorHex != nil && newColorHex == nil { return true }
+            return false
+        }()
+
+        // ── 2. 更新当前编辑的这条记录 ──
         let updated = Course(
             id: editing.id,
             name: courseName,
@@ -372,10 +396,37 @@ struct ManualCourseEditorView: View
             weeks: weeksText,
             term: editing.term,
             colorRandom: editing.colorRandom,
-            customColorHex: hasCustomColor ? selectedColor.toHex() : nil,
+            customColorHex: newColorHex,
             isManual: editing.isManual
         )
         courses[index] = updated
+
+        // ── 3. 如果颜色改变了，同步所有同名课程的颜色 ──
+        // 同一门课在不同时间段会有不同的 id，但 name 相同
+        if colorChanged
+        {
+            let targetName = editing.name  // 用编辑前的原名匹配
+            for i in courses.indices
+            {
+                // 按数组下标跳过刚更新的那条（而非按 id，因为旧数据可能存在重复 id）
+                guard i != index else { continue }
+                // 匹配同名课程
+                guard courses[i].name == targetName else { continue }
+
+                courses[i].customColorHex = newColorHex
+                // 如果重置了自定义色，也把 colorRandom 统一
+                if newColorHex == nil
+                {
+                    courses[i].colorRandom = oldColorRandom
+                }
+            }
+            let syncCount = courses.filter { $0.name == targetName }.count
+            print("🎨 已同步颜色到所有「\(targetName)」课程，共 \(syncCount) 条")
+        }
+
+        // ── 4. 如果课程名称也改了，同样需要考虑是否同步 ──
+        // （这里只同步颜色，名称修改属于单条编辑，不扩散）
+
         print("✅ 课程更新成功: \(courseName)")
     }
 

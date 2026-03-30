@@ -69,7 +69,10 @@ extension Course
 {
     init(from model: TimetableModel)
     {
-        let uniqueID = "\(model.term ?? "unknown")_day\(model.day)_s\(model.start)_\(model.name)"
+        // ID 包含 step 和 weekList 指纹，确保同一课程不同时间配置不会 ID 冲突
+        let sortedWL = model.weekList.sorted()
+        let weekTag = sortedWL.isEmpty ? "none" : "\(sortedWL.first!)-\(sortedWL.last!)x\(sortedWL.count)"
+        let uniqueID = "\(model.term ?? "unknown")_day\(model.day)_s\(model.start)_n\(model.step)_w\(weekTag)_\(model.name)"
 
         // 周次文本：优先用 weeks，其次 time，最后从 weekList 拼回
         let weeksText: String? = {

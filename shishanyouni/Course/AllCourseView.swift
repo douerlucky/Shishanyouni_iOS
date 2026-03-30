@@ -225,7 +225,7 @@ struct AllCourseView: View
             {
                 let cookie = try await scheduleQuery.loginAndGetCookie(
                     username: userinfo.username,
-                    rsaPassword: userinfo.encryptedResult
+                    rsaPassword: userinfo.encryptedPasswordSchool
                 )
 
                 let result = try await AllCourseQuery.shared.fetchAllCourses(

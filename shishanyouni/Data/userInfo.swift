@@ -14,8 +14,8 @@ class userInfo: ObservableObject
     @Published var username: String = ""
     @Published var nickname: String = ""
     @Published var plainPassword: String = ""
-    @Published var encryptedResult: String = ""
-
+    @Published var encryptedPasswordSchool: String = ""
+    @Published var encryptedPasswordShishanyouni: String = ""
     // 初始化时自动加载保存的数据
     init()
     {
@@ -35,7 +35,8 @@ class userInfo: ObservableObject
             if let savedPassword = KeychainHelper.shared.get(for: savedUsername)
             {
                 plainPassword = savedPassword
-                performEncryption()
+                performSchoolEncryption()
+                performShishanyouniEncryption()
                 print("✅ 已自动加载学号: \(username)")
             }
             nickname = UserDefaults.standard.string(forKey: "saved_nickname") ?? ""
@@ -84,18 +85,27 @@ class userInfo: ObservableObject
         // 清空当前数据
         username = ""
         plainPassword = ""
-        encryptedResult = ""
+        encryptedPasswordSchool = ""
+        encryptedPasswordShishanyouni = ""
         nickname = ""
 
         print("已清除保存的学号和密码")
     }
 
     // 加密方法
-    func performEncryption()
+    func performSchoolEncryption()
     {
-        if let result = encryptPassword(password: plainPassword)
+        if let result = encryptSchoolPassword(password: plainPassword)
         {
-            encryptedResult = result
+            encryptedPasswordSchool = result
+        }
+    }
+    
+    func performShishanyouniEncryption()
+    {
+        if let result = encryptShishanyouniPassword(password: plainPassword)
+        {
+            encryptedPasswordShishanyouni = result
         }
     }
     
@@ -111,7 +121,7 @@ class userInfo: ObservableObject
 
     func debugprint()
     {
-        print("设定为用户名:\(username)\n原始密码为:\(plainPassword)\n加密的密码为:\(encryptedResult)")
+        print("设定为用户名:\(username)\n原始密码为:\(plainPassword)\n加密的密码为:\(encryptedPasswordSchool)")
     }
     
 }

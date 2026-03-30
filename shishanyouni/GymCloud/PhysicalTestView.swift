@@ -266,7 +266,7 @@ struct PhysicalTestView: View
             {
                 let cookie = try await gymQuery.loginAndGetRunCookie(
                     username: userinfo.username,
-                    rsaPassword: userinfo.encryptedResult
+                    rsaPassword: userinfo.encryptedPasswordSchool
                 )
                 let key = "\(selectedYear)_1"
                 let result = try await gymQuery.fetchPhysicalScores(cookie: cookie, semesterKey: key)

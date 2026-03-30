@@ -346,7 +346,7 @@ struct ExamBottomControlBar: View
                 // 1. 使用 ScheduleQuery 的登录流程获取有效的 Cookie (JSESSIONID)
                 let cookie = try await scheduleQuery.loginAndGetCookie(
                     username: userinfo.username,
-                    rsaPassword: userinfo.encryptedResult
+                    rsaPassword: userinfo.encryptedPasswordSchool
                 )
 
                 // 2. 使用获取到的 Cookie 进行考试查询

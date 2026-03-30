@@ -44,6 +44,9 @@ struct ScheduleView: View
 
     @State private var addCourseContext: AddCourseContext?
     @State private var editCourseContext: Course?
+    
+    @AppStorage("enableLiquidGlassEffect") public var enableLiquidGlassEffect: Bool = false
+
 
     @State var semesterStartDate: Date = {
         var components = DateComponents()
@@ -103,6 +106,9 @@ struct ScheduleView: View
 
                     WeekHeaderView(curMonth: $nowDisplayMonth, datesCurWeek: $datesCurWeek, today: $today, nowMonth: $nowMonth)
                 }
+                .opacity(scheduleContentOpacity)
+                .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
+                
                 .background(Color(.secondarySystemBackground).opacity(0.5))
                 .clipShape(Capsule())
                 .padding(.horizontal, 10)
@@ -111,7 +117,19 @@ struct ScheduleView: View
                 // 课表主体 + 底部控制条
                 pageBodyView
             }
-            .onChange(of: backgroundImageFilename) { _ in
+            .background
+            {
+                if let backgroundImage = backgroundImage
+                {
+                    Image(uiImage: backgroundImage)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea() // 穿透灵动岛和底部
+                        .opacity(backgroundOpacity)
+                }
+            }
+            .onChange(of: backgroundImageFilename)
+            { _ in
                 loadBackgroundImage()
             }
             .toolbar
@@ -183,16 +201,6 @@ struct ScheduleView: View
     {
         ZStack(alignment: .bottom)
         {
-            if let backgroundImage = backgroundImage {
-                Color(.systemBackground)
-                    .overlay(
-                        Image(uiImage: backgroundImage)
-                            .resizable()
-                            .scaledToFit()
-                            .opacity(backgroundOpacity)
-                    )
-            }
-
             VStack
             {
                 ScrollView
@@ -201,6 +209,8 @@ struct ScheduleView: View
                     {
                         TimeScheduleView()
                             .frame(width: 60)
+                            .opacity(scheduleContentOpacity)
+                            .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
                             .background(Color(.secondarySystemBackground).opacity(0.5))
                             .clipShape(Capsule())
 
@@ -266,190 +276,190 @@ struct ScheduleView: View
     // 底部控制条
 
     @ViewBuilder
-        private var bottomControlBar: some View
+    private var bottomControlBar: some View
+    {
+        ZStack
         {
-            ZStack {
-                // 1. 核心课表控制区
-                // 🚨 魔法第一步：去掉了这里的 `if showBottomControls`，不销毁视图！
-                HStack(spacing: 4)
+            // 1. 核心课表控制区
+            HStack(spacing: 4)
+            {
+                Button(action: {
+                    isWeekFieldFocused = false
+                    inputWeek = ""
+                    nowDisplayWeek -= 1
+                    updateDatesForDisplayWeek()
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                })
                 {
-                    Button(action: {
-                        isWeekFieldFocused = false
-                        inputWeek = ""
-                        nowDisplayWeek -= 1
-                        updateDatesForDisplayWeek()
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    })
-                    {
-                        Image(systemName: "chevron.left.circle.fill")
-                            .font(.system(size: 36))
-                            .foregroundColor(nowDisplayWeek <= minWeek ? .gray : .blue)
-                    }
-                    .disabled(nowDisplayWeek <= minWeek)
-                    .optionalLiquidGlass()
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundColor(nowDisplayWeek <= minWeek ? .gray : .blue)
+                }
+                .disabled(nowDisplayWeek <= minWeek)
+                .optionalLiquidGlass()
 
-                    VStack(spacing: 4)
+                VStack(spacing: 4)
+                {
+                    if courses.isEmpty
                     {
-                        if courses.isEmpty
+                        Text("暂无课表")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                    }
+                    else
+                    {
+                        if nowDisplayWeek >= 1
                         {
-                            Text("暂无课表")
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                            HStack(spacing: 2)
+                            {
+                                Text("第")
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundColor(.primary)
+
+                                TextField("", text: weekBinding)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 24, height: 16)
+                                    .background(Color(.systemGray6))
+                                    .clipShape(Capsule())
+                                    .foregroundColor(.primary)
+                                    .focused($isWeekFieldFocused)
+                                    .textFieldStyle(.plain)
+                                    .toolbar
+                                    {
+                                        ToolbarItemGroup(placement: .keyboard)
+                                        {
+                                            Spacer()
+                                            Button("完成")
+                                            {
+                                                isWeekFieldFocused = false
+                                                handleWeekJump()
+                                                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                            }
+                                            .foregroundColor(.blue)
+                                        }
+                                    }
+                                    .onTapGesture { inputWeek = "" }
+                                    .onSubmit { handleWeekJump() }
+
+                                Text("周")
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundColor(.primary)
+                            }
                         }
                         else
                         {
-                            if nowDisplayWeek >= 1
-                            {
-                                HStack(spacing: 2)
-                                {
-                                    Text("第")
-                                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                                        .foregroundColor(.primary)
-
-                                    TextField("", text: weekBinding)
-                                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                                        .keyboardType(.numberPad)
-                                        .multilineTextAlignment(.center)
-                                        .frame(width: 24, height: 16)
-                                        .background(Color(.systemGray6))
-                                        .clipShape(Capsule())
-                                        .foregroundColor(.primary)
-                                        .focused($isWeekFieldFocused)
-                                        .textFieldStyle(.plain)
-                                        .toolbar
-                                        {
-                                             ToolbarItemGroup(placement: .keyboard)
-                                             {
-                                                 Spacer()
-                                                 Button("完成")
-                                                 {
-                                                     isWeekFieldFocused = false
-                                                     handleWeekJump()
-                                                     UINotificationFeedbackGenerator().notificationOccurred(.success)
-                                                 }
-                                                 .foregroundColor(.blue)
-                                             }
-    
-     }
-                                        .onTapGesture { inputWeek = "" }
-                                        .onSubmit { handleWeekJump() }
-
-                                    Text("周")
-                                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                            else
-                            {
-                                Text("距离开学\n还有 \(-nowDisplayWeek + 1) 周")
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                            }
-
-                            if nowDisplayWeek == calculateCurrentWeek()
-                            {
-                                Text("本周")
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
-                                    .background(Color.blue.opacity(0.2))
-                                    .cornerRadius(4)
-                            }
+                            Text("距离开学\n还有 \(-nowDisplayWeek + 1) 周")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
                         }
-                    }
-                    .frame(width: 80)
 
-                    Button(action: {
-                        isWeekFieldFocused = false
-                        inputWeek = ""
-                        nowDisplayWeek += 1
-                        updateDatesForDisplayWeek()
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    })
-                    {
-                        Image(systemName: "chevron.right.circle.fill")
-                            .font(.system(size: 36))
-                            .foregroundColor(nowDisplayWeek >= maxWeek ? .gray : .blue)
-                    }
-                    .disabled(nowDisplayWeek >= maxWeek)
-                    .optionalLiquidGlass()
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 8)
-                .glassBackground(cornerRadius: 64)
-                .overlay(alignment: .trailing) {
-                    // 右侧的小尾巴：“本周” & “开学周”
-                    VStack(spacing: 6)
-                    {
-                        if nowDisplayWeek != calculateCurrentWeek()
+                        if nowDisplayWeek == calculateCurrentWeek()
                         {
-                            Button(action: {
-                                nowDisplayWeek = calculateCurrentWeek()
-                                updateDatesForDisplayWeek()
-                                UINotificationFeedbackGenerator().notificationOccurred(.success)
-                            })
-                            {
-                                Text("本周")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white)
-                                    .frame(width: 44, height: 28)
-                                    .background(Color.blue)
-                                    .clipShape(Capsule())
-                            }
-                            .optionalLiquidGlass()
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .bottom).combined(with: .opacity)
-                            ))
-                        }
-
-                        if nowDisplayWeek < 1
-                        {
-                            Button(action: {
-                                nowDisplayWeek = 1
-                                updateDatesForDisplayWeek()
-                                UINotificationFeedbackGenerator().notificationOccurred(.success)
-                            })
-                            {
-                                Text("开学周")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white)
-                                    .frame(width: 44, height: 28)
-                                    .background(Color.green)
-                                    .clipShape(Capsule())
-                            }
-                            .optionalLiquidGlass()
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .bottom).combined(with: .opacity)
-                            ))
+                            Text("本周")
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .background(Color.blue.opacity(0.2))
+                                .cornerRadius(4)
                         }
                     }
-                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: nowDisplayWeek)
-                    .offset(x: 64)
                 }
-                // 👇 魔法第二步：用属性控制状态，取代 transition，治好 AppStorage 的失忆症！
-                .opacity(showBottomControls ? 1 : 0)                  // 透明度渐变
-                .offset(y: showBottomControls ? 0 : 80)               // 向下滑出屏幕 80px
-                .scaleEffect(showBottomControls ? 1 : 0.95)           // 微微缩放，更有呼吸感
-                .allowsHitTesting(showBottomControls)                 // 隐藏时禁用点击，防止“幽灵触控”
-                .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showBottomControls) // 显式绑定动画
+                .frame(width: 80)
 
-                // 2. 永远可见的 Toggle 悬浮小按键，站C位！
                 Button(action: {
-                    // 魔法第三步：直接 toggle 就行，外面的 .animation 会接管一切
-                    showBottomControls.toggle()
+                    isWeekFieldFocused = false
+                    inputWeek = ""
+                    nowDisplayWeek += 1
+                    updateDatesForDisplayWeek()
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
                 })
                 {
-                    Image(systemName: showBottomControls ? "chevron.down" : "chevron.up")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(showBottomControls ? .secondary : .blue)
-                        .frame(width: 32, height: 32)
-                        .background(Color(.systemBackground).opacity(0.85))
-                        .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundColor(nowDisplayWeek >= maxWeek ? .gray : .blue)
                 }
-                .offset(x: showBottomControls ? -130 : 0)
-                .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showBottomControls)
+                .disabled(nowDisplayWeek >= maxWeek)
+                .optionalLiquidGlass()
             }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .glassBackground(cornerRadius: 64)
+            .overlay(alignment: .trailing)
+            {
+                // 右侧的小尾巴：“本周” & “开学周”
+                VStack(spacing: 6)
+                {
+                    if nowDisplayWeek != calculateCurrentWeek()
+                    {
+                        Button(action: {
+                            nowDisplayWeek = calculateCurrentWeek()
+                            updateDatesForDisplayWeek()
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        })
+                        {
+                            Text("本周")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 28)
+                                .background(Color.blue)
+                                .clipShape(Capsule())
+                        }
+                        .optionalLiquidGlass()
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                    }
+
+                    if nowDisplayWeek < 1
+                    {
+                        Button(action: {
+                            nowDisplayWeek = 1
+                            updateDatesForDisplayWeek()
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        })
+                        {
+                            Text("开学周")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 28)
+                                .background(Color.green)
+                                .clipShape(Capsule())
+                        }
+                        .optionalLiquidGlass()
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                    }
+                }
+                .animation(.spring(response: 0.35, dampingFraction: 0.75), value: nowDisplayWeek)
+                .offset(x: 64)
+            }
+
+            .opacity(showBottomControls ? 1 : 0) // 透明度渐变
+            .offset(y: showBottomControls ? 0 : 80) // 向下滑出屏幕 80px
+            .scaleEffect(showBottomControls ? 1 : 0.95) // 微微缩放，更有呼吸感
+            .allowsHitTesting(showBottomControls) // 隐藏时禁用点击，防止“幽灵触控”
+            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showBottomControls) // 显式绑定动画
+
+            // 2. 永远可见的 Toggle 悬浮小按键，站C位！
+            Button(action: {
+                showBottomControls.toggle()
+            })
+            {
+                Image(systemName: showBottomControls ? "chevron.down" : "chevron.up")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(showBottomControls ? .secondary : .blue)
+                    .frame(width: 32, height: 32)
+                    .background(Color(.systemBackground).opacity(0.5))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            }
+            .optionalLiquidGlass()
+            .offset(x: showBottomControls ? -130 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showBottomControls)
         }
+    }
 
     // 工具
 
@@ -564,7 +574,8 @@ struct CourseGridView: View
     var onEditCourse: ((Course) -> Void)?
     var onLongPressEmptyCell: ((Int, Int) -> Void)?
     var onAddCourseFromCard: ((Course) -> Void)?
-
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     private let weekdayNames = ["一", "二", "三", "四", "五", "六", "日"]
 
     var body: some View
@@ -740,14 +751,14 @@ struct CourseGridView: View
     @ViewBuilder
     private func emptyCellView(day: Int, period: Int) -> some View
     {
+        
         Color(.systemGray6)
+            .opacity(0.4)
             .frame(height: scheduleCellHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color.gray.opacity(0.15), lineWidth: 0.5)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:12)
             .padding(1)
+            .opacity(scheduleContentOpacity)
             .contentShape(Rectangle())
             .contextMenu
             {
@@ -869,14 +880,14 @@ struct CourseGridView: View
 
             Spacer(minLength: 2)
         }
+
         .padding(.horizontal, 4)
         .frame(maxWidth: .infinity)
         .frame(height: cardHeight)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(color)
-                .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
-        )
+
+        .background(color.opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:12)
         .overlay(alignment: .topTrailing)
         {
             if !conflicts.isEmpty
@@ -889,8 +900,10 @@ struct CourseGridView: View
                     .padding(4)
             }
         }
+
         .padding(1)
         .contentShape(Rectangle())
+
         .contextMenu
         {
             Button
@@ -1099,45 +1112,59 @@ struct CourseCardPreview: View
         }
     }
 }
- 
-extension ScheduleView {
-    private func loadBackgroundImage() {
-        guard !backgroundImageFilename.isEmpty else {
+
+extension ScheduleView
+{
+    private func loadBackgroundImage()
+    {
+        guard !backgroundImageFilename.isEmpty
+        else
+        {
             backgroundImage = nil
             return
         }
         let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(backgroundImageFilename)
         if let data = try? Data(contentsOf: fileURL),
-           let image = UIImage(data: data) {
+           let image = UIImage(data: data)
+        {
             backgroundImage = image
-        } else {
+        }
+        else
+        {
             backgroundImage = nil
         }
     }
-    
-    private func saveBackgroundImage(_ image: UIImage) {
+
+    private func saveBackgroundImage(_ image: UIImage)
+    {
         guard let data = image.jpegData(compressionQuality: 0.8) else { return }
         let filename = "schedule_background_\(UUID().uuidString).jpg"
         let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(filename)
-        do {
+        do
+        {
             try data.write(to: fileURL)
             // 删除旧文件
-            if !backgroundImageFilename.isEmpty {
+            if !backgroundImageFilename.isEmpty
+            {
                 let oldURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                     .appendingPathComponent(backgroundImageFilename)
                 try? FileManager.default.removeItem(at: oldURL)
             }
             backgroundImageFilename = filename
             backgroundImage = image
-        } catch {
+        }
+        catch
+        {
             print("Failed to save background image: \(error)")
         }
     }
-    
-    private func clearBackgroundImage() {
-        if !backgroundImageFilename.isEmpty {
+
+    private func clearBackgroundImage()
+    {
+        if !backgroundImageFilename.isEmpty
+        {
             let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(backgroundImageFilename)
             try? FileManager.default.removeItem(at: fileURL)
@@ -1146,7 +1173,7 @@ extension ScheduleView {
         backgroundImage = nil
     }
 }
- 
+
 // MARK: - 时间轴
 
 struct ClassPeriod: Identifiable

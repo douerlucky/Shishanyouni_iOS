@@ -307,7 +307,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
+                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
                 let list = try await query.fetchBuildingList(token: token)
                 await MainActor.run
                 {
@@ -330,7 +330,7 @@ struct ElectricityView: View
     {
         Task
         {
-            let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
+            let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
             let list = try await query.fetchFloorList(token: token, buildingId: bId)
             await MainActor.run
             {
@@ -350,7 +350,7 @@ struct ElectricityView: View
     {
         Task
         {
-            let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
+            let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
             let list = try await query.fetchRoomList(token: token, buildingId: buildingId, floorNum: floor)
             await MainActor.run
             {
@@ -366,7 +366,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
+                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
                 let list = try await query.fetchFloorList(token: token, buildingId: buildingId)
                 await MainActor.run
                 {
@@ -389,7 +389,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
+                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
                 // 这里调用的是 API: /base/rooms/getRoomListByBuildIdAndFloor
                 let list = try await query.fetchRoomList(token: token, buildingId: buildingId, floorNum: floor)
                 await MainActor.run
@@ -427,7 +427,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedResult)
+                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
                 let records = try await query.fetchElectricityAccount(token: token, roomId: savedRoomId)
                 await MainActor.run
                 {

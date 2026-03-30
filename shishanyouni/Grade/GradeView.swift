@@ -531,7 +531,7 @@ struct BottomButtonView: View
                     {
                         Grades = try await gradeService.fetchGrades(
                             username: userinfo.username,
-                            password: userinfo.plainPassword,
+                            password: userinfo.encryptedPasswordShishanyouni,
                             xnm: selectedYear,
                             xqm: selectedTerm
                         )
