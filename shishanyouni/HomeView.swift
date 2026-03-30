@@ -19,6 +19,24 @@ struct HomeView: View
     @State private var navigateToStrategy = false
     @State private var navigateToClub = false
 
+    @State private var currentTime = Date() // 储存当前时间
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect() // 创建一个定时器
+
+    var timeString: String
+    {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss" // 显示 几点:几分:几秒
+        return formatter.string(from: currentTime)
+    }
+
+    var dateAndWeekString: String
+    {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "M月d日 EEEE"
+        return formatter.string(from: currentTime)
+    }
+
     @State private var date: String = {
         let formatter = DateFormatter()
         formatter.dateFormat = "d" // 只要日期数字
@@ -39,6 +57,64 @@ struct HomeView: View
         {
             ScrollView
             {
+                VStack(alignment: .leading, spacing: 8)
+                {
+                    HStack(alignment: .center) // 1. 让左边的 Stack 和右边的 Text 垂直居中对齐
+                    {
+                        if userinfo.showClock
+                        {
+                            VStack(alignment: .leading, spacing: 2) // 2. 关键：设置左对齐，并稍微缩减行间距
+                            {
+                                Text(dateAndWeekString)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.secondary)
+
+                                Text(timeString)
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .monospacedDigit() // 加上这个，数字跳动会更稳
+                            }
+                            .onReceive(timer)
+                            { input in
+                                currentTime = input
+                            }
+                        }
+
+                        Spacer() // 4. 加个弹簧，把随机话语顶到最右边（如果你喜欢左右分布的话）
+
+                        if userinfo.showDailyMessage
+                        {
+                            Text(userinfo.sessionDailyMessage)
+                                .font(.system(size: 16, weight: .medium))
+                                .multilineTextAlignment(.trailing) // 如果话语太长换行，也保持右对齐
+                                .frame(maxWidth: 300, alignment: .trailing) // 限制宽度，防止把左边的时钟挤扁了
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+
+                    if let days = userinfo.daysSinceEnrollment
+                    {
+                        if userinfo.showEnrollmentDays
+                        {
+                            VStack(alignment: .leading, spacing: 4)
+                            {
+                                Text("今天是在华农的第 \(days) 天")
+                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .foregroundColor(.primary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                        }
+                    }
+                    else
+                    {
+                        // 未登录或学号不符时的占位
+                        Text("欢迎使用狮山有你，快去登录吧")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                    }
+                }
                 LazyVGrid(columns: columns, spacing: 20)
                 {
 //                    MenuGridItem(title: "Debug页面", icon: "ladybug.fill", color: .orange)
@@ -104,7 +180,7 @@ struct HomeView: View
                     {
                         navigateToClub = true
                     }
-                    
+
 //                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
 //                    {
 //                        navigateToEvents = true
@@ -128,10 +204,10 @@ struct HomeView: View
             { ClassroomView() }
             .navigationDestination(isPresented: $navigateToEvents)
             { EventListView() }
-                .navigationDestination(isPresented: $navigateToStrategy)
-                { AllStrategy() }
-                .navigationDestination(isPresented: $navigateToClub)
-                { AllClub() }
+            .navigationDestination(isPresented: $navigateToStrategy)
+            { AllStrategy() }
+            .navigationDestination(isPresented: $navigateToClub)
+            { AllClub() }
         }
     }
 }

@@ -124,6 +124,59 @@ struct ProfileView: View
                             .foregroundColor(Color(.systemGray3))
                     }
                 }
+
+                Toggle(isOn: $userinfo.showDailyMessage)
+                {
+                    HStack(spacing: 12)
+                    { // 保持跟上面一样的间距
+                        // 左侧图标胶囊
+                        Image(systemName: "quote.bubble.fill")
+                            .foregroundColor(.white) // 图标颜色
+                            .frame(width: 30, height: 30) // 胶囊尺寸
+                            .background(Color.orange) // 寄语用醒目的橙色
+                            .cornerRadius(6) // 圆角
+
+                        Text("显示今日寄语")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .tint(.accentColor) // 右侧开关的颜色
+
+                // 2. 显示日期与时钟
+                Toggle(isOn: $userinfo.showClock)
+                {
+                    HStack(spacing: 12)
+                    {
+                        Image(systemName: "clock.fill")
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.blue) // 时钟用冷色调的蓝色
+                            .cornerRadius(6)
+
+                        Text("显示日期与时钟")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .tint(.accentColor)
+
+                // 3. 显示入校天数
+                Toggle(isOn: $userinfo.showEnrollmentDays)
+                {
+                    HStack(spacing: 12)
+                    {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.footnote) // 这个图标比较复杂，稍微缩小一点点字号
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.green) // 天数用充满希望的绿色
+                            .cornerRadius(6)
+
+                        Text("显示入校天数")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .tint(.accentColor)
+
                 NavigationLink
                 {
                     AboutUs()

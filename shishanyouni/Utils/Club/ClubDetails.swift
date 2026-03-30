@@ -138,23 +138,44 @@ struct ClubDetailView: View
                         }
 
                         // —— 联系方式 ——
-                        if let contacts = club.contact, !contacts.isEmpty
-                        {
-                            DetailSection(title: "联系方式", icon: "bubble.left.and.bubble.right")
-                            {
-                                VStack(alignment: .leading, spacing: 8)
-                                {
-                                    ForEach(contacts, id: \.self)
-                                    { item in
-                                        HStack(spacing: 8)
-                                        {
-                                            Image(systemName: "link")
-                                                .font(.caption)
-                                                .foregroundColor(.accentColor)
-                                            Text(item)
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.primary)
+                        if let contacts = club.contact, !contacts.isEmpty {
+                            DetailSection(title: "联系方式", icon: "bubble.left.and.bubble.right") {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    ForEach(contacts, id: \.self) { item in
+                                        Button {
+                                            // 【核心修改点】：通过 filter 只保留数字部分
+                                            let numbersOnly = item.filter { $0.isNumber }
+                                            
+                                            // 只有当过滤后不为空时才执行复制，防止误触
+                                            if !numbersOnly.isEmpty {
+                                                UIPasteboard.general.string = numbersOnly
+                                                
+                                                // 触感反馈
+                                                let impactMed = UIImpactFeedbackGenerator(style: .medium)
+                                                impactMed.impactOccurred()
+                                            }
+                                        } label: {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "link")
+                                                    .font(.caption)
+                                                    .foregroundColor(.accentColor)
+                                                Text(item) // 界面上依然显示完整信息（如“QQ群：12345”），方便阅读
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.primary)
+                                                    .multilineTextAlignment(.leading)
+                                                
+                                                Spacer()
+                                                
+                                                Text("复制群号")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color(.systemGray5))
+                                                    .clipShape(Capsule())
+                                            }
                                         }
+                                        .buttonStyle(.plain)
                                     }
                                 }
                             }

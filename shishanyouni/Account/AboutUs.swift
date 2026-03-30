@@ -26,13 +26,13 @@ struct AboutUs: View {
                 // 核心信息表格区（仿系统设置的表格样式）
                 VStack(spacing: 0) {
                     // 表格行1：版本号
-                    infoRow(title: "当前版本", content: "0.1 beta 7")
+                    infoRow(title: "当前版本", content: "0.1 beta 7 fix 1")
                     
                     // 分割线
                     Divider()
                     
                     // 表格行2：构建时间
-                    infoRow(title: "构建时间", content: "2026年3月30日")
+                    infoRow(title: "构建时间", content: "2026年3月31日")
                     
                     // 分割线
                     Divider()

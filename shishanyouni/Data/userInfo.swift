@@ -16,10 +16,71 @@ class userInfo: ObservableObject
     @Published var plainPassword: String = ""
     @Published var encryptedPasswordSchool: String = ""
     @Published var encryptedPasswordShishanyouni: String = ""
+    @Published var sessionDailyMessage: String = ""
+
+    @Published var showDailyMessage: Bool = true
+    {
+        didSet { UserDefaults.standard.set(showDailyMessage, forKey: "pref_showDailyMessage") }
+    }
+
+    @Published var showClock: Bool = true
+    {
+        didSet { UserDefaults.standard.set(showClock, forKey: "pref_showClock") }
+    }
+
+    @Published var showEnrollmentDays: Bool = true
+    {
+        didSet { UserDefaults.standard.set(showEnrollmentDays, forKey: "pref_showEnrollmentDays") }
+    }
+
     // 初始化时自动加载保存的数据
     init()
     {
         loadUserInfo()
+        refreshSessionMessage()
+        if UserDefaults.standard.object(forKey: "pref_showDailyMessage") != nil
+        {
+            showDailyMessage = UserDefaults.standard.bool(forKey: "pref_showDailyMessage")
+            showClock = UserDefaults.standard.bool(forKey: "pref_showClock")
+            showEnrollmentDays = UserDefaults.standard.bool(forKey: "pref_showEnrollmentDays")
+        }
+    }
+
+    func refreshSessionMessage()
+    {
+        sessionDailyMessage = FunMessage.getDailyMessage(for: self)
+    }
+
+    var daysSinceEnrollment: Int?
+    {
+        // 确保学号长度足够并截取前4位作为年份
+        guard username.count >= 4, let year = Int(username.prefix(4))
+        else
+        {
+            return nil
+        }
+
+        // 构造入学当年的 9 月 1 日
+        var components = DateComponents()
+        components.year = year
+        components.month = 9
+        components.day = 1
+
+        let calendar = Calendar.current
+        guard let enrollmentDate = calendar.date(from: components)
+        else
+        {
+            return nil
+        }
+
+        // 计算与今天的天数差
+        let date1 = calendar.startOfDay(for: enrollmentDate)
+        let date2 = calendar.startOfDay(for: Date())
+
+        let componentsDiff = calendar.dateComponents([.day], from: date1, to: date2)
+
+        // 返回天数（入学当天算作第 1 天）
+        return (componentsDiff.day ?? 0) + 1
     }
 
     // 加载保存的学号和密码
@@ -58,7 +119,7 @@ class userInfo: ObservableObject
 
         // 保存密码到 Keychain
         let success = KeychainHelper.shared.save(password: plainPassword, for: username)
-        
+
         UserDefaults.standard.set(nickname, forKey: "saved_nickname")
 
         if success
@@ -74,7 +135,6 @@ class userInfo: ObservableObject
     // 清除保存的数据（退出登录时使用）
     func clearUserInfo()
     {
-        
         // 清除 Keychain 中的密码
         KeychainHelper.shared.delete(for: username)
 
@@ -100,7 +160,7 @@ class userInfo: ObservableObject
             encryptedPasswordSchool = result
         }
     }
-    
+
     func performShishanyouniEncryption()
     {
         if let result = encryptShishanyouniPassword(password: plainPassword)
@@ -108,12 +168,12 @@ class userInfo: ObservableObject
             encryptedPasswordShishanyouni = result
         }
     }
-    
+
     func loadUserNickname()
     {
         let nickname = UserDefaults.standard.string(forKey: "saved_nickname")
     }
-    
+
     func saveUserNickname()
     {
         UserDefaults.standard.set(nickname, forKey: "saved_nickname")
@@ -123,5 +183,4 @@ class userInfo: ObservableObject
     {
         print("设定为用户名:\(username)\n原始密码为:\(plainPassword)\n加密的密码为:\(encryptedPasswordSchool)")
     }
-    
 }

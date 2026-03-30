@@ -60,79 +60,88 @@ class StrategyDetailViewModel: ObservableObject
 
 // MARK: - 自适应高度 WKWebView
 
-struct DynamicHTMLView: UIViewRepresentable
-{
+struct DynamicHTMLView: UIViewRepresentable {
     let htmlString: String
     @Binding var height: CGFloat
 
-    private var wrapped: String
-    {
+    private var wrapped: String {
         """
         <!DOCTYPE html><html>
         <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <meta name="referrer" content="no-referrer"> 
         <style>
-          /* 定义默认（浅色）模式下的颜色变量 */
-          :root {
-            --text-color: #1c1c1e;
-            --p-color: #3a3a3c;
-          }
-
-          /* 监听系统暗色模式，并动态替换颜色变量 */
-          @media (prefers-color-scheme: dark) {
-            :root {
-              --text-color: #f2f2f7; /* Apple 官方暗色模式的次级文字亮色 */
-              --p-color: #e5e5ea;
-            }
-          }
-
+          :root { --text-color: #1c1c1e; --p-color: #3a3a3c; }
+          @media (prefers-color-scheme: dark) { :root { --text-color: #f2f2f7; --p-color: #e5e5ea; } }
           body { font-family: -apple-system, sans-serif; font-size: 15px;
-                 line-height: 1.75; color: var(--text-color); margin: 0; padding: 0 2px;
-                 word-break: break-word; }
-          h3   { font-size: 16px; font-weight: 600; margin-top: 20px; margin-bottom: 6px; }
-          p    { margin: 6px 0; color: var(--p-color); }
-          img  { max-width: 100%; border-radius: 10px; margin-top: 8px; }
+                 line-height: 1.75; color: var(--text-color); margin: 0; padding: 0 10px;
+                 word-break: break-word; overflow: hidden; 
+                 /* 保险：在 HTML 内部加一个底边距，防止被截断 */
+                 padding-bottom: 60px !important; 
+          }
+          img { max-width: 100%; height: auto; border-radius: 10px; margin-top: 8px; display: block; }
         </style>
         </head>
-        <body>\(htmlString)</body></html>
+        <body>
+            <div id="content_wrapper">\(htmlString)</div>
+            <script>
+                const wrapper = document.getElementById('content_wrapper');
+                const notifyHeight = () => {
+                    // 使用 offsetHeight 获取包含 padding 的高度
+                    window.webkit.messageHandlers.heightHandler.postMessage(wrapper.offsetHeight);
+                };
+                // 1. 监听尺寸变化
+                const observer = new ResizeObserver(notifyHeight);
+                observer.observe(wrapper);
+                // 2. 监听所有图片加载完成
+                window.onload = notifyHeight;
+                // 3. 预防性延迟通知
+                setTimeout(notifyHeight, 500);
+                setTimeout(notifyHeight, 2000);
+            </script>
+        </body></html>
         """
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    func makeUIView(context: Context) -> WKWebView
-    {
-        let wv = WKWebView()
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.userContentController.add(context.coordinator, name: "heightHandler")
+        let wv = WKWebView(frame: .zero, configuration: config)
         wv.navigationDelegate = context.coordinator
-        wv.scrollView.isScrollEnabled = false
+        wv.scrollView.isScrollEnabled = false // 禁用内部滚动
         wv.isOpaque = false
         wv.backgroundColor = .clear
         wv.scrollView.backgroundColor = .clear
         return wv
     }
 
-    func updateUIView(_ wv: WKWebView, context: Context)
-    {
-        wv.loadHTMLString(wrapped, baseURL: URL(string: "https://lion.hzau.edu.cn"))
+    func updateUIView(_ wv: WKWebView, context: Context) {
+        if context.coordinator.lastLoadedHTML != wrapped {
+            context.coordinator.lastLoadedHTML = wrapped
+            wv.loadHTMLString(wrapped, baseURL: URL(string: "https://lion.hzau.edu.cn"))
+        }
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate
-    {
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var parent: DynamicHTMLView
+        var lastLoadedHTML: String = ""
         init(_ p: DynamicHTMLView) { parent = p }
-        func webView(_ wv: WKWebView, didFinish _: WKNavigation!)
-        {
-            wv.evaluateJavaScript("document.body.scrollHeight")
-            { r, _ in
-                if let h = r as? CGFloat
-                {
-                    DispatchQueue.main.async { self.parent.height = h }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "heightHandler", let h = message.body as? CGFloat {
+                // 如果检测到的高度比当前记录的大，且变化超过 5 像素，则更新
+                if h > 0 && abs(parent.height - h) > 5 {
+                    DispatchQueue.main.async {
+                        // 加上缓冲区间，彻底杜绝截断
+                        self.parent.height = h + 40
+                    }
                 }
             }
         }
     }
 }
-
 // MARK: - 详情主视图
 
 struct StrategyDetailView: View
@@ -216,6 +225,7 @@ struct StrategyDetailView: View
                     {
                         Text("暂无详细内容").foregroundColor(.secondary).padding(20)
                     }
+                    Spacer(minLength: 50)
                 }
             }
         }
