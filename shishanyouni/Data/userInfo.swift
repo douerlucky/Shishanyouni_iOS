@@ -33,17 +33,41 @@ class userInfo: ObservableObject
         didSet { UserDefaults.standard.set(showEnrollmentDays, forKey: "pref_showEnrollmentDays") }
     }
 
+    // 检测是否在预览环境中运行
+    private var isRunningInPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
     // 初始化时自动加载保存的数据
     init()
     {
-        loadUserInfo()
-        refreshSessionMessage()
-        if UserDefaults.standard.object(forKey: "pref_showDailyMessage") != nil
-        {
-            showDailyMessage = UserDefaults.standard.bool(forKey: "pref_showDailyMessage")
-            showClock = UserDefaults.standard.bool(forKey: "pref_showClock")
-            showEnrollmentDays = UserDefaults.standard.bool(forKey: "pref_showEnrollmentDays")
+        if isRunningInPreview {
+            // 在预览环境中提供模拟数据
+            setupPreviewData()
+        } else {
+            loadUserInfo()
+            refreshSessionMessage()
+            if UserDefaults.standard.object(forKey: "pref_showDailyMessage") != nil
+            {
+                showDailyMessage = UserDefaults.standard.bool(forKey: "pref_showDailyMessage")
+                showClock = UserDefaults.standard.bool(forKey: "pref_showClock")
+                showEnrollmentDays = UserDefaults.standard.bool(forKey: "pref_showEnrollmentDays")
+            }
         }
+    }
+    
+    private func setupPreviewData() {
+        // 为预览设置模拟数据
+        username = "2023123456"
+        nickname = "预览用户"
+        plainPassword = "preview_password"
+        // 预览中不需要真实的加密密码
+        encryptedPasswordSchool = "preview_encrypted_school"
+        encryptedPasswordShishanyouni = "preview_encrypted_shishanyouni"
+        sessionDailyMessage = "预览模式：今天也要加油哦！"
+        showDailyMessage = true
+        showClock = true
+        showEnrollmentDays = true
     }
 
     func refreshSessionMessage()

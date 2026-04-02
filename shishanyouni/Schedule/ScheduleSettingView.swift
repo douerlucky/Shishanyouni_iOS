@@ -273,7 +273,7 @@ struct ScheduleSettingView: View {
             }
             
             VStack(alignment: .leading) {
-                Text("背景透明度: \(Int(backgroundOpacity * 100))%")
+                Text("背景不透明度: \(Int(backgroundOpacity * 100))%")
                     .font(.subheadline)
                 Slider(value: $backgroundOpacity, in: 0.0...1.0, step: 0.05)
             }
@@ -281,7 +281,7 @@ struct ScheduleSettingView: View {
             .listRowSeparator(.hidden)
             
             VStack(alignment: .leading) {
-                Text("课表内容透明度: \(Int(scheduleContentOpacity * 100))%")
+                Text("课表内容不透明度: \(Int(scheduleContentOpacity * 100))%")
                     .font(.subheadline)
                 Slider(value: $scheduleContentOpacity, in: 0.0...1.0, step: 0.05)
             }

@@ -31,6 +31,7 @@ struct ScheduleView: View
     @State var today: Int = -1
     @State private var courses: [Course] = []
     @State var datesCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
+    @State var monthsCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
     @State var nowDisplayWeek: Int = -1
 
     @State private var inputWeek: String = ""
@@ -104,7 +105,7 @@ struct ScheduleView: View
                         .frame(width: 60)
                         .padding(.vertical, 8)
 
-                    WeekHeaderView(curMonth: $nowDisplayMonth, datesCurWeek: $datesCurWeek, today: $today, nowMonth: $nowMonth)
+                    WeekHeaderView(monthsCurWeek: $monthsCurWeek, datesCurWeek: $datesCurWeek, today: $today, nowMonth: $nowMonth)
                 }
                 .opacity(scheduleContentOpacity)
                 .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
@@ -131,6 +132,11 @@ struct ScheduleView: View
             .onChange(of: backgroundImageFilename)
             { _ in
                 loadBackgroundImage()
+            }
+            .onChange(of: savedTimestamp)
+            { _ in
+                loadSavedData()
+                updateDatesForDisplayWeek()
             }
             .toolbar
             {
@@ -436,7 +442,7 @@ struct ScheduleView: View
                 .offset(x: 64)
             }
 
-            .opacity(showBottomControls ? 1 : 0) // 透明度渐变
+            .opacity(showBottomControls ? 1 : 0) // 不透明度渐变
             .offset(y: showBottomControls ? 0 : 80) // 向下滑出屏幕 80px
             .scaleEffect(showBottomControls ? 1 : 0.95) // 微微缩放，更有呼吸感
             .allowsHitTesting(showBottomControls) // 隐藏时禁用点击，防止“幽灵触控”
@@ -501,12 +507,17 @@ struct ScheduleView: View
         guard let targetMonday = cal.date(byAdding: .day, value: offsetDays, to: firstMonday) else { return }
         nowDisplayMonth = cal.component(.month, from: targetMonday)
         var newDates: [Int] = []
+        var newMonths: [Int] = []
         for i in 0 ..< 7
         {
             if let date = cal.date(byAdding: .day, value: i, to: targetMonday)
-            { newDates.append(cal.component(.day, from: date)) }
+            {
+                newDates.append(cal.component(.day, from: date))
+                newMonths.append(cal.component(.month, from: date))
+            }
         }
         datesCurWeek = newDates
+        monthsCurWeek = newMonths
     }
 
     func getCurrentDate() -> Int { Calendar.current.component(.day, from: Date()) }
@@ -529,7 +540,7 @@ struct ScheduleView: View
 struct WeekHeaderView: View
 {
     let weekDays = ["一", "二", "三", "四", "五", "六", "日"]
-    @Binding var curMonth: Int
+    @Binding var monthsCurWeek: [Int]
     @Binding var datesCurWeek: [Int]
     @Binding var today: Int
     @Binding var nowMonth: Int
@@ -540,7 +551,7 @@ struct WeekHeaderView: View
         {
             ForEach(0 ..< 7, id: \.self)
             { index in
-                let isToday = curMonth == nowMonth && today == datesCurWeek[index]
+                let isToday = monthsCurWeek[index] == nowMonth && today == datesCurWeek[index]
                 VStack(spacing: 4)
                 {
                     Text(weekDays[index])
