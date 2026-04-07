@@ -23,33 +23,7 @@ struct AboutUs: View {
                     .font(.title)
                     .fontWeight(.bold)
                 
-                // 核心信息表格区（仿系统设置的表格样式）
-                VStack(spacing: 0) {
-                    // 表格行1：版本号
-                    infoRow(title: "当前版本", content: "0.1 beta 7 fix 1")
-                    
-                    // 分割线
-                    Divider()
-                    
-                    // 表格行2：构建时间
-                    infoRow(title: "构建时间", content: "2026年3月31日")
-                    
-                    // 分割线
-                    Divider()
-                    
-                    infoRow(title: "内测反馈群（长按可复制）", content: "1090311516")
-                        .contextMenu {
-                            // 长按复制功能
-                            Button("复制群号") {
-                                UIPasteboard.general.string = "1090311516"
-                            }
-                        }
-                }
-                .background(Color(.systemBackground))
-                .cornerRadius(12)
-                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                .padding(.horizontal, 16)
-                
+
                 // 开发/设计信息区
                 VStack(alignment: .leading, spacing: 8) {
                     Text("开发团队")

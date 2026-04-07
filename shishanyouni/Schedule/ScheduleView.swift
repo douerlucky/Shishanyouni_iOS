@@ -27,11 +27,9 @@ struct ScheduleView: View
     @EnvironmentObject var userinfo: userInfo
     @State private var showSettings = false
     @State var nowDisplayMonth: Int = -1
-    @State var nowMonth: Int = -1
-    @State var today: Int = -1
     @State private var courses: [Course] = []
     @State var datesCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
-    @State var monthsCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
+    @State var weekDatesCurWeek: [Date] = Array(repeating: Date(), count: 7)
     @State var nowDisplayWeek: Int = -1
 
     @State private var inputWeek: String = ""
@@ -105,7 +103,10 @@ struct ScheduleView: View
                         .frame(width: 60)
                         .padding(.vertical, 8)
 
-                    WeekHeaderView(monthsCurWeek: $monthsCurWeek, datesCurWeek: $datesCurWeek, today: $today, nowMonth: $nowMonth)
+                    WeekHeaderView(
+                        weekDatesCurWeek: $weekDatesCurWeek,
+                        datesCurWeek: $datesCurWeek
+                    )
                 }
                 .opacity(scheduleContentOpacity)
                 .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
@@ -188,8 +189,6 @@ struct ScheduleView: View
                 loadSavedData()
                 self.nowDisplayWeek = calculateCurrentWeek()
                 updateDatesForDisplayWeek()
-                self.today = getCurrentDate()
-                self.nowMonth = getCurrentMonth()
             }
         }
         .alert("保存成功", isPresented: $showSaveSuccess)
@@ -507,25 +506,23 @@ struct ScheduleView: View
         guard let targetMonday = cal.date(byAdding: .day, value: offsetDays, to: firstMonday) else { return }
         nowDisplayMonth = cal.component(.month, from: targetMonday)
         var newDates: [Int] = []
-        var newMonths: [Int] = []
+        var newWeekDates: [Date] = []
         for i in 0 ..< 7
         {
             if let date = cal.date(byAdding: .day, value: i, to: targetMonday)
             {
                 newDates.append(cal.component(.day, from: date))
-                newMonths.append(cal.component(.month, from: date))
+                newWeekDates.append(date)
             }
         }
         datesCurWeek = newDates
-        monthsCurWeek = newMonths
+        weekDatesCurWeek = newWeekDates
     }
-
-    func getCurrentDate() -> Int { Calendar.current.component(.day, from: Date()) }
-    func getCurrentMonth() -> Int { Calendar.current.component(.month, from: Date()) }
 
     func calculateCurrentWeek() -> Int
     {
-        let cal = Calendar.current
+        var cal = Calendar.current
+        cal.firstWeekday = 2
         let startComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStartDate)
         guard let startMonday = cal.date(from: startComps) else { return 1 }
         let nowComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
@@ -540,10 +537,8 @@ struct ScheduleView: View
 struct WeekHeaderView: View
 {
     let weekDays = ["一", "二", "三", "四", "五", "六", "日"]
-    @Binding var monthsCurWeek: [Int]
+    @Binding var weekDatesCurWeek: [Date]
     @Binding var datesCurWeek: [Int]
-    @Binding var today: Int
-    @Binding var nowMonth: Int
 
     var body: some View
     {
@@ -551,7 +546,7 @@ struct WeekHeaderView: View
         {
             ForEach(0 ..< 7, id: \.self)
             { index in
-                let isToday = monthsCurWeek[index] == nowMonth && today == datesCurWeek[index]
+                let isToday = Calendar.current.isDateInToday(weekDatesCurWeek[index])
                 VStack(spacing: 4)
                 {
                     Text(weekDays[index])
@@ -1197,20 +1192,58 @@ struct ClassPeriod: Identifiable
 
 struct TimeScheduleView: View
 {
+    @State private var now = Date()
+    private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
+
     let classPeriods: [ClassPeriod] = [
-        ClassPeriod(id: 1, periodNumber: 1, startTime: "8:00", endTime: "8:45"),
-        ClassPeriod(id: 2, periodNumber: 2, startTime: "8:55", endTime: "9:40"),
-        ClassPeriod(id: 3, periodNumber: 3, startTime: "10:00", endTime: "10:45"),
-        ClassPeriod(id: 4, periodNumber: 4, startTime: "10:55", endTime: "11:40"),
-        ClassPeriod(id: 5, periodNumber: 5, startTime: "14:30", endTime: "15:15"),
-        ClassPeriod(id: 6, periodNumber: 6, startTime: "15:25", endTime: "16:10"),
-        ClassPeriod(id: 7, periodNumber: 7, startTime: "16:30", endTime: "17:15"),
-        ClassPeriod(id: 8, periodNumber: 8, startTime: "17:25", endTime: "18:10"),
-        ClassPeriod(id: 9, periodNumber: 9, startTime: "19:00", endTime: "19:45"),
-        ClassPeriod(id: 10, periodNumber: 10, startTime: "19:50", endTime: "20:35"),
-        ClassPeriod(id: 11, periodNumber: 11, startTime: "20:40", endTime: "21:25"),
-        ClassPeriod(id: 12, periodNumber: 12, startTime: "21:30", endTime: "22:15"),
+        ClassPeriod(id: 1, periodNumber: 1, startTime: "7:40", endTime: "8:45"),
+        ClassPeriod(id: 2, periodNumber: 2, startTime: "8:45", endTime: "9:40"),
+        ClassPeriod(id: 3, periodNumber: 3, startTime: "9:40", endTime: "10:45"),
+        ClassPeriod(id: 4, periodNumber: 4, startTime: "10:45", endTime: "11:40"),
+        ClassPeriod(id: 5, periodNumber: 5, startTime: "14:10", endTime: "15:15"),
+        ClassPeriod(id: 6, periodNumber: 6, startTime: "15:15", endTime: "16:10"),
+        ClassPeriod(id: 7, periodNumber: 7, startTime: "16:10", endTime: "17:15"),
+        ClassPeriod(id: 8, periodNumber: 8, startTime: "17:15", endTime: "18:10"),
+        ClassPeriod(id: 9, periodNumber: 9, startTime: "18:10", endTime: "19:45"),
+        ClassPeriod(id: 10, periodNumber: 10, startTime: "19:45", endTime: "20:35"),
+        ClassPeriod(id: 11, periodNumber: 11, startTime: "20:35", endTime: "21:25"),
+        ClassPeriod(id: 12, periodNumber: 12, startTime: "21:25", endTime: "22:15"),
     ]
+
+    private var currentPeriodNumber: Int?
+    {
+        periodNumber(for: now)
+    }
+
+    private func periodNumber(for date: Date) -> Int?
+    {
+        let c = Calendar.current
+        let hour = c.component(.hour, from: date)
+        let minute = c.component(.minute, from: date)
+        let current = hour * 60 + minute
+
+        // 前闭后开区间: [start, end)
+        let ranges: [(Int, Int, Int)] = [
+            (1, 7 * 60 + 40, 8 * 60 + 45),
+            (2, 8 * 60 + 45, 9 * 60 + 40),
+            (3, 9 * 60 + 40, 10 * 60 + 45),
+            (4, 10 * 60 + 45, 11 * 60 + 40),
+            (5, 14 * 60 + 10, 15 * 60 + 15),
+            (6, 15 * 60 + 15, 16 * 60 + 10),
+            (7, 16 * 60 + 10, 17 * 60 + 15),
+            (8, 17 * 60 + 15, 18 * 60 + 10),
+            (9, 18 * 60 + 10, 19 * 60 + 45),
+            (10, 19 * 60 + 45, 20 * 60 + 35),
+            (11, 20 * 60 + 35, 21 * 60 + 25),
+            (12, 21 * 60 + 25, 22 * 60 + 15),
+        ]
+
+        for (period, start, end) in ranges where current >= start && current < end
+        {
+            return period
+        }
+        return nil
+    }
 
     var body: some View
     {
@@ -1218,21 +1251,31 @@ struct TimeScheduleView: View
         {
             ForEach(classPeriods)
             { period in
+                let isCurrent = currentPeriodNumber == period.periodNumber
                 VStack(spacing: 2)
                 {
                     Text("\(period.periodNumber)")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 14, weight: isCurrent ? .bold : .medium, design: .rounded))
+                        .foregroundColor(isCurrent ? .white : .secondary)
                     Text(period.startTime)
                         .font(.system(size: 10, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(isCurrent ? .white : .secondary)
                     Text(period.endTime)
                         .font(.system(size: 10, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(isCurrent ? .white : .secondary)
                 }
-                .frame(height: scheduleCellHeight)
-                .padding(1)
+                .frame(maxWidth: .infinity, minHeight: scheduleCellHeight, maxHeight: scheduleCellHeight)
+                .padding(.horizontal, 2)
+                .padding(.vertical, 1)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(isCurrent ? Color.blue : Color.clear)
+                )
             }
+        }
+        .onReceive(timer)
+        { input in
+            now = input
         }
     }
 }

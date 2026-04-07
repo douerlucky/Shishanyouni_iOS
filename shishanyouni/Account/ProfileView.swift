@@ -125,23 +125,6 @@ struct ProfileView: View
                     }
                 }
 
-                Toggle(isOn: $userinfo.showDailyMessage)
-                {
-                    HStack(spacing: 12)
-                    { // 保持跟上面一样的间距
-                        // 左侧图标胶囊
-                        Image(systemName: "quote.bubble.fill")
-                            .foregroundColor(.white) // 图标颜色
-                            .frame(width: 30, height: 30) // 胶囊尺寸
-                            .background(Color.orange) // 寄语用醒目的橙色
-                            .cornerRadius(6) // 圆角
-
-                        Text("显示今日寄语")
-                            .foregroundColor(.primary)
-                    }
-                }
-                .tint(.accentColor) // 右侧开关的颜色
-
                 // 2. 显示日期与时钟
                 Toggle(isOn: $userinfo.showClock)
                 {

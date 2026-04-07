@@ -79,15 +79,7 @@ struct HomeView: View
                             }
                         }
 
-                        Spacer() // 4. 加个弹簧，把随机话语顶到最右边（如果你喜欢左右分布的话）
-
-                        if userinfo.showDailyMessage
-                        {
-                            Text(userinfo.sessionDailyMessage)
-                                .font(.system(size: 16, weight: .medium))
-                                .multilineTextAlignment(.trailing) // 如果话语太长换行，也保持右对齐
-                                .frame(maxWidth: 300, alignment: .trailing) // 限制宽度，防止把左边的时钟挤扁了
-                        }
+                        Spacer()
                     }
                     .padding(.horizontal)
                     .padding(.top, 10)

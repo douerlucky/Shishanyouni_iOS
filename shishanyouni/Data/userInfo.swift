@@ -16,12 +16,6 @@ class userInfo: ObservableObject
     @Published var plainPassword: String = ""
     @Published var encryptedPasswordSchool: String = ""
     @Published var encryptedPasswordShishanyouni: String = ""
-    @Published var sessionDailyMessage: String = ""
-
-    @Published var showDailyMessage: Bool = true
-    {
-        didSet { UserDefaults.standard.set(showDailyMessage, forKey: "pref_showDailyMessage") }
-    }
 
     @Published var showClock: Bool = true
     {
@@ -46,13 +40,8 @@ class userInfo: ObservableObject
             setupPreviewData()
         } else {
             loadUserInfo()
-            refreshSessionMessage()
-            if UserDefaults.standard.object(forKey: "pref_showDailyMessage") != nil
-            {
-                showDailyMessage = UserDefaults.standard.bool(forKey: "pref_showDailyMessage")
-                showClock = UserDefaults.standard.bool(forKey: "pref_showClock")
-                showEnrollmentDays = UserDefaults.standard.bool(forKey: "pref_showEnrollmentDays")
-            }
+            showClock = UserDefaults.standard.bool(forKey: "pref_showClock")
+            showEnrollmentDays = UserDefaults.standard.bool(forKey: "pref_showEnrollmentDays")
         }
     }
     
@@ -64,15 +53,8 @@ class userInfo: ObservableObject
         // 预览中不需要真实的加密密码
         encryptedPasswordSchool = "preview_encrypted_school"
         encryptedPasswordShishanyouni = "preview_encrypted_shishanyouni"
-        sessionDailyMessage = "预览模式：今天也要加油哦！"
-        showDailyMessage = true
         showClock = true
         showEnrollmentDays = true
-    }
-
-    func refreshSessionMessage()
-    {
-        sessionDailyMessage = FunMessage.getDailyMessage(for: self)
     }
 
     var daysSinceEnrollment: Int?
