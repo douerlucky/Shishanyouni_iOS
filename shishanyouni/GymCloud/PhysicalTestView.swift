@@ -25,7 +25,7 @@ struct PhysicalTestView: View
     @State private var isLoading = false
 
     // 筛选状态 (参考 ExamView)
-    @State var selectedYear = "2025-2026"
+    @State var selectedYear = "2026-2027"
     @State var selectedTerm = "1"
     @State private var showPicker = false
 

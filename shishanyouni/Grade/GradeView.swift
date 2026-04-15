@@ -347,7 +347,7 @@ struct GradeInquiry: View
     @State private var alertTitle   = ""
 
     @State var selectedYear = "2025"
-    @State var selectedTerm = "1"
+    @State var selectedTerm = "2"
 
     /// 被排除（不计入统计）的课程 ID 集合
     @State private var excludedIDs: Set<String> = []

@@ -13,7 +13,7 @@ struct ExamView: View
     @State private var alertTitle = ""
 
     @State var selectedYear = "2025"
-    @State var selectedTerm = "3" // 默认选秋季
+    @State var selectedTerm = "12" 
 
     // 声明查询工具
     private let scheduleQuery = ScheduleQuery()
@@ -329,10 +329,10 @@ struct ExamBottomControlBar: View
     {
         switch term
         {
-        case "3": return "上"
-        case "12": return "下"
+        case "3": return "一"
+        case "12": return "二"
         default:
-            return "上"
+            return "一"
         }
     }
 
