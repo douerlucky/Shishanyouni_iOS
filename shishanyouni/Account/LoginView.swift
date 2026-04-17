@@ -10,6 +10,7 @@ import SwiftUI
 struct LoginView: View
 {
     @EnvironmentObject var userinfo: userInfo
+    @Environment(\.dismiss) private var dismiss
 
     @State private var username: String = ""
     @State private var password: String = ""
@@ -35,7 +36,7 @@ struct LoginView: View
                         .scaledToFit()
                         .frame(width: 128, height: 128)
                         .cornerRadius(32)
-                    Text("使用校园信息门户账号登录，即表示接受我们为你提供个性化校园服务。")
+                    Text("绑定校园信息门户账号，即表示接受我们为你提供个性化校园服务。")
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -134,24 +135,21 @@ struct LoginView: View
                                 case .success:
                                     await MainActor.run
                                     {
-                                        // 成功弹窗
-                                        self.alertTitle = "登录成功"
-                                        self.alertMessage = "可以正常使用啦"
-                                        self.showAlert = true
-                                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                        userinfo.username = username
+                                        userinfo.plainPassword = password
+                                        userinfo.performSchoolEncryption()
+                                        userinfo.performShishanyouniEncryption()
+
                                         if rememberPassword
                                         {
-                                            userinfo.username = username
-                                            userinfo.plainPassword = password
-                                            userinfo.performSchoolEncryption()
-                                            userinfo.performShishanyouniEncryption()
                                             userinfo.saveUserInfo()
                                         }
                                         else
                                         {
-                                            userinfo.clearUserInfo()
+                                            userinfo.clearSavedCredentials()
                                         }
-                                        
+                                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                        dismiss()
                                     }
                                     
                                     Task {
@@ -160,7 +158,7 @@ struct LoginView: View
                                     
 
                                 case let .failure(reason):
-                                    print("登录失败，原因是：\(reason)")
+                                    print("绑定失败，原因是：\(reason)")
                                     await MainActor.run
                                     {
                                         // 失败
@@ -181,7 +179,7 @@ struct LoginView: View
                 }
             label:
                 {
-                    Text("登录")
+                    Text("绑定")
                             .fontWeight(.bold)
                             .font(.system(size: 18))
                             .foregroundColor(.white)
@@ -208,13 +206,14 @@ struct LoginView: View
                         .font(.footnote)
                     }
                     .padding(.top, 8)
-                    .confirmationDialog("确定要清除保存的登录信息吗？", isPresented: $showLogoutConfirm, titleVisibility: .visible)
+                    .confirmationDialog("确定要清除保存的绑定信息吗？", isPresented: $showLogoutConfirm, titleVisibility: .visible)
                     {
                         Button("清除并退出", role: .destructive)
                         {
                             userinfo.clearUserInfo()
                             username = ""
                             password = ""
+                            dismiss()
                         }
                         Button("取消", role: .cancel) { }
                     }
@@ -231,7 +230,7 @@ struct LoginView: View
                         .scaleEffect(1.5)
                         .tint(.blue)
 
-                    Text("正在尝试登录")
+                    Text("正在尝试绑定信息门户账号")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -256,11 +255,6 @@ struct LoginView: View
         {
             Button("确定", role: .cancel)
             {
-                // 如果登录成功，可以在这里进行跳转
-                if alertTitle == "登录成功"
-                {
-                    // 执行登录成功后的操作
-                }
             }
         } message: {
             if !alertMessage.isEmpty

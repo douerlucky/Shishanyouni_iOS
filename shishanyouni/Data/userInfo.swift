@@ -143,6 +143,20 @@ class userInfo: ObservableObject
         print("已清除保存的学号和密码")
     }
 
+    // 仅清除持久化保存的数据，保留当前会话登录态
+    func clearSavedCredentials()
+    {
+        if !username.isEmpty
+        {
+            KeychainHelper.shared.delete(for: username)
+        }
+
+        UserDefaults.standard.removeObject(forKey: "saved_username")
+        UserDefaults.standard.removeObject(forKey: "saved_nickname")
+
+        print("已清除本地保存的账号信息，保留当前会话")
+    }
+
     // 加密方法
     func performSchoolEncryption()
     {

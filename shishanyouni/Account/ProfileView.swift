@@ -44,14 +44,12 @@ struct ProfileView: View
                             .foregroundColor(.secondary)
 
                         Text("公开信息与本地工具功能均可正常使用")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
-                            .multilineTextAlignment(.center)
 
-                        Text("登录后可使用成绩、考试、体测等个性化校园服务")
-                            .font(.system(size: 14))
+                        Text("绑定信息门户后可使用成绩、考试、体测等个性化校园服务")
+                            .font(.system(size: 12))
                             .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
                     }
                 }
                 else if !userinfo.nickname.isEmpty
@@ -92,13 +90,13 @@ struct ProfileView: View
                                 .font(.body)
                             if userinfo.username.isEmpty
                             {
-                                Text("当前为游客模式")
+                                Text("点击绑定信息门户账号")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
                             else
                             {
-                                Text("已启用个性化校园服务")
+                                Text("已绑定信息门户账号")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
