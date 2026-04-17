@@ -44,9 +44,9 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
 {
     // 南湖跑系统的地址
     private let casLoginURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https://tygl.hzau.edu.cn/"
-    private let scoreURL = "https://tygl.hzau.edu.cn/main.php?module=stu&title=stu_sun_score"
-    private let physicalURL = "https://tygl.hzau.edu.cn/main.php?module=stu&title=stu_ht_score"
-    private let rootURL = "https://tygl.hzau.edu.cn/"
+    private let scoreURL = "http://tygl.hzau.edu.cn/main.php?module=stu&title=stu_sun_score"
+    private let physicalURL = "http://tygl.hzau.edu.cn/main.php?module=stu&title=stu_ht_score"
+    private let rootURL = "http://tygl.hzau.edu.cn/"
 
     // 手动存储 cookies (用于登录过程中的状态追踪)
     private var cookieJar: [String: String] = [:]

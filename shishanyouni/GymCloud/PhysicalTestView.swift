@@ -36,7 +36,7 @@ struct PhysicalTestView: View
 
     private let gymQuery = GymCloudQuery()
 
-    let years = ["2026-2027","2025-2026", "2024-2025", "2023-2024", "2022-2023"]
+    let years = ["2026-2027", "2025-2026", "2024-2025", "2023-2024", "2022-2023"]
 
     var body: some View
     {
@@ -44,7 +44,6 @@ struct PhysicalTestView: View
         {
             ZStack(alignment: .bottom)
             {
-
                 Color(uiColor: .systemGroupedBackground)
                     .ignoresSafeArea()
 
@@ -56,32 +55,36 @@ struct PhysicalTestView: View
                         {
                             VStack(alignment: .leading, spacing: 25)
                             {
-                                NavigationLink(destination: PhysicalTestCalculatorView()) {
-                                    HStack(spacing: 16) {
+                                NavigationLink(destination: PhysicalTestCalculatorView())
+                                {
+                                    HStack(spacing: 16)
+                                    {
                                         // 左侧计算器图标（带背景圆环）
-                                        ZStack {
+                                        ZStack
+                                        {
                                             Circle()
                                                 .fill(Color.blue.opacity(0.1))
                                                 .frame(width: 48, height: 48)
-                                            
+
                                             Image(systemName: "plus.forwardslash.minus")
                                                 .font(.system(size: 20, weight: .bold))
                                                 .foregroundColor(.blue)
                                         }
-                                        
+
                                         // 中间文字说明
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        VStack(alignment: .leading, spacing: 4)
+                                        {
                                             Text("体测计算器")
                                                 .font(.system(size: 18, weight: .bold))
                                                 .foregroundColor(.primary)
-                                            
+
                                             Text("在体测结果出来之前，先自己预估一下吧！")
                                                 .font(.system(size: 12))
                                                 .foregroundColor(.secondary.opacity(0.8))
                                         }
-                                        
+
                                         Spacer()
-                                        
+
                                         // 右侧箭头
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14, weight: .semibold))
@@ -96,17 +99,15 @@ struct PhysicalTestView: View
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.top, 10) // 距离顶部的间距
-                                
+
                                 // 顶部总分大圆环
                                 HStack(spacing: 30)
                                 {
-                                    MainScoreRing(score: Double(score.totalScore) ?? 0,totalGrade: score.totalGrade)
+                                    MainScoreRing(score: Double(score.totalScore) ?? 0, totalGrade: score.totalGrade)
                                         .frame(width: 128, height: 128)
 
                                     VStack(alignment: .leading, spacing: 8)
                                     {
-                                        
-
                                         Text("测试年度: \(score.testYear)")
                                             .font(.system(size: 20, weight: .bold))
                                             .foregroundColor(.secondary)
@@ -115,7 +116,7 @@ struct PhysicalTestView: View
                                             .font(.system(size: 16))
                                             .foregroundColor(.secondary.opacity(0.8))
 
-                                        HStack()
+                                        HStack
                                         {
                                             Text(score.gradeLevel)
 
@@ -124,14 +125,32 @@ struct PhysicalTestView: View
                                     }
                                 }
                                 .padding(20)
-                                .frame(maxWidth:.infinity)
+                                .frame(maxWidth: .infinity)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(Color(uiColor: .secondarySystemGroupedBackground))
                                         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                                 )
                                 .padding(.horizontal, 16)
-                                
+
+                                VStack(spacing: 4)
+                                {
+                                    Text("本功能仅用于参考，不构成任何医疗或健康建议")
+                                        .font(.system(size: 14))
+                                    Text("数据来源：《国家学生体质健康标准（2014年修订）》")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary.opacity(0.8))
+                                    Link("查看官方标准说明", destination: URL(string: "http://www.moe.gov.cn/s78/A17/twys_left/moe_938/moe_792/s3273/201407/t20140708_171692.html")!)
+                                        .font(.system(size: 12))
+                                }
+                                .padding(10)
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                                )
+                                .padding(.horizontal, 16)
 
                                 // 单项数据网格两列布局
                                 VStack(alignment: .leading, spacing: 15)
@@ -143,7 +162,7 @@ struct PhysicalTestView: View
 
                                     let columns = [
                                         GridItem(.flexible(), spacing: 16),
-                                        GridItem(.flexible())
+                                        GridItem(.flexible()),
                                     ]
                                     LazyVGrid(columns: columns, spacing: 16)
                                     {
@@ -194,7 +213,6 @@ struct PhysicalTestView: View
                 Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("确定")))
             }
         }
-       
     }
 
     private var emptyStateView: some View
@@ -291,7 +309,7 @@ struct PhysicalTestView: View
                 {
                     self.isLoading = false
                     self.alertTitle = "查询失败"
-                    if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+                    if userinfo.username.isEmpty && userinfo.plainPassword.isEmpty
                     {
                         self.alertMessage = "好像忘记了登录，请先去登录吧！"
                     }

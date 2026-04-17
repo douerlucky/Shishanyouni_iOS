@@ -1186,6 +1186,7 @@ struct ClassPeriod: Identifiable
 {
     let id: Int
     let periodNumber: Int
+    let displayStartTime: String
     let startTime: String
     let endTime: String
 }
@@ -1196,18 +1197,18 @@ struct TimeScheduleView: View
     private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     let classPeriods: [ClassPeriod] = [
-        ClassPeriod(id: 1, periodNumber: 1, startTime: "7:40", endTime: "8:45"),
-        ClassPeriod(id: 2, periodNumber: 2, startTime: "8:45", endTime: "9:40"),
-        ClassPeriod(id: 3, periodNumber: 3, startTime: "9:40", endTime: "10:45"),
-        ClassPeriod(id: 4, periodNumber: 4, startTime: "10:45", endTime: "11:40"),
-        ClassPeriod(id: 5, periodNumber: 5, startTime: "14:10", endTime: "15:15"),
-        ClassPeriod(id: 6, periodNumber: 6, startTime: "15:15", endTime: "16:10"),
-        ClassPeriod(id: 7, periodNumber: 7, startTime: "16:10", endTime: "17:15"),
-        ClassPeriod(id: 8, periodNumber: 8, startTime: "17:15", endTime: "18:10"),
-        ClassPeriod(id: 9, periodNumber: 9, startTime: "18:10", endTime: "19:45"),
-        ClassPeriod(id: 10, periodNumber: 10, startTime: "19:45", endTime: "20:35"),
-        ClassPeriod(id: 11, periodNumber: 11, startTime: "20:35", endTime: "21:25"),
-        ClassPeriod(id: 12, periodNumber: 12, startTime: "21:25", endTime: "22:15"),
+        ClassPeriod(id: 1, periodNumber: 1, displayStartTime: "7:30", startTime: "8:00", endTime: "8:45"),
+        ClassPeriod(id: 2, periodNumber: 2, displayStartTime: "8:45", startTime: "9:00", endTime: "9:40"),
+        ClassPeriod(id: 3, periodNumber: 3, displayStartTime: "9:40", startTime: "10:00", endTime: "10:45"),
+        ClassPeriod(id: 4, periodNumber: 4, displayStartTime: "10:45", startTime: "10:55", endTime: "11:40"),
+        ClassPeriod(id: 5, periodNumber: 5, displayStartTime: "14:00", startTime: "14:30", endTime: "15:15"),
+        ClassPeriod(id: 6, periodNumber: 6, displayStartTime: "15:15", startTime: "15:15", endTime: "16:10"),
+        ClassPeriod(id: 7, periodNumber: 7, displayStartTime: "16:10", startTime: "16:30", endTime: "17:15"),
+        ClassPeriod(id: 8, periodNumber: 8, displayStartTime: "17:15", startTime: "17:25", endTime: "18:10"),
+        ClassPeriod(id: 9, periodNumber: 9, displayStartTime: "18:30", startTime: "19:00", endTime: "19:45"),
+        ClassPeriod(id: 10, periodNumber: 10, displayStartTime: "19:45", startTime: "19:50", endTime: "20:35"),
+        ClassPeriod(id: 11, periodNumber: 11, displayStartTime: "20:35", startTime: "20:40", endTime: "21:25"),
+        ClassPeriod(id: 12, periodNumber: 12, displayStartTime: "21:25", startTime: "21:30", endTime: "22:15"),
     ]
 
     private var currentPeriodNumber: Int?
@@ -1222,27 +1223,35 @@ struct TimeScheduleView: View
         let minute = c.component(.minute, from: date)
         let current = hour * 60 + minute
 
-        // 前闭后开区间: [start, end)
-        let ranges: [(Int, Int, Int)] = [
-            (1, 7 * 60 + 40, 8 * 60 + 45),
-            (2, 8 * 60 + 45, 9 * 60 + 40),
-            (3, 9 * 60 + 40, 10 * 60 + 45),
-            (4, 10 * 60 + 45, 11 * 60 + 40),
-            (5, 14 * 60 + 10, 15 * 60 + 15),
-            (6, 15 * 60 + 15, 16 * 60 + 10),
-            (7, 16 * 60 + 10, 17 * 60 + 15),
-            (8, 17 * 60 + 15, 18 * 60 + 10),
-            (9, 18 * 60 + 10, 19 * 60 + 45),
-            (10, 19 * 60 + 45, 20 * 60 + 35),
-            (11, 20 * 60 + 35, 21 * 60 + 25),
-            (12, 21 * 60 + 25, 22 * 60 + 15),
-        ]
-
-        for (period, start, end) in ranges where current >= start && current < end
+        for period in classPeriods
         {
-            return period
+            guard let displayStart = minutes(from: period.displayStartTime),
+                  let start = minutes(from: period.startTime),
+                  let end = minutes(from: period.endTime)
+            else
+            {
+                continue
+            }
+
+            if current >= displayStart && current < end
+            {
+                return period.periodNumber
+            }
         }
         return nil
+    }
+
+    private func minutes(from time: String) -> Int?
+    {
+        let parts = time.split(separator: ":")
+        guard parts.count == 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1])
+        else
+        {
+            return nil
+        }
+        return hour * 60 + minute
     }
 
     var body: some View

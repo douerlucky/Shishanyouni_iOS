@@ -34,6 +34,8 @@
 		FE0EE3692F6EEA40009A37DD /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE0FAC442F616B3600F918D5 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE111F0A2F91FA700097674B /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE1C95B22F91220400A81B3C /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -183,6 +185,20 @@
 			sourceTree = "<group>";
 		};
 		FE106FBB2F4328BF001EB50D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE111F0B2F91FA700097674B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE1C95B32F91220400A81B3C /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -470,6 +486,10 @@
 					ProjectRef = FEC4024F2F85384E00F916F1 /* SwiftyRSA.xcodeproj */;
 				},
 				{
+					ProductGroup = FE1C95B32F91220400A81B3C /* Products */;
+					ProjectRef = FE1C95B22F91220400A81B3C /* SwiftyRSA.xcodeproj */;
+				},
+				{
 					ProductGroup = FE77A01E2F37BC800045B79D /* Products */;
 					ProjectRef = FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */;
 				},
@@ -528,6 +548,10 @@
 				{
 					ProductGroup = FE7FDF722F7AD1A900BFE579 /* Products */;
 					ProjectRef = FE7FDF712F7AD1A900BFE579 /* SwiftyRSA.xcodeproj */;
+				},
+				{
+					ProductGroup = FE111F0B2F91FA700097674B /* Products */;
+					ProjectRef = FE111F0A2F91FA700097674B /* SwiftyRSA.xcodeproj */;
 				},
 				{
 					ProductGroup = FE6D54EC2F64252E0063F464 /* Products */;
@@ -771,13 +795,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "狮山有你";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "需要访问相册以保存课表图片";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -805,13 +830,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = shishanyouni/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "狮山有你";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "需要访问相册以保存课表图片";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

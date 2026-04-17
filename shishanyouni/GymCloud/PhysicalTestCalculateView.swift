@@ -105,6 +105,25 @@ struct PhysicalTestCalculatorView: View
                             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     )
                     .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 4)
+                    {
+                        Text("本功能仅用于参考，不构成任何医疗或健康建议")
+                            .font(.system(size: 14))
+                        Text("数据来源：《国家学生体质健康标准（2014年修订）》")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary.opacity(0.8))
+                        Link("查看官方标准说明", destination: URL(string: "http://www.moe.gov.cn/s78/A17/twys_left/moe_938/moe_792/s3273/201407/t20140708_171692.html")!)
+                            .font(.system(size: 12))
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                    )
+                    .padding(.horizontal, 16)
 
                     // MARK: 2. 基础信息区 (身高体重放一排)
 

@@ -7,32 +7,43 @@
 
 import SwiftUI
 
-struct AboutUs: View {
-    var body: some View {
+struct AboutUs: View
+{
+    var body: some View
+    {
         // 使用ScrollView适配内容过长的情况
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 16) {
+        ScrollView(.vertical, showsIndicators: false)
+        {
+            VStack(spacing: 16)
+            {
                 // 顶部Logo和标题
                 Image("login")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 128, height: 128)
                     .cornerRadius(32)
-                
+
                 Text("关于狮山有你iOS版")
                     .font(.title)
                     .fontWeight(.bold)
-                
 
                 // 开发/设计信息区
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8)
+                {
                     Text("开发团队")
                         .font(.headline)
-                    
+
                     Text("沸点工作室 移动App开发组")
                     Text("iOS版UI设计：douer_lucky")
                     Text("iOS版开发：douer_lucky、澜沧")
 
+                    Text("版本 1.0 fix 5")
+                    Text("反馈QQ群聊（长按复制）：1090311516")
+                        .textSelection(.enabled)
+                        .onTapGesture
+                        {
+                            UIPasteboard.general.string = "1090311516"
+                        }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
@@ -40,19 +51,19 @@ struct AboutUs: View {
                 .cornerRadius(12)
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                 .padding(.horizontal, 16)
-                
+
                 Text("部分后端数据由狮山有你工作室提供")
                     .foregroundColor(.gray)
-                
+
                 // 简介和工作室说明
-                VStack(alignment: .leading, spacing: 16) {
-                    
-                    Text("狮山有你iOS旨在为使用Apple设备的华中农业大学师生打造的校园工具App。狮山有你提供了课表、考试安排、成绩和空教室等多种查询功能。通过狮山有你，你可以更好地管理学业和校园生活，提高学习效率，让校园生活更加便捷和有序。无论是学生还是教师，狮山有你都将成为你不可或缺的校园伙伴。")
+                VStack(alignment: .leading, spacing: 16)
+                {
+                    Text("狮山有你 iOS 是一款校园信息与学习生活工具应用，提供课表管理、课程查询、考试信息、空教室、校历、校车、校园攻略与社团信息等功能。部分个性化服务可在用户自愿登录其校园账号后使用，其余公开内容与本地工具功能无需登录也可体验。")
                         .lineSpacing(4)
-                    
-                    Text("沸点工作室移动App开发组 & Swift Coding Club HZAU，是一个专注于移动应用创意设计与开发的团队/社团，研究移动应用UI交互设计、iOS开发、Harmony OS开发")
-                    
-                    Text("狮山有你工作室是由一群具有奉献精神的学生建立的学生工作室，负责狮山有你的开发和维护，工作室秉承“学以致用，服务同学”的理念，致力于为华农学子提供安全可靠、简单好用、界面美观的移动端一站式信息获取平台。")
+
+                    Text("沸点工作室移动 App 开发组 & Swift Coding Club HZAU 是一个专注于移动应用设计与开发的团队，持续进行 UI 交互设计、iOS 开发与相关技术实践。")
+
+                    Text("狮山有你 iOS 由独立开发者与学生团队持续维护。我们希望通过清晰、可靠、易用的产品设计，整理校园公开信息，并为有需要的用户提供便捷的移动端信息查询与学习生活辅助体验。")
                         .lineSpacing(4)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -61,7 +72,7 @@ struct AboutUs: View {
                 .cornerRadius(12)
                 .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                 .padding(.horizontal, 16)
-                
+
                 // 底部留白
                 Spacer(minLength: 32)
             }
@@ -70,10 +81,11 @@ struct AboutUs: View {
         .background(Color(.systemGray6))
         .toolbar(.hidden, for: .tabBar)
     }
-    
-    
-    private func infoRow(title: String, content: String) -> some View {
-        HStack {
+
+    private func infoRow(title: String, content: String) -> some View
+    {
+        HStack
+        {
             Text(title)
                 .font(.subheadline)
                 .foregroundColor(.secondary) // 标题灰色，次要信息
@@ -88,6 +100,7 @@ struct AboutUs: View {
 }
 
 // 预览
-#Preview {
+#Preview
+{
     AboutUs()
 }

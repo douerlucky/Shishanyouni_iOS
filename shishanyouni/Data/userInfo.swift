@@ -35,26 +35,11 @@ class userInfo: ObservableObject
     // 初始化时自动加载保存的数据
     init()
     {
-        if isRunningInPreview {
-            // 在预览环境中提供模拟数据
-            setupPreviewData()
-        } else {
+
             loadUserInfo()
             showClock = UserDefaults.standard.bool(forKey: "pref_showClock")
             showEnrollmentDays = UserDefaults.standard.bool(forKey: "pref_showEnrollmentDays")
-        }
-    }
-    
-    private func setupPreviewData() {
-        // 为预览设置模拟数据
-        username = "2023123456"
-        nickname = "预览用户"
-        plainPassword = "preview_password"
-        // 预览中不需要真实的加密密码
-        encryptedPasswordSchool = "preview_encrypted_school"
-        encryptedPasswordShishanyouni = "preview_encrypted_shishanyouni"
-        showClock = true
-        showEnrollmentDays = true
+        
     }
 
     var daysSinceEnrollment: Int?

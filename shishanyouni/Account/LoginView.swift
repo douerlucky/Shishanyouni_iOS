@@ -35,8 +35,10 @@ struct LoginView: View
                         .scaledToFit()
                         .frame(width: 128, height: 128)
                         .cornerRadius(32)
-                    Text("使用信息门户的学号和密码来进行登录")
+                    Text("使用校园信息门户账号登录，即表示接受我们为你提供个性化校园服务。")
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
 
 

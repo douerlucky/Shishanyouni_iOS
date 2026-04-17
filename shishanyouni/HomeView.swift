@@ -1,5 +1,23 @@
 import SwiftUI
 
+private enum HomeMenuColor
+{
+    static let red1 = Color(red: 0.89, green: 0.24, blue: 0.22)
+    static let red2 = Color(red: 0.80, green: 0.18, blue: 0.30)
+    static let orange1 = Color(red: 0.95, green: 0.47, blue: 0.18)
+    static let orange2 = Color(red: 0.90, green: 0.58, blue: 0.16)
+    static let yellow1 = Color(red: 0.86, green: 0.73, blue: 0.16)
+    static let yellow2 = Color(red: 0.72, green: 0.76, blue: 0.18)
+    static let green1 = Color(red: 0.26, green: 0.69, blue: 0.31)
+    static let green2 = Color(red: 0.15, green: 0.71, blue: 0.47)
+    static let cyan1 = Color(red: 0.12, green: 0.70, blue: 0.74)
+    static let cyan2 = Color(red: 0.13, green: 0.63, blue: 0.86)
+    static let blue1 = Color(red: 0.20, green: 0.49, blue: 0.92)
+    static let blue2 = Color(red: 0.30, green: 0.40, blue: 0.88)
+    static let purple1 = Color(red: 0.50, green: 0.34, blue: 0.86)
+    static let purple2 = Color(red: 0.69, green: 0.34, blue: 0.78)
+}
+
 struct HomeView: View
 {
     @State private var cookieInput = "No cookies yet."
@@ -10,6 +28,7 @@ struct HomeView: View
     @State private var navigateToExams = false
     @State private var navigateToNanhuRun = false
     @State private var navigateToPhysicalTest = false
+    @State private var navigateToPhysicalTestCalculator = false
     @State private var navigateToAllCoueseSearch = false
     @State private var navigateToSchoolCalender = false
     @State private var navigateToBus = false
@@ -18,6 +37,7 @@ struct HomeView: View
     @State private var navigateToEvents = false
     @State private var navigateToStrategy = false
     @State private var navigateToClub = false
+    @State private var navigateToGIS = false
 
     @State private var currentTime = Date() // 储存当前时间
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect() // 创建一个定时器
@@ -44,6 +64,11 @@ struct HomeView: View
     }()
 
     @EnvironmentObject var userinfo: userInfo
+
+    private var isGuestMode: Bool
+    {
+        userinfo.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     let columns = [
         GridItem(.flexible()),
@@ -100,11 +125,22 @@ struct HomeView: View
                     }
                     else
                     {
-                        // 未登录或学号不符时的占位
-                        Text("欢迎使用狮山有你，快去登录吧")
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal)
+                        VStack(alignment: .leading, spacing: 8)
+                        {
+                            Text("当前为游客模式")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.secondary)
+
+                            Text("欢迎使用狮山有你！\n来一起探索华中农业大学吧！")
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+
+                            Text("游客模式下可使用公开信息与本地工具功能，登录后可解锁个性化校园服务。")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
                     }
                 }
                 LazyVGrid(columns: columns, spacing: 20)
@@ -114,64 +150,89 @@ struct HomeView: View
 //                        navigateDebugRoom = true
 //                    }
 
-                    MenuGridItem(title: "成绩查询", icon: "graduationcap.fill", color: .blue)
+                    if !isGuestMode
                     {
-                        navigateToGrades = true
+                        MenuGridItem(title: "成绩查询", icon: "graduationcap.fill", color: HomeMenuColor.red1)
+                        {
+                            navigateToGrades = true
+                        }
+
+                        MenuGridItem(title: "考试查询", icon: "pencil.line", color: HomeMenuColor.orange1)
+                        {
+                            navigateToExams = true
+                        }
+                        MenuGridItem(title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: HomeMenuColor.yellow1)
+                        {
+                            navigateToAllCoueseSearch = true
+                        }
+
                     }
 
-                    MenuGridItem(title: "考试查询", icon: "pencil.line", color: .green)
-                    {
-                        navigateToExams = true
-                    }
 
-                    MenuGridItem(title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: .yellow)
-                    {
-                        navigateToAllCoueseSearch = true
-                    }
-                    MenuGridItem(title: "空教室查询", icon: "door.left.hand.open", color: .purple)
+                    MenuGridItem(title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1)
                     {
                         navigateToClassroom = true
                     }
+                    
 
-                    MenuGridItem(title: "环湖跑查询", icon: "figure.run", color: .brown)
+                    if !isGuestMode
                     {
-                        navigateToNanhuRun = true
-                    }
+                        MenuGridItem(title: "环湖跑查询", icon: "figure.run", color: HomeMenuColor.cyan1)
+                        {
+                            navigateToNanhuRun = true
+                        }
 
-                    MenuGridItem(title: "体测查询", icon: "figure.run.square.stack.fill", color: .red)
-                    {
-                        navigateToPhysicalTest = true
+                        MenuGridItem(title: "体测查询", icon: "figure.run.square.stack.fill", color: HomeMenuColor.blue1)
+                        {
+                            navigateToPhysicalTest = true
+                        }
                     }
-                    MenuGridItem(title: "宿舍电费", icon: "gauge.with.needle.fill", color: .indigo)
+                    MenuGridItem(title: "体测计算器", icon: "plus.forwardslash.minus", color: HomeMenuColor.blue2)
                     {
-                        navigateElectricity = true
+                        navigateToPhysicalTestCalculator = true
                     }
+                    
+                    
+                    if !isGuestMode
+                    {
+                        MenuGridItem(title: "宿舍电费", icon: "gauge.with.needle.fill", color: HomeMenuColor.purple1)
+                        {
+                            navigateElectricity = true
+                        }
+                    }
+                    
+                    MenuGridItem(title: "校园地图", icon: "map.fill", color: HomeMenuColor.green2)
+                    {
+                        navigateToGIS = true
+                    }
+                    
                     if #available(iOS 26.0, *)
                     {
-                        MenuGridItem(title: "校历查询", icon: date + ".calendar", color: .cyan)
+                        MenuGridItem(title: "校历查询", icon: date + ".calendar", color: HomeMenuColor.purple2)
                         {
                             navigateToSchoolCalender = true
                         }
                     }
                     else
                     {
-                        MenuGridItem(title: "校历查询", icon: "calendar", color: .cyan)
+                        MenuGridItem(title: "校历查询", icon: "calendar", color: HomeMenuColor.purple2)
                         {
                             navigateToSchoolCalender = true
                         }
                     }
-                    MenuGridItem(title: "校车查询", icon: "bus", color: .pink)
+                    MenuGridItem(title: "校车查询", icon: "bus", color: HomeMenuColor.red2)
                     {
                         navigateToBus = true
                     }
-                    MenuGridItem(title: "攻略", icon: "info.bubble", color: .teal)
+                    MenuGridItem(title: "攻略", icon: "info.bubble", color: HomeMenuColor.orange2)
                     {
                         navigateToStrategy = true
                     }
-                    MenuGridItem(title: "社团", icon: "person.2.fill", color: .gray)
+                    MenuGridItem(title: "社团", icon: "person.2.fill", color: HomeMenuColor.yellow2)
                     {
                         navigateToClub = true
                     }
+
 
 //                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
 //                    {
@@ -186,6 +247,7 @@ struct HomeView: View
             .navigationDestination(isPresented: $navigateToExams) { ExamView() }
             .navigationDestination(isPresented: $navigateToNanhuRun) { NanhuRunView() }
             .navigationDestination(isPresented: $navigateToPhysicalTest) { PhysicalTestView() }
+            .navigationDestination(isPresented: $navigateToPhysicalTestCalculator) { PhysicalTestCalculatorView() }
             .navigationDestination(isPresented: $navigateToAllCoueseSearch) { AllCourseView() }
             .navigationDestination(isPresented: $navigateToSchoolCalender) { SchoolCalendarView() }
             .navigationDestination(isPresented: $navigateToBus)
@@ -200,6 +262,8 @@ struct HomeView: View
             { AllStrategy() }
             .navigationDestination(isPresented: $navigateToClub)
             { AllClub() }
+            .navigationDestination(isPresented: $navigateToGIS)
+            { SchoolGISView() }
         }
     }
 }

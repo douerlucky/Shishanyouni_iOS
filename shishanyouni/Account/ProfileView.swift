@@ -37,9 +37,22 @@ struct ProfileView: View
             {
                 if userinfo.username.isEmpty
                 {
-                    Text("点击下方账号设置进行登录")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
+                    VStack(spacing: 8)
+                    {
+                        Text("当前为游客模式")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
+
+                        Text("公开信息与本地工具功能均可正常使用")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.center)
+
+                        Text("登录后可使用成绩、考试、体测等个性化校园服务")
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 else if !userinfo.nickname.isEmpty
                 {
@@ -75,17 +88,17 @@ struct ProfileView: View
                     {
                         VStack(alignment: .leading)
                         {
-                            Text("学号")
+                            Text("账号设置")
                                 .font(.body)
                             if userinfo.username.isEmpty
                             {
-                                Text("未登录")
+                                Text("当前为游客模式")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
                             else
                             {
-                                Text(userinfo.username)
+                                Text("已启用个性化校园服务")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
