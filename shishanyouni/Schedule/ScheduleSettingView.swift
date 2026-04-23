@@ -422,13 +422,8 @@ struct ScheduleSettingView: View {
     // MARK: - 持久化
 
     private func persistCourses(_ courses: [Course]) {
-        do {
-            let data = try JSONEncoder().encode(courses)
-            UserDefaults.standard.set(data, forKey: "saved_courses")
-            print("✅ 课表已保存到本地，共 \(courses.count) 条")
-        } catch {
-            print("❌ 课表本地保存失败: \(error)")
-        }
+        ScheduleSharedStore.saveCourses(courses)
+        print("✅ 课表已保存到共享存储，共 \(courses.count) 条")
     }
 
     /// 将拉取结果写入 courses，keepManual 决定是否保留手动课程
@@ -464,7 +459,7 @@ struct ScheduleSettingView: View {
 
     private func clearAllCourses() {
         courses = []
-        UserDefaults.standard.removeObject(forKey: "saved_courses")
+        ScheduleSharedStore.clearCourses()
         print("✅ 所有课程已清空")
     }
 
@@ -484,6 +479,8 @@ struct ScheduleSettingView: View {
     private func saveSettings() {
         semesterStartDate   = tempStartDate
         savedTimestamp      = tempStartDate.timeIntervalSince1970
+        ScheduleSharedStore.saveSemesterStartTimestamp(savedTimestamp)
+        ScheduleSharedStore.saveBackgroundMeta(filename: backgroundImageFilename, opacity: backgroundOpacity)
         showSaveConfirmation = true
     }
 
@@ -508,6 +505,13 @@ struct ScheduleSettingView: View {
                 try? FileManager.default.removeItem(at: oldURL)
             }
             backgroundImageFilename = filename
+
+            // 同步保存到 App Group 容器，供 Widget 读取
+            if let sharedDir = ScheduleSharedStore.sharedContainerURL() {
+                let sharedURL = sharedDir.appendingPathComponent(filename)
+                try? data.write(to: sharedURL)
+            }
+            ScheduleSharedStore.saveBackgroundMeta(filename: filename, opacity: backgroundOpacity)
         } catch {
             print("Failed to save background image: \(error)")
         }
@@ -518,7 +522,13 @@ struct ScheduleSettingView: View {
             let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(backgroundImageFilename)
             try? FileManager.default.removeItem(at: fileURL)
+
+            if let sharedDir = ScheduleSharedStore.sharedContainerURL() {
+                let sharedURL = sharedDir.appendingPathComponent(backgroundImageFilename)
+                try? FileManager.default.removeItem(at: sharedURL)
+            }
             backgroundImageFilename = ""
+            ScheduleSharedStore.clearBackgroundMeta()
         }
     }
 }

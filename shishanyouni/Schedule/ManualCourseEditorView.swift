@@ -432,16 +432,8 @@ struct ManualCourseEditorView: View
 
     private func persistCourses()
     {
-        do
-        {
-            let data = try JSONEncoder().encode(courses)
-            UserDefaults.standard.set(data, forKey: "saved_courses")
-            print("✅ 课程保存成功，共 \(courses.count) 门")
-        }
-        catch
-        {
-            print("❌ 保存失败: \(error)")
-        }
+        ScheduleSharedStore.saveCourses(courses)
+        print("✅ 课程保存成功，共 \(courses.count) 门")
     }
 }
 

@@ -77,16 +77,8 @@ struct ScheduleView: View
 
     private func saveCourses()
     {
-        do
-        {
-            let data = try JSONEncoder().encode(courses)
-            UserDefaults.standard.set(data, forKey: "saved_courses")
-            print("✅ 课程保存成功，共 \(courses.count) 门")
-        }
-        catch
-        {
-            print("❌ 课程保存失败: \(error)")
-        }
+        ScheduleSharedStore.saveCourses(courses)
+        print("✅ 课程保存成功，共 \(courses.count) 门")
     }
 
     var body: some View
@@ -477,21 +469,18 @@ struct ScheduleView: View
 
     func loadSavedData()
     {
-        if savedTimestamp > 0 { semesterStartDate = Date(timeIntervalSince1970: savedTimestamp) }
-        if let data = UserDefaults.standard.data(forKey: "saved_courses")
+        if savedTimestamp > 0
         {
-            do
-            {
-                courses = try JSONDecoder().decode([Course].self, from: data)
-                print("✅ 已加载 \(courses.count) 门课程")
-            }
-            catch
-            {
-                print("❌ 课表加载失败: \(error)")
-                courses = []
-            }
+            semesterStartDate = Date(timeIntervalSince1970: savedTimestamp)
         }
-        else { courses = [] }
+        else if let sharedTs = ScheduleSharedStore.loadSemesterStartTimestamp(), sharedTs > 0
+        {
+            savedTimestamp = sharedTs
+            semesterStartDate = Date(timeIntervalSince1970: sharedTs)
+        }
+
+        courses = ScheduleSharedStore.loadCourses()
+        print("✅ 已加载 \(courses.count) 门课程")
         loadBackgroundImage()
     }
 
@@ -516,6 +505,7 @@ struct ScheduleView: View
         }
         datesCurWeek = newDates
         weekDatesCurWeek = newWeekDates
+        ScheduleSharedStore.saveCurrentWeek(nowDisplayWeek)
     }
 
     func calculateCurrentWeek() -> Int

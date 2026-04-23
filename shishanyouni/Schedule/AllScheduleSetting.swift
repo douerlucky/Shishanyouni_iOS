@@ -242,24 +242,8 @@ struct AllScheduleSetting: View
 
     private func loadSavedCourses()
     {
-        guard let data = UserDefaults.standard.data(forKey: "saved_courses")
-        else
-        {
-            courses = []
-            return
-        }
-
-        do
-        {
-            let decoded = try JSONDecoder().decode([Course].self, from: data)
-            courses = decoded
-            sortCoursesByNameAndTime()
-        }
-        catch
-        {
-            print("load saved_courses failed: \(error)")
-            courses = []
-        }
+        courses = ScheduleSharedStore.loadCourses()
+        sortCoursesByNameAndTime()
     }
 
     private func confirmDeleteCourse()
@@ -272,15 +256,7 @@ struct AllScheduleSetting: View
 
     private func saveCourses()
     {
-        do
-        {
-            let data = try JSONEncoder().encode(courses)
-            UserDefaults.standard.set(data, forKey: "saved_courses")
-        }
-        catch
-        {
-            print("save saved_courses failed: \(error)")
-        }
+        ScheduleSharedStore.saveCourses(courses)
     }
 
     private func sortCoursesByNameAndTime()

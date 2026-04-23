@@ -6,7 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FE406C212F9A4C4F007039C2 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE406C202F9A4C4F007039C2 /* WidgetKit.framework */; };
+		FE406C232F9A4C4F007039C2 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE406C222F9A4C4F007039C2 /* SwiftUI.framework */; };
+		FE406C2E2F9A4C52007039C2 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = FE406C1E2F9A4C4E007039C2 /* ScheduleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		FE406C2C2F9A4C52007039C2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FE4D980E2F330FB40087BCAE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE406C1D2F9A4C4E007039C2;
+			remoteInfo = ScheduleWidgetExtension;
+		};
 		FE4D98242F330FB60087BCAE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FE4D980E2F330FB40087BCAE /* Project object */;
@@ -22,6 +35,20 @@
 			remoteInfo = shishanyouni;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FE406C332F9A4C53007039C2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FE406C2E2F9A4C52007039C2 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A503295E2F66810900917FD3 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -42,6 +69,11 @@
 		FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE3B40EF2F417D0C00C34896 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE406A952F99F2F7007039C2 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
+		FE406C1E2F9A4C4E007039C2 /* ScheduleWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE406C202F9A4C4F007039C2 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		FE406C222F9A4C4F007039C2 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		FE406C342F9A4EFE007039C2 /* ScheduleWidgetExtensionRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScheduleWidgetExtensionRelease.entitlements; sourceTree = "<group>"; };
+		FE406C362F9A4FA6007039C2 /* ScheduleWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScheduleWidgetExtension.entitlements; sourceTree = "<group>"; };
 		FE45A9AD2F7A1DFB0082B7E4 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE45AA872F7A67F30082B7E4 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
 		FE4D98162F330FB40087BCAE /* shishanyouni.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shishanyouni.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,6 +96,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FE406C322F9A4C53007039C2 /* Exceptions for "ScheduleWidget" folder in "ScheduleWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = FE406C1D2F9A4C4E007039C2 /* ScheduleWidgetExtension */;
+		};
 		FE4D98432F3311EA0087BCAE /* Exceptions for "shishanyouni" folder in "shishanyouni" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -74,6 +113,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		FE406C242F9A4C4F007039C2 /* ScheduleWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				FE406C322F9A4C53007039C2 /* Exceptions for "ScheduleWidget" folder in "ScheduleWidgetExtension" target */,
+			);
+			path = ScheduleWidget;
+			sourceTree = "<group>";
+		};
 		FE4D98182F330FB40087BCAE /* shishanyouni */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -100,6 +147,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		FE406C1B2F9A4C4E007039C2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FE406C232F9A4C4F007039C2 /* SwiftUI.framework in Frameworks */,
+				FE406C212F9A4C4F007039C2 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FE4D98132F330FB40087BCAE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -250,6 +306,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE406C1F2F9A4C4F007039C2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FE406C202F9A4C4F007039C2 /* WidgetKit.framework */,
+				FE406C222F9A4C4F007039C2 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		FE45A9AE2F7A1DFB0082B7E4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -267,10 +332,14 @@
 		FE4D980D2F330FB40087BCAE = {
 			isa = PBXGroup;
 			children = (
+				FE406C362F9A4FA6007039C2 /* ScheduleWidgetExtension.entitlements */,
+				FE406C342F9A4EFE007039C2 /* ScheduleWidgetExtensionRelease.entitlements */,
 				FE779FE22F37BC580045B79D /* SwiftyRSA_Src */,
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
 				FE4D98262F330FB60087BCAE /* shishanyouniTests */,
 				FE4D98302F330FB60087BCAE /* shishanyouniUITests */,
+				FE406C242F9A4C4F007039C2 /* ScheduleWidget */,
+				FE406C1F2F9A4C4F007039C2 /* Frameworks */,
 				FE4D98172F330FB40087BCAE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -281,6 +350,7 @@
 				FE4D98162F330FB40087BCAE /* shishanyouni.app */,
 				FE4D98232F330FB60087BCAE /* shishanyouniTests.xctest */,
 				FE4D982D2F330FB60087BCAE /* shishanyouniUITests.xctest */,
+				FE406C1E2F9A4C4E007039C2 /* ScheduleWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -386,6 +456,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		FE406C1D2F9A4C4E007039C2 /* ScheduleWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE406C2F2F9A4C53007039C2 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */;
+			buildPhases = (
+				FE406C1A2F9A4C4E007039C2 /* Sources */,
+				FE406C1B2F9A4C4E007039C2 /* Frameworks */,
+				FE406C1C2F9A4C4E007039C2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				FE406C242F9A4C4F007039C2 /* ScheduleWidget */,
+			);
+			name = ScheduleWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = ScheduleWidgetExtension;
+			productReference = FE406C1E2F9A4C4E007039C2 /* ScheduleWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		FE4D98152F330FB40087BCAE /* shishanyouni */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = FE4D98372F330FB60087BCAE /* Build configuration list for PBXNativeTarget "shishanyouni" */;
@@ -393,10 +485,12 @@
 				FE4D98122F330FB40087BCAE /* Sources */,
 				FE4D98132F330FB40087BCAE /* Frameworks */,
 				FE4D98142F330FB40087BCAE /* Resources */,
+				FE406C332F9A4C53007039C2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FE406C2D2F9A4C52007039C2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
@@ -461,9 +555,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					FE406C1D2F9A4C4E007039C2 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					FE4D98152F330FB40087BCAE = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -634,11 +731,19 @@
 				FE4D98152F330FB40087BCAE /* shishanyouni */,
 				FE4D98222F330FB60087BCAE /* shishanyouniTests */,
 				FE4D982C2F330FB60087BCAE /* shishanyouniUITests */,
+				FE406C1D2F9A4C4E007039C2 /* ScheduleWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		FE406C1C2F9A4C4E007039C2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FE4D98142F330FB40087BCAE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -663,6 +768,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		FE406C1A2F9A4C4E007039C2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FE4D98122F330FB40087BCAE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -687,6 +799,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		FE406C2D2F9A4C52007039C2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE406C1D2F9A4C4E007039C2 /* ScheduleWidgetExtension */;
+			targetProxy = FE406C2C2F9A4C52007039C2 /* PBXContainerItemProxy */;
+		};
 		FE4D98252F330FB60087BCAE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = FE4D98152F330FB40087BCAE /* shishanyouni */;
@@ -700,6 +817,72 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		FE406C302F9A4C53007039C2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidgetExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z76985BH76;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni.ScheduleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FE406C312F9A4C53007039C2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidgetExtensionRelease.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z76985BH76;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni.ScheduleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		FE4D98352F330FB60087BCAE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -828,6 +1011,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = shishanyouni/shishanyouni.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -863,6 +1047,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = shishanyouni/shishanyouniRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -968,6 +1153,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		FE406C2F2F9A4C53007039C2 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE406C302F9A4C53007039C2 /* Debug */,
+				FE406C312F9A4C53007039C2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		FE4D98112F330FB40087BCAE /* Build configuration list for PBXProject "shishanyouni" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
