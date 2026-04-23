@@ -20,6 +20,10 @@ struct LoginView: View
     @State private var alertTitle = ""
     @State private var alertMessage: String = ""
     @State private var showLogoutConfirm: Bool = false
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
 
     var loginChecker: LoginChecker = LoginChecker()
 
@@ -128,7 +132,13 @@ struct LoginView: View
                             let cryptPassword = encryptSchoolPassword(password: password)
                             do
                             {
-                                let result_status = try await loginChecker.checkLogin(username: username, password: cryptPassword!)
+                                let result_status = try await loginChecker.checkLogin(
+                                    username: username,
+                                    password: cryptPassword!,
+                                    mfaCodeProvider: { phone in
+                                        await requestMFACode(maskedPhone: phone)
+                                    }
+                                )
                                 print(result_status)
                                 switch result_status
                                 {
@@ -171,8 +181,12 @@ struct LoginView: View
                             }
                             catch
                             {
-                                print("查询失败")
-                                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                await MainActor.run {
+                                    self.alertTitle = "出现错误"
+                                    self.alertMessage = error.localizedDescription
+                                    self.showAlert = true
+                                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                }
                             }
                         }
                     }
@@ -262,6 +276,33 @@ struct LoginView: View
                 Text(alertMessage)
             }
         }
+        .sheet(isPresented: $showMFASheet) {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
+    }
+}
+
+extension LoginView {
+    @MainActor
+    private func requestMFACode(maskedPhone: String?) async -> String? {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        showMFASheet = true
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?) {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
     }
 }
 

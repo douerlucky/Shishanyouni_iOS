@@ -92,6 +92,8 @@ struct PickerItem: Decodable, Identifiable
 class ElectricityQuery: NSObject, URLSessionTaskDelegate
 {
     private let ssoLoginURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https%3A%2F%2Fsdgl.hzau.edu.cn%2Fapi%2Fsso%2Fmobile%2Fcallback%3FtargetUrl%3Dhttps%3A%2F%2Fsdgl.hzau.edu.cn%2Fapi%2Fsso%2Fmobile%2Fcallback"
+    private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
+    private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
 
     private let apiBase = "https://sdgl.hzau.edu.cn/api/base"
 
@@ -116,20 +118,14 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     private func extractCookies(from response: HTTPURLResponse)
     {
-        if let setCookies = response.allHeaderFields["Set-Cookie"] as? String
-        {
-            let cookies = setCookies.components(separatedBy: ",")
-            for cookie in cookies
-            {
-                if let nameValuePair = cookie.components(separatedBy: ";").first
-                {
-                    let parts = nameValuePair.trimmingCharacters(in: .whitespaces).components(separatedBy: "=")
-                    if parts.count == 2
-                    {
-                        cookieJar[parts[0]] = parts[1]
-                    }
-                }
+        let headerFields = response.allHeaderFields.reduce(into: [String: String]()) { partialResult, item in
+            if let key = item.key as? String, let value = item.value as? String {
+                partialResult[key] = value
             }
+        }
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: ssoLoginURL)!)
+        for cookie in cookies {
+            cookieJar[cookie.name] = cookie.value
         }
     }
 
@@ -156,9 +152,117 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         ]
     }
 
+    private func performMFAIfNeeded(username: String, password: String, mfaCodeProvider: MFACodeProvider?) async throws -> String {
+        // Debug 模式可强制触发验证码输入弹窗，便于本地联调 UI 流程
+        if CASMFADebug.forcePromptEnabled {
+            guard let provider = mfaCodeProvider else {
+                throw CASMFAError.needCodeInput
+            }
+            guard let code = await provider(CASMFADebug.maskedPhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw CASMFAError.cancelled
+            }
+            return ""
+        }
+
+        var detectRequest = URLRequest(url: URL(string: mfaDetectURL)!)
+        detectRequest.httpMethod = "POST"
+        detectRequest.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Content-Type")
+        detectRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+        detectRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+        detectRequest.setValue(ssoLoginURL, forHTTPHeaderField: "Referer")
+        detectRequest.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        detectRequest.httpBody = [
+            "username=\(formEncode(username))",
+            "password=\(formEncode(password))",
+            "fpVisitorId=\(formEncode(CASMFADebug.fpVisitorId))",
+        ].joined(separator: "&").data(using: .utf8)
+
+        let (detectData, detectResponse) = try await session.data(for: detectRequest)
+        guard let detectHTTP = detectResponse as? HTTPURLResponse else {
+            throw NSError(domain: "MFADetectFailed", code: 500)
+        }
+        extractCookies(from: detectHTTP)
+
+        let detect = try JSONDecoder().decode(CASMFADetectResponse.self, from: detectData)
+        guard detect.code == 0, let detectInfo = detect.data else {
+            throw CASMFAError.initFailed
+        }
+        print("[MFA][Electricity] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false), state=\(detectInfo.state ?? "nil"), fpVisitorId=\(CASMFADebug.fpVisitorId)")
+        guard detectInfo.need else {
+            print("[MFA][Electricity] 服务端判定无需二次验证，本次不会弹验证码。")
+            return ""
+        }
+        guard (detectInfo.mfaTypeSecurePhone ?? false) else {
+            throw CASMFAError.unsupportedType
+        }
+        guard let state = detectInfo.state, !state.isEmpty else {
+            throw CASMFAError.initFailed
+        }
+        guard let provider = mfaCodeProvider else {
+            throw CASMFAError.needCodeInput
+        }
+
+        var initComponents = URLComponents(string: mfaInitSecurePhoneURL)!
+        initComponents.queryItems = [URLQueryItem(name: "state", value: state)]
+        var initRequest = URLRequest(url: initComponents.url!)
+        initRequest.httpMethod = "GET"
+        initRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+        initRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+        let (initData, initResponse) = try await session.data(for: initRequest)
+        guard let initHTTP = initResponse as? HTTPURLResponse else {
+            throw NSError(domain: "MFAInitFailed", code: 500)
+        }
+        extractCookies(from: initHTTP)
+
+        let initResult = try JSONDecoder().decode(CASMFAInitResponse.self, from: initData)
+        guard initResult.code == 0, let initInfo = initResult.data else {
+            throw CASMFAError.initFailed
+        }
+
+        var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+        sendRequest.httpMethod = "POST"
+        sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
+        sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+        sendRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+        sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
+
+        let (sendData, sendResponse) = try await session.data(for: sendRequest)
+        guard let sendHTTP = sendResponse as? HTTPURLResponse else {
+            throw NSError(domain: "MFASendFailed", code: 500)
+        }
+        extractCookies(from: sendHTTP)
+        let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
+        guard sendResult.code == 0 else {
+            throw CASMFAError.sendFailed
+        }
+
+        guard let code = await provider(initInfo.securePhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw CASMFAError.cancelled
+        }
+
+        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/valid")!)
+        validRequest.httpMethod = "POST"
+        validRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
+        validRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+        validRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+        validRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid, "code": code], options: [])
+
+        let (validData, validResponse) = try await session.data(for: validRequest)
+        guard let validHTTP = validResponse as? HTTPURLResponse else {
+            throw NSError(domain: "MFAValidFailed", code: 500)
+        }
+        extractCookies(from: validHTTP)
+        let validResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: validData)
+        guard validResult.code == 0, validResult.data?.status == 2 else {
+            throw CASMFAError.verifyFailed
+        }
+
+        return state
+    }
+
     // MARK: - 核心登录逻辑：获取Token
 
-    func loginAndGetToken(username: String, rsaPassword: String) async throws -> String
+    func loginAndGetToken(username: String, rsaPassword: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> String
     {
         // --- Step 1: GET 获取 execution ---
         var request1 = URLRequest(url: URL(string: ssoLoginURL)!)
@@ -184,6 +288,8 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         }
         let execution = String(matchedText[valueStart.upperBound ..< valueEnd.lowerBound])
 
+        let mfaState = try await performMFAIfNeeded(username: username, password: rsaPassword, mfaCodeProvider: mfaCodeProvider)
+
         // --- Step 2: POST 提交登录表单 ---
         var request2 = URLRequest(url: URL(string: ssoLoginURL)!)
         request2.httpMethod = "POST"
@@ -199,11 +305,11 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
             "captcha=",
             "currentMenu=1",
             "failN=0",
-            "mfaState=",
+            "mfaState=\(formEncode(mfaState))",
             "execution=\(formEncode(execution))",
             "_eventId=submit",
             "geolocation=",
-            "fpVisitorId=cf1df3e32fe5f29e9c91952fed0edc7e",
+            "fpVisitorId=\(formEncode(CASMFADebug.fpVisitorId))",
             "submit1=Login1",
         ].joined(separator: "&")
         request2.httpBody = bodyString.data(using: .utf8)

@@ -12,6 +12,12 @@ struct DebugRoom: View
 {
     @State private var webViewRef: WKWebView? = nil
     @State private var showWeb = false
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var randomFPVisitorEnabled = CASMFADebug.randomFPVisitorEnabled
+    @State private var fpRefreshTick = 0
 
     @State var cookieInput: String = ""
 
@@ -90,6 +96,37 @@ struct DebugRoom: View
                     userinfo.debugprint()
                 }
 
+                VStack(alignment: .leading, spacing: 10)
+                {
+                    Toggle("MFA 使用随机 fpVisitorId（更容易触发 need=true）", isOn: $randomFPVisitorEnabled)
+                        .onChange(of: randomFPVisitorEnabled) { newValue in
+                            CASMFADebug.setRandomFPVisitorEnabled(newValue)
+                        }
+
+                    Text("当前 fpVisitorId: \(CASMFADebug.fpVisitorId)")
+                        .font(.system(size: 12, weight: .regular, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .id(fpRefreshTick)
+
+                    Button("重新生成 fpVisitorId")
+                    {
+                        CASMFADebug.regenerateFPVisitorId()
+                        fpRefreshTick += 1
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("预览验证码弹窗页面")
+                    {
+                        mfaMaskedPhone = "133****0922"
+                        mfaCode = ""
+                        showMFASheet = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+                .background(Color.orange.opacity(0.08))
+                .cornerRadius(12)
+
                 // MARK: - 课表接口测试（lion API，无需 CAS）
 
                 Button("测试查询课表接口")
@@ -145,6 +182,30 @@ struct DebugRoom: View
 
                 // MARK: - 南湖跑接口测试（保持原有逻辑）
 
+                Button("测试 CAS 登录接口（MFA）")
+                {
+                    let loginChecker = LoginChecker()
+                    Task
+                    {
+                        do
+                        {
+                            print("🚀 开始测试 CAS 登录 + MFA...")
+                            let result = try await loginChecker.checkLogin(
+                                username: userinfo.username,
+                                password: userinfo.encryptedPasswordSchool,
+                                mfaCodeProvider: { phone in
+                                    await requestMFACode(maskedPhone: phone)
+                                }
+                            )
+                            print("✅ CAS 登录结果: \(result)")
+                        }
+                        catch
+                        {
+                            debugPrintError(error)
+                        }
+                    }
+                }
+
                 Button("测试南湖跑查询接口")
                 {
                     let nanhurunquery: GymCloudQuery = GymCloudQuery()
@@ -155,7 +216,10 @@ struct DebugRoom: View
                             print("🚀 开始测试南湖跑接口...")
                             let cookie = try await nanhurunquery.loginAndGetRunCookie(
                                 username: userinfo.username,
-                                rsaPassword: userinfo.encryptedPasswordSchool
+                                rsaPassword: userinfo.encryptedPasswordSchool,
+                                mfaCodeProvider: { phone in
+                                    await requestMFACode(maskedPhone: phone)
+                                }
                             )
                             print("✅ 成功获取 Cookie: \(cookie)")
                             let circles = try await nanhurunquery.fetchRunScores(cookie: cookie)
@@ -180,7 +244,10 @@ struct DebugRoom: View
                             print("🚀 开始测试电费接口...")
                             let token = try await electrictyquery.loginAndGetToken(
                                 username: userinfo.username,
-                                rsaPassword: userinfo.encryptedPasswordSchool
+                                rsaPassword: userinfo.encryptedPasswordSchool,
+                                mfaCodeProvider: { phone in
+                                    await requestMFACode(maskedPhone: phone)
+                                }
                             )
                             print("✅ 成功获取 Token: \(token)")
                         }
@@ -208,6 +275,19 @@ struct DebugRoom: View
                                 }
                         }
                     }
+                    .sheet(isPresented: $showMFASheet)
+                    {
+                        MFACodeInputSheet(
+                            maskedPhone: mfaMaskedPhone,
+                            code: $mfaCode,
+                            onCancel: {
+                                resolveMFACode(nil)
+                            },
+                            onConfirm: {
+                                resolveMFACode(mfaCode)
+                            }
+                        )
+                    }
             }
         }
     }
@@ -226,6 +306,26 @@ struct DebugRoom: View
         {
             print("❌ 未知错误: \(error)")
         }
+    }
+
+    @MainActor
+    private func requestMFACode(maskedPhone: String?) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        showMFASheet = true
+
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ value: String?)
+    {
+        mfaContinuation?.resume(returning: value?.trimmingCharacters(in: .whitespacesAndNewlines))
+        mfaContinuation = nil
+        showMFASheet = false
     }
 }
 

@@ -23,6 +23,10 @@ struct ElectricityView: View
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
 
     private let query = ElectricityQuery()
 
@@ -77,6 +81,14 @@ struct ElectricityView: View
         .alert(isPresented: $showAlert)
         {
             Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("好")))
+        }
+        .sheet(isPresented: $showMFASheet) {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
         }
     }
 
@@ -307,7 +319,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
+                let token = try await loginToken()
                 let list = try await query.fetchBuildingList(token: token)
                 await MainActor.run
                 {
@@ -330,7 +342,7 @@ struct ElectricityView: View
     {
         Task
         {
-            let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
+            let token = try await loginToken()
             let list = try await query.fetchFloorList(token: token, buildingId: bId)
             await MainActor.run
             {
@@ -350,7 +362,7 @@ struct ElectricityView: View
     {
         Task
         {
-            let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
+            let token = try await loginToken()
             let list = try await query.fetchRoomList(token: token, buildingId: buildingId, floorNum: floor)
             await MainActor.run
             {
@@ -366,7 +378,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
+                let token = try await loginToken()
                 let list = try await query.fetchFloorList(token: token, buildingId: buildingId)
                 await MainActor.run
                 {
@@ -389,7 +401,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
+                let token = try await loginToken()
                 // 这里调用的是 API: /base/rooms/getRoomListByBuildIdAndFloor
                 let list = try await query.fetchRoomList(token: token, buildingId: buildingId, floorNum: floor)
                 await MainActor.run
@@ -427,7 +439,7 @@ struct ElectricityView: View
         {
             do
             {
-                let token = try await query.loginAndGetToken(username: userinfo.username, rsaPassword: userinfo.encryptedPasswordSchool)
+                let token = try await loginToken()
                 let records = try await query.fetchElectricityAccount(token: token, roomId: savedRoomId)
                 await MainActor.run
                 {
@@ -457,6 +469,33 @@ struct ElectricityView: View
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             showAlert = true
         }
+    }
+
+    private func loginToken() async throws -> String {
+        try await query.loginAndGetToken(
+            username: userinfo.username,
+            rsaPassword: userinfo.encryptedPasswordSchool,
+            mfaCodeProvider: { phone in
+                await requestMFACode(maskedPhone: phone)
+            }
+        )
+    }
+
+    @MainActor
+    private func requestMFACode(maskedPhone: String?) async -> String? {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        showMFASheet = true
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?) {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
     }
 }
 

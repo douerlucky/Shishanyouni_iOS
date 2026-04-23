@@ -164,8 +164,11 @@ struct ScheduleView: View
                 }
                 ToolbarItem(placement: .navigationBarTrailing)
                 {
-                    Button(action: { addCourseContext = AddCourseContext(day: 1, period: 1) })
-                    { Image(systemName: "plus.circle").fontWeight(.medium) }
+                    NavigationLink(destination: AllScheduleSetting())
+                    {
+                        Image(systemName: "rectangle.stack")
+                            .fontWeight(.medium)
+                    }
                 }
             }
             .sheet(isPresented: $showSettings)
@@ -223,11 +226,7 @@ struct ScheduleView: View
                             courses: courses,
                             nowdisplayWeek: nowDisplayWeek,
                             onDeleteCourse: { course in
-                                if let index = courses.firstIndex(where: { $0.id == course.id })
-                                {
-                                    courses.remove(at: index)
-                                    saveCourses()
-                                }
+                                removeCourseOccurrence(course, in: nowDisplayWeek)
                             },
                             onEditCourse: { course in
                                 editCourseContext = course
@@ -530,6 +529,62 @@ struct ScheduleView: View
         let diff = cal.dateComponents([.weekOfYear], from: startMonday, to: currentMonday)
         return (diff.weekOfYear ?? 0) + 1
     }
+
+    /// 仅删除当前显示周的一次课程出现：
+    /// - 若该课还有其他周次，保留课程并移除当前周
+    /// - 若仅剩当前周，则删除整门课
+    private func removeCourseOccurrence(_ course: Course, in week: Int)
+    {
+        guard let index = courses.firstIndex(where: { $0.id == course.id })
+        else
+        {
+            return
+        }
+
+        let target = courses[index]
+
+        guard target.weekList.contains(week)
+        else
+        {
+            // 兜底：如果未命中周次，按旧逻辑整门删除
+            courses.remove(at: index)
+            saveCourses()
+            return
+        }
+
+        let newWeekList = target.weekList.filter { $0 != week }
+
+        if newWeekList.isEmpty
+        {
+            courses.remove(at: index)
+        }
+        else
+        {
+            let updatedCourse = Course(
+                id: target.id,
+                name: target.name,
+                day: target.day,
+                start: target.start,
+                step: target.step,
+                room: target.room,
+                teacher: target.teacher,
+                weekList: newWeekList,
+                weeks: weekText(from: newWeekList),
+                term: target.term,
+                colorRandom: target.colorRandom,
+                customColorHex: target.customColorHex,
+                isManual: target.isManual
+            )
+            courses[index] = updatedCourse
+        }
+
+        saveCourses()
+    }
+
+    private func weekText(from weekList: [Int]) -> String
+    {
+        weekList.sorted().map { "\($0)" }.joined(separator: ",") + "周"
+    }
 }
 
 // 星期头
@@ -562,6 +617,7 @@ struct WeekHeaderView: View
             }
         }
     }
+
 }
 
 // CourseGridView

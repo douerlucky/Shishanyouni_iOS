@@ -17,6 +17,10 @@ struct NanhuRunView: View
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
 
     private let runQuery = GymCloudQuery()
 
@@ -97,6 +101,14 @@ struct NanhuRunView: View
         {
             Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("确定")))
         }
+        .sheet(isPresented: $showMFASheet) {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
     }
 
     private func fetchData()
@@ -109,7 +121,10 @@ struct NanhuRunView: View
                 // 1. 登录并获取双 Cookie
                 let cookie = try await runQuery.loginAndGetRunCookie(
                     username: userinfo.username,
-                    rsaPassword: userinfo.encryptedPasswordSchool
+                    rsaPassword: userinfo.encryptedPasswordSchool,
+                    mfaCodeProvider: { phone in
+                        await requestMFACode(maskedPhone: phone)
+                    }
                 )
 
                 // 2. 获取成绩
@@ -141,6 +156,25 @@ struct NanhuRunView: View
                 }
             }
         }
+    }
+}
+
+extension NanhuRunView {
+    @MainActor
+    private func requestMFACode(maskedPhone: String?) async -> String? {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        showMFASheet = true
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?) {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
     }
 }
 

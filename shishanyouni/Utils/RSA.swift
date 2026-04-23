@@ -6,6 +6,52 @@
 //
 
 import Foundation
+import Security
+
+private enum RSAEncryptError: Error {
+    case invalidPEM
+    case keyCreateFailed
+    case encryptFailed
+}
+
+private func makePublicKey(from pem: String) throws -> SecKey {
+    let lines = pem
+        .components(separatedBy: .newlines)
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty && !$0.hasPrefix("-----") }
+    let base64Body = lines.joined()
+    guard let keyData = Data(base64Encoded: base64Body) else {
+        throw RSAEncryptError.invalidPEM
+    }
+
+    let attributes: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+        kSecAttrKeyClass as String: kSecAttrKeyClassPublic
+    ]
+    var error: Unmanaged<CFError>?
+    guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, &error) else {
+        throw error?.takeRetainedValue() ?? RSAEncryptError.keyCreateFailed
+    }
+    return key
+}
+
+private func rsaPKCS1EncryptToBase64(_ plainText: String, publicKeyPEM: String) throws -> String {
+    let key = try makePublicKey(from: publicKeyPEM)
+    let data = Data(plainText.utf8)
+    guard SecKeyIsAlgorithmSupported(key, .encrypt, .rsaEncryptionPKCS1) else {
+        throw RSAEncryptError.encryptFailed
+    }
+    var error: Unmanaged<CFError>?
+    guard let encrypted = SecKeyCreateEncryptedData(
+        key,
+        .rsaEncryptionPKCS1,
+        data as CFData,
+        &error
+    ) else {
+        throw error?.takeRetainedValue() ?? RSAEncryptError.encryptFailed
+    }
+    return (encrypted as Data).base64EncodedString()
+}
 
 func encryptSchoolPassword(password: String) -> String? {
     let publicKeyString = """
@@ -21,16 +67,11 @@ func encryptSchoolPassword(password: String) -> String? {
     """
 
     do {
-        // 直接使用，无需 import
-        let publicKey = try PublicKey(pemEncoded: publicKeyString)
-        let clear = try ClearMessage(string: password, using: .utf8)
-        
         // 华农 CAS 默认使用 PKCS1 填充
-        let encrypted = try clear.encrypted(with: publicKey, padding: .PKCS1)
-        
-        return "__RSA__" + encrypted.base64String
+        let encrypted = try rsaPKCS1EncryptToBase64(password, publicKeyPEM: publicKeyString)
+        return "__RSA__" + encrypted
     } catch {
-        print("❌ 加密失败: \(error)")
+        print("encrypt failed: \(error)")
         return nil
     }
 }
@@ -45,16 +86,11 @@ func encryptShishanyouniPassword(password: String) -> String? {
     """
 
     do {
-        // 直接使用，无需 import
-        let publicKey = try PublicKey(pemEncoded: publicKeyString)
-        let clear = try ClearMessage(string: password, using: .utf8)
-        
-        // 华农 CAS 默认使用 PKCS1 填充
-        let encrypted = try clear.encrypted(with: publicKey, padding: .PKCS1)
-        
-        return encrypted.base64String + "_RSA"
+        // 教务系统也走 PKCS1
+        let encrypted = try rsaPKCS1EncryptToBase64(password, publicKeyPEM: publicKeyString)
+        return encrypted + "_RSA"
     } catch {
-        print("❌ 加密失败: \(error)")
+        print("encrypt failed: \(error)")
         return nil
     }
 }
