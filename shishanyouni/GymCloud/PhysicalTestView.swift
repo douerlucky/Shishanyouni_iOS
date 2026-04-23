@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+private let physicalTestReferenceTitle = "《国家学生体质健康标准（2014年修订）》"
+private let physicalTestReferenceURL = URL(string: "http://www.moe.gov.cn/s78/A17/twys_left/moe_938/moe_792/s3273/201407/t20140708_171692.html")!
+private let physicalTestSectionSpacing: CGFloat = 20
+private let physicalTestCardHorizontalPadding: CGFloat = 16
+private let physicalTestCardInnerPadding: CGFloat = 16
+
 func getScoreColor(score: Double) -> Color
 {
     switch score
@@ -38,6 +44,27 @@ struct PhysicalTestView: View
 
     let years = ["2026-2027", "2025-2026", "2024-2025", "2023-2024", "2022-2023"]
 
+    private func normalizedMetricText(_ raw: String, fallbackUnit: String) -> String
+    {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "--\(fallbackUnit)" }
+        return trimmed
+    }
+
+    private func parsedBMI(from score: PhysicalScore) -> String?
+    {
+        let heightText = score.height.replacingOccurrences(of: "米", with: "")
+        let weightText = score.weight.replacingOccurrences(of: "千克", with: "")
+
+        guard let height = Double(heightText), let weight = Double(weightText), height > 0 else
+        {
+            return nil
+        }
+
+        let bmi = weight / (height * height)
+        return String(format: "%.1f", bmi)
+    }
+
     var body: some View
     {
         NavigationStack
@@ -53,7 +80,7 @@ struct PhysicalTestView: View
                     {
                         ScrollView
                         {
-                            VStack(alignment: .leading, spacing: 25)
+                            VStack(alignment: .leading, spacing: physicalTestSectionSpacing)
                             {
                                 NavigationLink(destination: PhysicalTestCalculatorView())
                                 {
@@ -90,14 +117,14 @@ struct PhysicalTestView: View
                                             .font(.system(size: 14, weight: .semibold))
                                             .foregroundColor(.secondary.opacity(0.5))
                                     }
-                                    .padding()
+                                    .padding(physicalTestCardInnerPadding)
                                     .background(
                                         RoundedRectangle(cornerRadius: 20)
                                             .fill(Color(uiColor: .secondarySystemGroupedBackground))
                                             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                                     )
                                 }
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, physicalTestCardHorizontalPadding)
                                 .padding(.top, 10) // 距离顶部的间距
 
                                 // 顶部总分大圆环
@@ -124,41 +151,83 @@ struct PhysicalTestView: View
                                         }
                                     }
                                 }
-                                .padding(20)
+                                .padding(physicalTestCardInnerPadding)
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(Color(uiColor: .secondarySystemGroupedBackground))
                                         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                                 )
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, physicalTestCardHorizontalPadding)
 
-                                VStack(spacing: 4)
+                                VStack(alignment: .leading, spacing: 6)
                                 {
                                     Text("本功能仅用于参考，不构成任何医疗或健康建议")
                                         .font(.system(size: 14))
-                                    Text("数据来源：《国家学生体质健康标准（2014年修订）》")
+                                    Text("数据来源：\(physicalTestReferenceTitle)")
                                         .font(.system(size: 12))
                                         .foregroundColor(.secondary.opacity(0.8))
-                                    Link("查看官方标准说明", destination: URL(string: "http://www.moe.gov.cn/s78/A17/twys_left/moe_938/moe_792/s3273/201407/t20140708_171692.html")!)
+                                    Text("体测成绩展示及其中涉及的 BMI 相关信息均以该标准为依据。")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary.opacity(0.8))
+                                    Link("查看官方标准说明", destination: physicalTestReferenceURL)
                                         .font(.system(size: 12))
                                 }
-                                .padding(10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(physicalTestCardInnerPadding)
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(Color(uiColor: .secondarySystemGroupedBackground))
                                         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                                 )
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, physicalTestCardHorizontalPadding)
 
                                 // 单项数据网格两列布局
-                                VStack(alignment: .leading, spacing: 15)
+                                VStack(alignment: .leading, spacing: 16)
                                 {
+                                    let bmiDetail = score.details.first { $0.project.localizedCaseInsensitiveContains("BMI") }
+                                    let regularDetails = score.details.filter { !$0.project.localizedCaseInsensitiveContains("BMI") }
+
+                                    HStack(spacing: 12)
+                                    {
+                                        Text("身高")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.secondary)
+
+                                        Text(normalizedMetricText(score.height, fallbackUnit: "米"))
+                                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                                            .foregroundColor(.primary)
+
+                                        Spacer(minLength: 12)
+
+                                        Text("体重")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.secondary)
+
+                                        Text(normalizedMetricText(score.weight, fallbackUnit: "千克"))
+                                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                                            .foregroundColor(.primary)
+                                    }
+                                    .padding(physicalTestCardInnerPadding)
+                                    .frame(maxWidth: .infinity)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                                    )
+                                    .padding(.horizontal, physicalTestCardHorizontalPadding)
+
                                     Text("单项成绩")
                                         .font(.title2.bold())
                                         .foregroundColor(.primary)
-                                        .padding(.horizontal)
+                                        .padding(.horizontal, physicalTestCardHorizontalPadding)
+
+                                    if let bmiDetail
+                                    {
+                                        BMIDetailRow(detail: bmiDetail)
+                                            .padding(.horizontal, physicalTestCardHorizontalPadding)
+                                    }
 
                                     let columns = [
                                         GridItem(.flexible(), spacing: 16),
@@ -166,12 +235,12 @@ struct PhysicalTestView: View
                                     ]
                                     LazyVGrid(columns: columns, spacing: 16)
                                     {
-                                        ForEach(score.details, id: \.project)
+                                        ForEach(regularDetails, id: \.project)
                                         { detail in
                                             DetailCard(detail: detail)
                                         }
                                     }
-                                    .padding(.horizontal)
+                                    .padding(.horizontal, physicalTestCardHorizontalPadding)
                                 }
                             }
                             .padding(.bottom, 100)
@@ -334,6 +403,7 @@ struct PhysicalTestView: View
         default: return .red
         }
     }
+
 }
 
 struct MainScoreRing: View
@@ -382,7 +452,7 @@ struct DetailCard: View
 
     var body: some View
     {
-        VStack(alignment: .leading, spacing: 10)
+        VStack(alignment: .leading, spacing: 12)
         {
             Text(detail.project)
                 .font(.system(size: 16))
@@ -414,7 +484,7 @@ struct DetailCard: View
                     .clipShape(Capsule())
             }
         }
-        .padding()
+        .padding(physicalTestCardInnerPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20)
@@ -428,6 +498,81 @@ struct DetailCard: View
         if grade.contains("不") { return .red }
         if grade.contains("及格") { return .orange }
         return .green
+    }
+}
+
+struct BMIDetailRow: View
+{
+    let detail: PhysicalDetail
+
+    private var scoreValue: Double
+    {
+        Double(detail.score) ?? 0
+    }
+
+    private func gradeColor(_ grade: String) -> Color
+    {
+        if grade.contains("不") { return .red }
+        if grade.contains("及格") || grade.contains("超重") { return .orange }
+        return .green
+    }
+
+    var body: some View
+    {
+        HStack(alignment: .top, spacing: 20)
+        {
+            VStack(spacing: 14)
+            {
+                Text(detail.project)
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                HStack
+                {
+                    Spacer()
+                    MiniScoreBadge(score: scoreValue)
+                    Spacer()
+                }
+
+                HStack
+                {
+                    Text(detail.result)
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Text(detail.grade)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(gradeColor(detail.grade))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 4)
+                        .background(gradeColor(detail.grade).opacity(0.15))
+                        .clipShape(Capsule())
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+            VStack(alignment: .leading, spacing: 4)
+            {
+                Text("BMI 信息依据：\(physicalTestReferenceTitle)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Link("查看 BMI 官方标准说明", destination: physicalTestReferenceURL)
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+        .frame(minHeight: 168)
+        .padding(physicalTestCardInnerPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        )
     }
 }
 

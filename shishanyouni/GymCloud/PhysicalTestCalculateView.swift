@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+private let physicalTestCitationTitle = "《国家学生体质健康标准（2014年修订）》"
+private let physicalTestCitationURL = URL(string: "http://www.moe.gov.cn/s78/A17/twys_left/moe_938/moe_792/s3273/201407/t20140708_171692.html")!
+private let physicalTestCalcSectionSpacing: CGFloat = 20
+private let physicalTestCalcCardHorizontalPadding: CGFloat = 16
+private let physicalTestCalcCardInnerPadding: CGFloat = 16
+
 // MARK: - 计算器专用数据模型
 
 struct CalcPhysicalDetail: Identifiable
@@ -78,7 +84,7 @@ struct PhysicalTestCalculatorView: View
 
             ScrollView
             {
-                VStack(alignment: .leading, spacing: 25)
+                VStack(alignment: .leading, spacing: physicalTestCalcSectionSpacing)
                 {
                     // MARK: 1. 顶部总分环 (Reactive!)
 
@@ -97,33 +103,37 @@ struct PhysicalTestCalculatorView: View
                                 .foregroundColor(.secondary.opacity(0.7))
                         }
                     }
-                    .padding(20)
+                    .padding(physicalTestCalcCardInnerPadding)
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
                             .fill(Color(uiColor: .secondarySystemGroupedBackground))
                             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     )
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, physicalTestCalcCardHorizontalPadding)
                     
-                    VStack(spacing: 4)
+                    VStack(alignment: .leading, spacing: 6)
                     {
                         Text("本功能仅用于参考，不构成任何医疗或健康建议")
                             .font(.system(size: 14))
-                        Text("数据来源：《国家学生体质健康标准（2014年修订）》")
+                        Text("数据来源：\(physicalTestCitationTitle)")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary.opacity(0.8))
-                        Link("查看官方标准说明", destination: URL(string: "http://www.moe.gov.cn/s78/A17/twys_left/moe_938/moe_792/s3273/201407/t20140708_171692.html")!)
+                        Text("其中 BMI 分类与分值计算同样依据该标准执行。")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary.opacity(0.8))
+                        Link("查看官方标准说明", destination: physicalTestCitationURL)
                             .font(.system(size: 12))
                     }
-                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(physicalTestCalcCardInnerPadding)
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
                             .fill(Color(uiColor: .secondarySystemGroupedBackground))
                             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                     )
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, physicalTestCalcCardHorizontalPadding)
 
                     // MARK: 2. 基础信息区 (身高体重放一排)
 
@@ -183,15 +193,15 @@ struct PhysicalTestCalculatorView: View
                             .opacity(gender == "未选择" ? 0.35 : 1.0)
                         }
                     }
-                    .padding()
+                    .padding(physicalTestCalcCardInnerPadding)
                     .background(RoundedRectangle(cornerRadius: 15).fill(Color(uiColor: .secondarySystemGroupedBackground)))
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, physicalTestCalcCardHorizontalPadding)
 
                     // MARK: 3. 单项成绩网格
 
                     VStack(alignment: .leading, spacing: 16)
                     {
-                        Text("单项成绩").font(.title2.bold()).padding(.horizontal)
+                        Text("单项成绩").font(.title2.bold()).padding(.horizontal, physicalTestCalcCardHorizontalPadding)
 
                         if gender == "未选择"
                         {
@@ -206,6 +216,9 @@ struct PhysicalTestCalculatorView: View
                         }
                         else
                         {
+                            CalcBMICard(bmiValue: bmiValue, bmiResult: bmiResult, gender: gender)
+                                .padding(.horizontal, physicalTestCalcCardHorizontalPadding)
+
                             let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible())]
                             LazyVGrid(columns: columns, spacing: 16)
                             {
@@ -220,7 +233,7 @@ struct PhysicalTestCalculatorView: View
                                     {
                                         if detail.isBMI
                                         {
-                                            CalcBMICard(bmiValue: bmiValue, bmiResult: bmiResult, gender: gender)
+                                            EmptyView()
                                         }
                                         else
                                         {
@@ -229,7 +242,7 @@ struct PhysicalTestCalculatorView: View
                                     }
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, physicalTestCalcCardHorizontalPadding)
                         }
                     }
                 }
@@ -504,7 +517,7 @@ struct CalcDetailCard: View
 
     var body: some View
     {
-        VStack(alignment: .leading, spacing: 10)
+        VStack(alignment: .leading, spacing: 12)
         {
             Text(detail.project).font(.system(size: 15)).foregroundColor(.secondary)
             HStack
@@ -567,7 +580,7 @@ struct CalcDetailCard: View
                     .padding(5).background(gradeColor(detail.grade).opacity(0.15)).clipShape(Capsule())
             }
         }
-        .padding()
+        .padding(physicalTestCalcCardInnerPadding)
         .background(RoundedRectangle(cornerRadius: 20).fill(Color(uiColor: .secondarySystemGroupedBackground)).shadow(color: .black.opacity(0.05), radius: 8))
     }
 
@@ -670,33 +683,57 @@ struct CalcBMICard: View
 
     var body: some View
     {
-        VStack(alignment: .leading, spacing: 10)
+        HStack(alignment: .top, spacing: 20)
         {
-            Text("BMI").font(.system(size: 15)).foregroundColor(.secondary)
-            HStack
+            VStack(alignment: .leading, spacing: 12)
             {
-                Spacer()
-                if grade != "待输入"
+                Text("身体形态 (BMI)")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+
+                HStack
                 {
-                    MiniScoreBadge(score: bmiScore)
+                    Spacer()
+                    if grade != "待输入"
+                    {
+                        MiniScoreBadge(score: bmiScore)
+                    }
+                    else
+                    {
+                        MiniScoreBadge(score: 0)
+                    }
+                    Spacer()
                 }
-                else
+
+                HStack
                 {
-                    MiniScoreBadge(score: 0)
+                    Text(bmiResult.isEmpty ? "自动计算" : bmiResult)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(bmiResult.isEmpty ? .secondary : .primary)
+                    Spacer()
+                    Text(grade)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(getColor(level: grade))
+                        .padding(5)
+                        .background(getColor(level: grade).opacity(0.15))
+                        .clipShape(Capsule())
                 }
-                Spacer()
             }
-            HStack
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 6)
             {
-                Text(bmiResult.isEmpty ? "自动计算" : bmiResult).font(.system(size: 18, weight: .bold)).foregroundColor(bmiResult.isEmpty ? .secondary : .primary)
-                Spacer()
-                Text(grade)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(getColor(level: grade))
-                    .padding(5).background(getColor(level: grade).opacity(0.15)).clipShape(Capsule())
+                Text("BMI 信息依据：\(physicalTestCitationTitle)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Link("查看 BMI 官方标准说明", destination: physicalTestCitationURL)
+                    .font(.system(size: 11, weight: .medium))
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+           
         }
-        .padding().background(RoundedRectangle(cornerRadius: 20).fill(Color(uiColor: .secondarySystemGroupedBackground)).shadow(color: .black.opacity(0.05), radius: 8))
+        .padding(physicalTestCalcCardInnerPadding)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Color(uiColor: .secondarySystemGroupedBackground)).shadow(color: .black.opacity(0.05), radius: 8))
     }
 }
 
