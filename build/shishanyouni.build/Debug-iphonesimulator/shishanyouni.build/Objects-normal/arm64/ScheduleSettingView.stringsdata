@@ -1,0 +1,384 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ScheduleSettingView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "设置",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "是否同时清除手动添加的课程？",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 141
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认清除导入的课程",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 206
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认清除手动添加的课程",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 212
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认清除所有课程",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 218
+        }
+      },
+      {
+        "comment": "",
+        "key": "设置已保存",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 316
+        }
+      },
+      {
+        "comment": "",
+        "key": "本学期开学日期",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "学期设置",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 107
+        }
+      },
+      {
+        "comment": "",
+        "key": "请先在个人页面登录",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 117
+        }
+      },
+      {
+        "comment": "",
+        "key": "导入中…",
+        "location": {
+          "startingColumn": 44,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "导入课表",
+        "location": {
+          "startingColumn": 61,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "课表导入",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 139
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 142
+        }
+      },
+      {
+        "comment": "",
+        "key": "保留",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 147
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 152
+        }
+      },
+      {
+        "comment": "",
+        "key": "点击「保留」将保留手动课程，仅替换导入课程；点击「清除」将删除所有课程后重新导入。",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 157
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除导入的课程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 168
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除手动添加的课程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 180
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除所有课程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 192
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除课程",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 200
+        }
+      },
+      {
+        "comment": "",
+        "key": "导入课程 %lld 门 · 手动课程 %lld 门",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 204
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 207
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 208
+        }
+      },
+      {
+        "comment": "",
+        "key": "将删除所有自动导入的课程，手动添加的课程不受影响。",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 210
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 213
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 214
+        }
+      },
+      {
+        "comment": "",
+        "key": "将删除所有手动添加的课程，导入课程不受影响。",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 216
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 219
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 220
+        }
+      },
+      {
+        "comment": "",
+        "key": "此操作将删除全部课程，包括导入和手动添加的，无法恢复。",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 222
+        }
+      },
+      {
+        "comment": "",
+        "key": "背景液态玻璃效果",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 292
+        }
+      },
+      {
+        "comment": "",
+        "key": "选择背景图片",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除背景图片",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 268
+        }
+      },
+      {
+        "comment": "",
+        "key": "背景不透明度: %lld%%",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 276
+        }
+      },
+      {
+        "comment": "",
+        "key": "课表内容不透明度: %lld%%",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 284
+        }
+      },
+      {
+        "comment": "",
+        "key": "背景图片",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 296
+        }
+      },
+      {
+        "comment": "",
+        "key": "保存设置",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 309
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 317
+        }
+      },
+      {
+        "comment": "",
+        "key": "开学日期已更新为 %@",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 319
+        }
+      },
+      {
+        "comment": "",
+        "key": "导入课表",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 356
+        }
+      },
+      {
+        "comment": "",
+        "key": "选择导入学期",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 328
+        }
+      },
+      {
+        "comment": "",
+        "key": "学年",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 334
+        }
+      },
+      {
+        "comment": "",
+        "key": "学期",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 344
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 336
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 360
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 363
+        }
+      }
+    ]
+  },
+  "version": 1
+}

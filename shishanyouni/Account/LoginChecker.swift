@@ -16,11 +16,33 @@ struct BindResponse: Codable {
     let success: Bool
 }
 
+enum AccountBindError: LocalizedError {
+    case invalidURL
+    case requestFailed(String)
+    case invalidResponse
+    case serverRejected(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "绑定地址无效。"
+        case let .requestFailed(message):
+            return message
+        case .invalidResponse:
+            return "狮山有你后端返回了无法识别的响应。"
+        case let .serverRejected(message):
+            return message
+        }
+    }
+}
+
 class AccountBinder {
     private let bindURL = "https://lion.hzau.edu.cn/app/ios/bind"
 
-    func bind(username: String, password: String, type: Int = 0) async {
-        guard let url = URL(string: bindURL) else { return }
+    func bind(username: String, password: String, type: Int = 0) async throws {
+        guard let url = URL(string: bindURL) else {
+            throw AccountBindError.invalidURL
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -32,27 +54,45 @@ class AccountBinder {
             "type": type
         ]
 
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else { return }
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
+            throw AccountBindError.requestFailed("狮山有你后端请求体编码失败。")
+        }
         request.httpBody = bodyData
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            if let http = response as? HTTPURLResponse {
-                print("[AccountBinder] 状态码: \(http.statusCode)")
+            guard let http = response as? HTTPURLResponse else {
+                throw AccountBindError.invalidResponse
             }
+            print("[AccountBinder] 状态码: \(http.statusCode)")
 
             let result = try JSONDecoder().decode(BindResponse.self, from: data)
 
             if result.success {
                 print("[AccountBinder] 绑定成功: \(result.msg)")
             } else {
-                // 绑定失败不影响主流程，静默处理
                 print("[AccountBinder] 绑定失败 (code \(result.code)): \(result.msg)")
+                throw AccountBindError.serverRejected(result.msg)
             }
-
+        } catch let error as AccountBindError {
+            throw error
+        } catch let error as DecodingError {
+            print("[AccountBinder] 解码失败: \(error.localizedDescription)")
+            throw AccountBindError.invalidResponse
+        } catch let error as URLError {
+            let message: String
+            switch error.code {
+            case .secureConnectionFailed, .serverCertificateHasBadDate, .serverCertificateUntrusted, .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid, .clientCertificateRejected, .clientCertificateRequired:
+                message = "TLS错误导致安全连接失败。"
+            default:
+                message = error.localizedDescription
+            }
+            print("[AccountBinder] 请求异常: \(message)")
+            throw AccountBindError.requestFailed(message)
         } catch {
             print("[AccountBinder] 请求异常: \(error.localizedDescription)")
+            throw AccountBindError.requestFailed(error.localizedDescription)
         }
     }
 }

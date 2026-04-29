@@ -1,0 +1,44 @@
+{
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/GymCloud/PhysicalTestCalculateView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestCalculateView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestCalculateView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestCalculateView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestCalculateView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestCalculateView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/GymCloud/PhysicalTestView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/PhysicalTestView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/AllScheduleSetting.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllScheduleSetting.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllScheduleSetting.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllScheduleSetting.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllScheduleSetting.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllScheduleSetting.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ManualCourseEditorView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ManualCourseEditorView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ManualCourseEditorView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ManualCourseEditorView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ManualCourseEditorView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ManualCourseEditorView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/Schedule.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Schedule.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Schedule.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Schedule.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Schedule.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Schedule.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ScheduleExporter.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleExporter.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleExporter.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleExporter.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleExporter.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleExporter.swiftdeps"
+  }
+}

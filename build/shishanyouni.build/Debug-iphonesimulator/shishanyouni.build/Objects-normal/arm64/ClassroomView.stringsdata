@@ -1,0 +1,224 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Classroom/ClassroomView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "空教室查询",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在查询...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 73
+        }
+      },
+      {
+        "comment": "",
+        "key": "好哒",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 102
+        }
+      },
+      {
+        "comment": "",
+        "key": "关注的教室",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 133
+        }
+      },
+      {
+        "comment": "",
+        "key": "还没有关注的教室",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 159
+        }
+      },
+      {
+        "comment": "",
+        "key": "长按下方查询结果中的教室名称，可以添加关注，在此处优先显示今日占用情况",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "教室",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 177
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消关注",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 256
+        }
+      },
+      {
+        "comment": "",
+        "key": "—",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 280
+        }
+      },
+      {
+        "comment": "",
+        "key": "上课",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 286
+        }
+      },
+      {
+        "comment": "",
+        "key": "空闲",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 286
+        }
+      },
+      {
+        "comment": "",
+        "key": "上课",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 364
+        }
+      },
+      {
+        "comment": "",
+        "key": "空闲",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 364
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消关注",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 386
+        }
+      },
+      {
+        "comment": "",
+        "key": "关注此教室",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 395
+        }
+      },
+      {
+        "comment": "",
+        "key": "暂无教室数据或未开始查询",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 447
+        }
+      },
+      {
+        "comment": "",
+        "key": "教室",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 461
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 579
+        }
+      },
+      {
+        "comment": "",
+        "key": "教学楼过滤",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 759
+        }
+      },
+      {
+        "comment": "",
+        "key": "教室位置",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 708
+        }
+      },
+      {
+        "comment": "",
+        "key": "教学楼",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 717
+        }
+      },
+      {
+        "comment": "",
+        "key": "栋号",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 733
+        }
+      },
+      {
+        "comment": "",
+        "key": "楼层",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 747
+        }
+      },
+      {
+        "comment": "",
+        "key": "不分栋",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 737
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@栋",
+        "location": {
+          "startingColumn": 64,
+          "startingLine": 737
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld 楼",
+        "location": {
+          "startingColumn": 68,
+          "startingLine": 749
+        }
+      },
+      {
+        "comment": "",
+        "key": "完成",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 765
+        }
+      }
+    ]
+  },
+  "version": 1
+}

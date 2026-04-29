@@ -1,0 +1,44 @@
+{
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Exam/Exam.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Exam.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Exam.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Exam.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Exam.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Exam.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Exam/ExamView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/ExamView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/ExamView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/ExamView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/ExamView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/ExamView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Grade/Grade.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Grade.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Grade.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Grade.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Grade.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/Grade.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Grade/GradeView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GradeView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GradeView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GradeView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GradeView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GradeView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/GymCloud/GymCloud.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GymCloud.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GymCloud.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GymCloud.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GymCloud.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/GymCloud.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/GymCloud/NanhuRunView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/NanhuRunView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/NanhuRunView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/NanhuRunView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/NanhuRunView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/x86_64/NanhuRunView.swiftdeps"
+  }
+}

@@ -20,6 +20,8 @@ struct LoginView: View
     @State private var alertTitle = ""
     @State private var alertMessage: String = ""
     @State private var showLogoutConfirm: Bool = false
+    @State private var casStatusMessage = "未绑定"
+    @State private var backendStatusMessage = "未绑定"
     @State private var showMFASheet = false
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
@@ -129,62 +131,72 @@ struct LoginView: View
                         Task
                         {
                             defer { isLoading = false }
-                            let cryptPassword = encryptSchoolPassword(password: password)
-                            do
-                            {
-                                let result_status = try await loginChecker.checkLogin(
-                                    username: username,
-                                    password: cryptPassword!,
-                                    mfaCodeProvider: { phone in
-                                        await requestMFACode(maskedPhone: phone)
-                                    }
-                                )
-                                print(result_status)
-                                switch result_status
-                                {
-                                case .success:
-                                    await MainActor.run
-                                    {
-                                        userinfo.username = username
-                                        userinfo.plainPassword = password
-                                        userinfo.performSchoolEncryption()
-                                        userinfo.performShishanyouniEncryption()
-
-                                        if rememberPassword
-                                        {
-                                            userinfo.saveUserInfo()
-                                        }
-                                        else
-                                        {
-                                            userinfo.clearSavedCredentials()
-                                        }
-                                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                                        dismiss()
-                                    }
-                                    
-                                    Task {
-                                            await AccountBinder().bind(username: username, password: password)
-                                        }
-                                    
-
-                                case let .failure(reason):
-                                    print("绑定失败，原因是：\(reason)")
-                                    await MainActor.run
-                                    {
-                                        // 失败
-                                        self.alertTitle = "出现错误"
-                                        self.alertMessage = "用户名或密码有错误"
-                                        self.showAlert = true
-                                        UINotificationFeedbackGenerator().notificationOccurred(.error)
-                                    }
-                                }
-                            }
-                            catch
-                            {
+                            guard let schoolPassword = encryptSchoolPassword(password: password) else {
                                 await MainActor.run {
                                     self.alertTitle = "出现错误"
-                                    self.alertMessage = error.localizedDescription
+                                    self.alertMessage = "CAS 密码加密失败，请稍后重试或联系开发者检查公钥配置。"
                                     self.showAlert = true
+                                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                }
+                                return
+                            }
+                            guard let shishanyouniPassword = encryptShishanyouniPassword(password: password) else {
+                                await MainActor.run {
+                                    self.alertTitle = "出现错误"
+                                    self.alertMessage = "狮山有你后端密码加密失败，请稍后重试或联系开发者检查公钥配置。"
+                                    self.showAlert = true
+                                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                }
+                                return
+                            }
+
+                            async let casAttempt = performCASBinding(username: username, encryptedPassword: schoolPassword)
+                            async let backendAttempt = performBackendBinding(username: username, encryptedPassword: shishanyouniPassword)
+                            let (casResult, backendResult) = await (casAttempt, backendAttempt)
+                            let casBound = casResult.0
+                            let backendBound = backendResult.0
+
+                            await MainActor.run
+                            {
+                                if casBound || backendBound
+                                {
+                                    userinfo.username = username
+                                    userinfo.plainPassword = password
+                                    userinfo.encryptedPasswordSchool = schoolPassword
+                                    userinfo.encryptedPasswordShishanyouni = shishanyouniPassword
+                                }
+                                userinfo.updateBindingStatus(casBound: casBound, shishanyouniBound: backendBound)
+                                refreshBindingStatusText()
+
+                                if casBound || backendBound
+                                {
+                                    if rememberPassword
+                                    {
+                                        userinfo.saveUserInfo()
+                                    }
+                                    else
+                                    {
+                                        userinfo.clearSavedCredentials()
+                                    }
+                                }
+
+                                let alert = buildBindingAlerts(
+                                    casBound: casBound,
+                                    casMessage: casResult.1,
+                                    backendBound: backendBound,
+                                    backendMessage: backendResult.1
+                                )
+
+                                self.alertTitle = alert.0
+                                self.alertMessage = alert.1
+                                self.showAlert = true
+
+                                if casBound || backendBound
+                                {
+                                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                }
+                                else
+                                {
                                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                                 }
                             }
@@ -204,7 +216,13 @@ struct LoginView: View
                 }
                 .optionalLiquidGlass()
                 .padding()
-                
+
+                VStack(spacing: 12)
+                {
+                    bindingIndicator(title: "CAS 连接", isBound: userinfo.isCASBound, message: casStatusMessage)
+                    bindingIndicator(title: "狮山有你后端连接", isBound: userinfo.isShishanyouniBound, message: backendStatusMessage)
+                }
+                .padding(.horizontal, 20)
 
                 if !userinfo.username.isEmpty
                 {
@@ -215,19 +233,19 @@ struct LoginView: View
                         HStack
                         {
                             Image(systemName: "person.badge.minus")
-                            Text("清除保存并退出")
+                            Text("退出登录")
                         }
                         .font(.footnote)
                     }
                     .padding(.top, 8)
-                    .confirmationDialog("确定要清除保存的绑定信息吗？", isPresented: $showLogoutConfirm, titleVisibility: .visible)
+                    .confirmationDialog("确定要退出当前登录状态吗？", isPresented: $showLogoutConfirm, titleVisibility: .visible)
                     {
-                        Button("清除并退出", role: .destructive)
+                        Button("退出登录", role: .destructive)
                         {
                             userinfo.clearUserInfo()
                             username = ""
                             password = ""
-                            dismiss()
+                            refreshBindingStatusText()
                         }
                         Button("取消", role: .cancel) { }
                     }
@@ -244,9 +262,11 @@ struct LoginView: View
                         .scaleEffect(1.5)
                         .tint(.blue)
 
-                    Text("正在尝试绑定信息门户账号")
+                    Text("正在绑定CAS与\n狮山有你")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+    
                 }
                 .frame(width: 180, height: 120)
                 .background(Color(.systemBackground).opacity(0.95))
@@ -264,6 +284,7 @@ struct LoginView: View
                 password = userinfo.plainPassword
                 rememberPassword = true
             }
+            refreshBindingStatusText()
         }
         .alert(alertTitle, isPresented: $showAlert)
         {
@@ -288,6 +309,91 @@ struct LoginView: View
 }
 
 extension LoginView {
+    private func performCASBinding(username: String, encryptedPassword: String) async -> (Bool, String?) {
+        do
+        {
+            let result = try await loginChecker.checkLogin(
+                username: username,
+                password: encryptedPassword,
+                mfaCodeProvider: { phone in
+                    await requestMFACode(maskedPhone: phone)
+                }
+            )
+            switch result
+            {
+            case .success:
+                return (true, nil)
+            case let .failure(message):
+                return (false, message)
+            }
+        }
+        catch
+        {
+            return (false, error.localizedDescription)
+        }
+    }
+
+    private func performBackendBinding(username: String, encryptedPassword: String) async -> (Bool, String?) {
+        do
+        {
+            try await AccountBinder().bind(username: username, password: encryptedPassword)
+            return (true, nil)
+        }
+        catch
+        {
+            return (false, error.localizedDescription)
+        }
+    }
+
+    private func buildBindingAlerts(casBound: Bool, casMessage: String?, backendBound: Bool, backendMessage: String?) -> (String, String) {
+        var messages: [String] = []
+        if casBound {
+            messages.append("CAS 已绑定成功。")
+        } else {
+            messages.append("绑定 CAS 服务有问题：\(casMessage ?? "请稍后重试。")")
+        }
+
+        if backendBound {
+            messages.append("狮山有你后端已绑定成功。")
+        } else {
+            messages.append("绑定狮山有你后端有问题：\(backendMessage ?? "请稍后重试。")")
+        }
+
+        return ("绑定结果", messages.joined(separator: "\n"))
+    }
+
+    @MainActor
+    private func refreshBindingStatusText() {
+        casStatusMessage = userinfo.isCASBound ? "已绑定" : "未绑定"
+        backendStatusMessage = userinfo.isShishanyouniBound ? "已绑定" : "未绑定"
+    }
+
+    @ViewBuilder
+    private func bindingIndicator(title: String, isBound: Bool, message: String) -> some View {
+        HStack(spacing: 12)
+        {
+            Circle()
+                .fill(isBound ? Color.green : Color.red)
+                .frame(width: 12, height: 12)
+
+            VStack(alignment: .leading, spacing: 2)
+            {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Text(message)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
     @MainActor
     private func requestMFACode(maskedPhone: String?) async -> String? {
         mfaMaskedPhone = maskedPhone ?? ""

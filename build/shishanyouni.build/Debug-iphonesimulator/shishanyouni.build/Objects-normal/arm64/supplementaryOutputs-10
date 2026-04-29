@@ -1,0 +1,37 @@
+{
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/HomeView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/HomeView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/HomeView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/HomeView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/HomeView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/HomeView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/MainTabView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/MainTabView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/MainTabView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/MainTabView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/MainTabView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/MainTabView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/SchoolGIS.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/SchoolGIS.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/SchoolGIS.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/SchoolGIS.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/SchoolGIS.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/SchoolGIS.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/shishanyouniApp.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/shishanyouniApp.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/shishanyouniApp.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/shishanyouniApp.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/shishanyouniApp.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/shishanyouniApp.swiftdeps"
+  }
+}

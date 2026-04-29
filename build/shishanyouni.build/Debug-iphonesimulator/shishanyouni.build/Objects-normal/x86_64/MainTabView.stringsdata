@@ -1,0 +1,32 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/MainTabView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "课表",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 25
+        }
+      },
+      {
+        "comment": "",
+        "key": "首页",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "我的",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 44
+        }
+      }
+    ]
+  },
+  "version": 1
+}

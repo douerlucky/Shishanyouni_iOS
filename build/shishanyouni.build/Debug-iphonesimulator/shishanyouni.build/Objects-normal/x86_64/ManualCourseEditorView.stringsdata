@@ -1,0 +1,232 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ManualCourseEditorView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "课程信息",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 117
+        }
+      },
+      {
+        "comment": "",
+        "key": "上课周次",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 209
+        }
+      },
+      {
+        "comment": "",
+        "key": "预览",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 272
+        }
+      },
+      {
+        "comment": "",
+        "key": "开始节次不能大于结束节次",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "星期",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 127
+        }
+      },
+      {
+        "comment": "",
+        "key": "开始节次",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "结束节次",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 150
+        }
+      },
+      {
+        "comment": "",
+        "key": "课程名称",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 121
+        }
+      },
+      {
+        "comment": "",
+        "key": "输入课程名称",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 123
+        }
+      },
+      {
+        "comment": "",
+        "key": "第%lld节",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 139
+        }
+      },
+      {
+        "comment": "",
+        "key": "第%lld节",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 154
+        }
+      },
+      {
+        "comment": "",
+        "key": "教室",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 174
+        }
+      },
+      {
+        "comment": "",
+        "key": "可选",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 176
+        }
+      },
+      {
+        "comment": "",
+        "key": "教师",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 182
+        }
+      },
+      {
+        "comment": "",
+        "key": "可选",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 184
+        }
+      },
+      {
+        "comment": "",
+        "key": "课程颜色",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 190
+        }
+      },
+      {
+        "comment": "",
+        "key": "重置",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 194
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 202
+        }
+      },
+      {
+        "comment": "",
+        "key": "本学期",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 215
+        }
+      },
+      {
+        "comment": "",
+        "key": "1-11周",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 216
+        }
+      },
+      {
+        "comment": "",
+        "key": "12-19周",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 217
+        }
+      },
+      {
+        "comment": "",
+        "key": "单周",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 251
+        }
+      },
+      {
+        "comment": "",
+        "key": "双周",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 253
+        }
+      },
+      {
+        "comment": "",
+        "key": "全部清空",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 263
+        }
+      },
+      {
+        "comment": "",
+        "key": "周次: %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 296
+        }
+      },
+      {
+        "comment": "",
+        "key": "第%lld-%lld节",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 282
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 311
+        }
+      }
+    ]
+  },
+  "version": 1
+}

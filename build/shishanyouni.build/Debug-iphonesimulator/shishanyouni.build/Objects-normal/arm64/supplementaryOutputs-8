@@ -1,0 +1,44 @@
+{
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ScheduleSettingView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ScheduleSharedStore.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSharedStore.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSharedStore.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSharedStore.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSharedStore.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSharedStore.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ScheduleView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Club/AllClub.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllClub.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllClub.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllClub.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllClub.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllClub.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Club/ClubDetails.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClubDetails.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClubDetails.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClubDetails.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClubDetails.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClubDetails.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Strategy/AllStrategy.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllStrategy.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllStrategy.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllStrategy.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllStrategy.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllStrategy.swiftdeps"
+  }
+}

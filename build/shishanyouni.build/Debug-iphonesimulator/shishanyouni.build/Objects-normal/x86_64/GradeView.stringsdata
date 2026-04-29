@@ -1,0 +1,208 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Grade/GradeView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "平均学分绩点",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "成绩",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 149
+        }
+      },
+      {
+        "comment": "",
+        "key": "学分",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 161
+        }
+      },
+      {
+        "comment": "",
+        "key": "—",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 258
+        }
+      },
+      {
+        "comment": "",
+        "key": "平均分",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 262
+        }
+      },
+      {
+        "comment": "",
+        "key": "—",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 283
+        }
+      },
+      {
+        "comment": "",
+        "key": "加权平均分",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 287
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld 门",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 300
+        }
+      },
+      {
+        "comment": "",
+        "key": "记录课程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 303
+        }
+      },
+      {
+        "comment": "",
+        "key": "总学分",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 319
+        }
+      },
+      {
+        "comment": "",
+        "key": "成绩查询",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 471
+        }
+      },
+      {
+        "comment": "",
+        "key": "暂无成绩数据",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 379
+        }
+      },
+      {
+        "comment": "",
+        "key": "选择学期后点击查询",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 382
+        }
+      },
+      {
+        "comment": "",
+        "key": "总成绩",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 395
+        }
+      },
+      {
+        "comment": "",
+        "key": "单科成绩",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 408
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在查询成绩",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 447
+        }
+      },
+      {
+        "comment": "",
+        "key": "好的",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 476
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 512
+        }
+      },
+      {
+        "comment": "",
+        "key": "查询",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 567
+        }
+      },
+      {
+        "comment": "",
+        "key": "选择学期",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 587
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 615
+        }
+      },
+      {
+        "comment": "",
+        "key": "年份",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 593
+        }
+      },
+      {
+        "comment": "",
+        "key": "学期",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 608
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@学年",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 602
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@学年",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 598
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,48 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/HomeView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "首页",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 244
+        }
+      },
+      {
+        "comment": "",
+        "key": "今天是在华农的第 %lld 天",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前为游客模式",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 130
+        }
+      },
+      {
+        "comment": "",
+        "key": "欢迎使用狮山有你！\n来一起探索华中农业大学吧！",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "游客模式下可使用公开信息与本地工具功能，登录后可解锁个性化校园服务。",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 138
+        }
+      }
+    ]
+  },
+  "version": 1
+}

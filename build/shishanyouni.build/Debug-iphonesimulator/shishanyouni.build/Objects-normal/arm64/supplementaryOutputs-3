@@ -1,0 +1,44 @@
+{
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Backup/ScheduleSettingView_backup.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView_backup.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView_backup.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView_backup.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView_backup.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleSettingView_backup.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Backup/ScheduleView_backup.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView_backup.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView_backup.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView_backup.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView_backup.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ScheduleView_backup.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Classroom/Classroom.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Classroom.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Classroom.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Classroom.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Classroom.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/Classroom.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Classroom/ClassroomView.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClassroomView.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClassroomView.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClassroomView.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClassroomView.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/ClassroomView.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Course/AllCourse.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllCourse.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllCourse.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllCourse.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllCourse.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/AllCourse.swiftdeps"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Course/component/WeekButton.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/WeekButton.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/WeekButton.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/WeekButton.dia",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/WeekButton.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/shishanyouni.build/Objects-normal/arm64/WeekButton.swiftdeps"
+  }
+}

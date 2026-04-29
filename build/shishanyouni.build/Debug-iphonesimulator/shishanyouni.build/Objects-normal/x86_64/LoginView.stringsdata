@@ -1,0 +1,112 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Account/LoginView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "记住密码",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 105
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定要清除保存的绑定信息吗？",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "绑定校园信息门户账号，即表示接受我们为你提供个性化校园服务。",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "请输入学号",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 68
+        }
+      },
+      {
+        "comment": "",
+        "key": "学号",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 59
+        }
+      },
+      {
+        "comment": "",
+        "key": "请输入密码",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "密码",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 85
+        }
+      },
+      {
+        "comment": "",
+        "key": "绑定",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 204
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除保存并退出",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "清除并退出",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 233
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 240
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在尝试绑定信息门户账号",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 255
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 278
+        }
+      }
+    ]
+  },
+  "version": 1
+}

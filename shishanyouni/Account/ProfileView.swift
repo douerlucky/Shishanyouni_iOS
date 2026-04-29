@@ -94,9 +94,27 @@ struct ProfileView: View
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
+                            else if userinfo.isCASBound && userinfo.isShishanyouniBound
+                            {
+                                Text("已绑定学校账号")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            else if userinfo.isCASBound
+                            {
+                                Text("CAS已绑定，狮山有你未绑定")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            else if userinfo.isShishanyouniBound
+                            {
+                                Text("狮山有你已绑定，CAS未绑定")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
                             else
                             {
-                                Text("已绑定信息门户账号")
+                                Text("未成功绑定狮山有你、CAS账号")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }

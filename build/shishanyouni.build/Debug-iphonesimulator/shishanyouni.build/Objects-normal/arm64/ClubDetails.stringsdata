@@ -1,0 +1,24 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Club/ClubDetails.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "重试",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 80
+        }
+      },
+      {
+        "comment": "",
+        "key": "复制群号",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 169
+        }
+      }
+    ]
+  },
+  "version": 1
+}

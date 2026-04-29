@@ -1,0 +1,56 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ScheduleWidget/ScheduleWidget.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "第 %lld 周",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 267
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld月",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 275
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 289
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 312
+        }
+      },
+      {
+        "comment": "",
+        "key": "课表",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 563
+        }
+      },
+      {
+        "comment": "",
+        "key": "完整显示当周课表",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 564
+        }
+      }
+    ]
+  },
+  "version": 1
+}

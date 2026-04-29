@@ -10,12 +10,21 @@ import SwiftUI
 
 class userInfo: ObservableObject
 {
+    private enum StorageKey {
+        static let savedUsername = "saved_username"
+        static let savedNickname = "saved_nickname"
+        static let savedCASBound = "saved_cas_bound"
+        static let savedBackendBound = "saved_backend_bound"
+    }
+
     // 使用 @Published，这样当这些值改变时，所有引用的页面都会自动刷新
     @Published var username: String = ""
     @Published var nickname: String = ""
     @Published var plainPassword: String = ""
     @Published var encryptedPasswordSchool: String = ""
     @Published var encryptedPasswordShishanyouni: String = ""
+    @Published var isCASBound: Bool = false
+    @Published var isShishanyouniBound: Bool = false
 
     @Published var showClock: Bool = true
     {
@@ -78,7 +87,7 @@ class userInfo: ObservableObject
     func loadUserInfo()
     {
         // 从 UserDefaults 读取学号
-        if let savedUsername = UserDefaults.standard.string(forKey: "saved_username"),
+        if let savedUsername = UserDefaults.standard.string(forKey: StorageKey.savedUsername),
            !savedUsername.isEmpty
         {
             username = savedUsername
@@ -91,7 +100,14 @@ class userInfo: ObservableObject
                 performShishanyouniEncryption()
                 print("✅ 已自动加载学号: \(username)")
             }
-            nickname = UserDefaults.standard.string(forKey: "saved_nickname") ?? ""
+            nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname) ?? ""
+            isCASBound = UserDefaults.standard.bool(forKey: StorageKey.savedCASBound)
+            isShishanyouniBound = UserDefaults.standard.bool(forKey: StorageKey.savedBackendBound)
+        }
+        else
+        {
+            isCASBound = false
+            isShishanyouniBound = false
         }
     }
 
@@ -106,12 +122,13 @@ class userInfo: ObservableObject
         }
 
         // 保存学号到 UserDefaults
-        UserDefaults.standard.set(username, forKey: "saved_username")
+        UserDefaults.standard.set(username, forKey: StorageKey.savedUsername)
 
         // 保存密码到 Keychain
         let success = KeychainHelper.shared.save(password: plainPassword, for: username)
 
-        UserDefaults.standard.set(nickname, forKey: "saved_nickname")
+        UserDefaults.standard.set(nickname, forKey: StorageKey.savedNickname)
+        persistBindingStatus()
 
         if success
         {
@@ -130,8 +147,10 @@ class userInfo: ObservableObject
         KeychainHelper.shared.delete(for: username)
 
         // 清除 UserDefaults
-        UserDefaults.standard.removeObject(forKey: "saved_username")
-        UserDefaults.standard.removeObject(forKey: "saved_nickname")
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedUsername)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedNickname)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedCASBound)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedBackendBound)
 
         // 清空当前数据
         username = ""
@@ -139,6 +158,8 @@ class userInfo: ObservableObject
         encryptedPasswordSchool = ""
         encryptedPasswordShishanyouni = ""
         nickname = ""
+        isCASBound = false
+        isShishanyouniBound = false
 
         print("已清除保存的学号和密码")
     }
@@ -151,10 +172,18 @@ class userInfo: ObservableObject
             KeychainHelper.shared.delete(for: username)
         }
 
-        UserDefaults.standard.removeObject(forKey: "saved_username")
-        UserDefaults.standard.removeObject(forKey: "saved_nickname")
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedUsername)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedNickname)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedCASBound)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedBackendBound)
 
         print("已清除本地保存的账号信息，保留当前会话")
+    }
+
+    func updateBindingStatus(casBound: Bool, shishanyouniBound: Bool)
+    {
+        isCASBound = casBound
+        isShishanyouniBound = shishanyouniBound
     }
 
     // 加密方法
@@ -176,16 +205,22 @@ class userInfo: ObservableObject
 
     func loadUserNickname()
     {
-        let nickname = UserDefaults.standard.string(forKey: "saved_nickname")
+        let nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname)
     }
 
     func saveUserNickname()
     {
-        UserDefaults.standard.set(nickname, forKey: "saved_nickname")
+        UserDefaults.standard.set(nickname, forKey: StorageKey.savedNickname)
     }
 
     func debugprint()
     {
         print("设定为用户名:\(username)\n原始密码为:\(plainPassword)\n加密的密码为:\(encryptedPasswordSchool)")
+    }
+
+    private func persistBindingStatus()
+    {
+        UserDefaults.standard.set(isCASBound, forKey: StorageKey.savedCASBound)
+        UserDefaults.standard.set(isShishanyouniBound, forKey: StorageKey.savedBackendBound)
     }
 }

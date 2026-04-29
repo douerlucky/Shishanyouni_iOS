@@ -7,24 +7,121 @@
 
 import Foundation
 
+enum ExamQuerySource: String, CaseIterable, Identifiable {
+    case cas = "cas"
+    case shishanyouni = "shishanyouni"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cas: return "CAS"
+        case .shishanyouni: return "狮山有你"
+        }
+    }
+}
+
 struct ExamResponse: Decodable
 {
     let items: [Exam]
 }
 
+private struct LionExamResponse: Decodable {
+    let msg: String?
+    let code: Int
+    let data: [LionExamItem]?
+    let success: Bool?
+
+    var isSuccess: Bool {
+        success == true || code == 2 || code == 200
+    }
+}
+
+private struct LionExamItem: Decodable {
+    let xm: String?
+    let xh: String?
+    let kcmc: String
+    let ksmc: String
+    let kssj: String
+    let cdmc: String?
+    let bj: String?
+}
+
+enum ExamQueryError: LocalizedError {
+    case invalidURL
+    case invalidResponse
+    case apiError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "考试查询地址无效。"
+        case .invalidResponse:
+            return "考试查询返回了无法识别的响应。"
+        case let .apiError(message):
+            return message
+        }
+    }
+}
+
 struct Exam: Identifiable, Decodable
 {
-    var id: Int { row_id }
-    let row_id: Int
-    let kcmc: String // 课程名称
-    let ksmc: String // 考试名称 (如：期末考试)
-    let kssj: String // 考试时间 (2026-01-19(09:00-11:00))
-    let cdmc: String? // 场地名称 (三教C305)
-    let zwh: String? // 座位号
-    let xf: String? // 学分
-    let jxbmc: String? // 教学班名称
+    var id: String {
+        if let rowID = rowID {
+            return String(rowID)
+        }
+        return "\(kcmc)_\(ksmc)_\(kssj)"
+    }
 
-    // 拆分日期和时间
+    private let rowID: Int?
+    let kcmc: String
+    let ksmc: String
+    let kssj: String
+    let cdmc: String?
+    let zwh: String?
+    let xf: String?
+    let jxbmc: String?
+    let bj: String?
+    let querySource: ExamQuerySource
+
+    private enum CodingKeys: String, CodingKey {
+        case rowID = "row_id"
+        case kcmc
+        case ksmc
+        case kssj
+        case cdmc
+        case zwh
+        case xf
+        case jxbmc
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        rowID = try container.decodeIfPresent(Int.self, forKey: .rowID)
+        kcmc = try container.decode(String.self, forKey: .kcmc)
+        ksmc = try container.decode(String.self, forKey: .ksmc)
+        kssj = try container.decode(String.self, forKey: .kssj)
+        cdmc = try container.decodeIfPresent(String.self, forKey: .cdmc)
+        zwh = try container.decodeIfPresent(String.self, forKey: .zwh)
+        xf = try container.decodeIfPresent(String.self, forKey: .xf)
+        jxbmc = try container.decodeIfPresent(String.self, forKey: .jxbmc)
+        bj = nil
+        querySource = .cas
+    }
+
+    fileprivate init(from item: LionExamItem) {
+        rowID = nil
+        kcmc = item.kcmc
+        ksmc = item.ksmc
+        kssj = item.kssj
+        cdmc = item.cdmc.flatMap { $0.isEmpty ? nil : $0 }
+        zwh = nil
+        xf = nil
+        jxbmc = nil
+        bj = item.bj.flatMap { $0.isEmpty ? nil : $0 }
+        querySource = .shishanyouni
+    }
+
     var examDate: String
     {
         kssj.components(separatedBy: "(").first ?? kssj
@@ -38,17 +135,28 @@ struct Exam: Identifiable, Decodable
         }
         return ""
     }
+
+    var seatDisplayText: String {
+        if let zwh, !zwh.isEmpty {
+            return "座位: \(zwh)"
+        }
+
+        switch querySource {
+        case .cas:
+            return "不支持座位号"
+        case .shishanyouni:
+            return "不支持座位号"
+        }
+    }
 }
 
 class ExamQuery
 {
     static let shared = ExamQuery()
+    private let lionURL = "https://lion.hzau.edu.cn/app/ios/exam"
 
-    func fetchExams(cookie: String,xnm: String, xqm: String) async throws -> [Exam]
+    func fetchExams(cookie: String, xnm: String, xqm: String) async throws -> [Exam]
     {
-
-
-        // 构建请求
         let urlString = "http://byjxyt.hzau.edu.cn/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
@@ -62,10 +170,9 @@ class ExamQuery
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
 
-        // 3. 构建参数
         let params = [
-            "xnm": xnm, // 学年 (如 2025)
-            "xqm": xqm, // 学期 (1 或 3)
+            "xnm": xnm,
+            "xqm": xqm,
             "queryModel.showCount": "100",
             "queryModel.currentPage": "1",
         ]
@@ -75,13 +182,41 @@ class ExamQuery
             .joined(separator: "&")
             .data(using: .utf8)
 
-        // 4. 发送请求
         let (data, _) = try await URLSession.shared.data(for: request)
-
-        // 调试用：打印原始数据
-        // if let json = String(data: data, encoding: .utf8) { print("Exam JSON: \(json)") }
-
         let response = try JSONDecoder().decode(ExamResponse.self, from: data)
         return response.items
+    }
+
+    func fetchExamsFromShishanyouni(username: String, encryptedPassword: String, xnm: String, xqm: String) async throws -> [Exam] {
+        guard let url = URL(string: lionURL) else {
+            throw ExamQueryError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let payload: [String: Any] = [
+            "xnm": xnm,
+            "xqm": xqm,
+            "yhm": username,
+            "mm": encryptedPassword,
+            "type": 1,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
+            throw ExamQueryError.invalidResponse
+        }
+
+        let decoded = try JSONDecoder().decode(LionExamResponse.self, from: data)
+        guard decoded.isSuccess else {
+            throw ExamQueryError.apiError(decoded.msg ?? "狮山有你考试查询失败。")
+        }
+
+        return (decoded.data ?? [])
+            .map { Exam(from: $0) }
+            .sorted { $0.kssj < $1.kssj }
     }
 }

@@ -1,0 +1,40 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Strategy/AllStrategy.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "校园攻略",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 201
+        }
+      },
+      {
+        "comment": "",
+        "key": "加载中...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 146
+        }
+      },
+      {
+        "comment": "",
+        "key": "重新加载",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 163
+        }
+      },
+      {
+        "comment": "",
+        "key": "暂无攻略",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 177
+        }
+      }
+    ]
+  },
+  "version": 1
+}

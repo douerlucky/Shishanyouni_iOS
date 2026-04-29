@@ -1,0 +1,32 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Strategy/StrategyDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "加载中...",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "重新加载",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "暂无详细内容",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 226
+        }
+      }
+    ]
+  },
+  "version": 1
+}

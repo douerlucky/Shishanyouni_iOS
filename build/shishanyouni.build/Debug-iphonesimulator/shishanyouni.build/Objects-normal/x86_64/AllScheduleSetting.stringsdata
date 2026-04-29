@@ -1,0 +1,80 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/AllScheduleSetting.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "所有课程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认删除课程",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 129
+        }
+      },
+      {
+        "comment": "",
+        "key": "暂无已导入课程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "删除",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "编辑",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 71
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 131
+        }
+      },
+      {
+        "comment": "",
+        "key": "删除",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "将删除「%@」，此操作不可撤销。",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 142
+        }
+      },
+      {
+        "comment": "",
+        "key": "周%@ 第%lld-%lld节",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 157
+        }
+      }
+    ]
+  },
+  "version": 1
+}

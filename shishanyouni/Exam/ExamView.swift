@@ -13,7 +13,8 @@ struct ExamView: View
     @State private var alertTitle = ""
 
     @State var selectedYear = "2025"
-    @State var selectedTerm = "12" 
+    @State var selectedTerm = "2"
+    @State private var querySource: ExamQuerySource = .cas
 
     // 声明查询工具
     private let scheduleQuery = ScheduleQuery()
@@ -91,6 +92,7 @@ struct ExamView: View
                 alertMessage: $alertMessage,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
+                querySource: $querySource,
                 scheduleQuery: scheduleQuery,
                 examQuery: examQuery
             )
@@ -167,17 +169,14 @@ struct ExamCard: View
                             .font(.system(size: 16, weight: .semibold))
                     }
 
-                    if let zwh = exam.zwh, !zwh.isEmpty
+                    HStack
                     {
-                        HStack
-                        {
-                            Image(systemName: "number.square")
-                                .foregroundColor(.green)
-                                .font(.system(size: 16, weight: .semibold))
-                                .frame(width: 18)
-                            Text("座位: \(zwh)")
-                                .font(.system(size: 16, weight: .semibold))
-                        }
+                        Image(systemName: "number.square")
+                            .foregroundColor(.green)
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(width: 18)
+                        Text(exam.seatDisplayText)
+                            .font(.system(size: 16, weight: .semibold))
                     }
                 }
             }
@@ -204,6 +203,7 @@ struct ExamBottomControlBar: View
     @Binding var alertMessage: String
     @Binding var selectedYear: String
     @Binding var selectedTerm: String
+    @Binding var querySource: ExamQuerySource
 
     @State private var showPicker = false
     @EnvironmentObject var userinfo: userInfo
@@ -211,8 +211,8 @@ struct ExamBottomControlBar: View
     let scheduleQuery: ScheduleQuery
     let examQuery: ExamQuery
 
-    let years = ["2023", "2024", "2025"]
-    let terms = [("秋季学期", "3"), ("春季学期", "12")]
+    let years = ["2023", "2024", "2025", "2026"]
+    let terms = [("第一学期", "1"), ("第二学期", "2")]
 
     var body: some View
     {
@@ -223,7 +223,7 @@ struct ExamBottomControlBar: View
             {
                 HStack
                 {
-                    Text("\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
+                    Text("\(querySource.title) · \(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
                         .font(.system(size: 14, weight: .bold))
                     Image(systemName: "chevron.up")
                         .font(.system(size: 10, weight: .bold))
@@ -266,6 +266,16 @@ struct ExamBottomControlBar: View
                 Text("选择查询范围")
                     .font(.headline)
                     .padding(.top, 20)
+
+                Picker("查询服务器", selection: $querySource)
+                {
+                    ForEach(ExamQuerySource.allCases)
+                    { source in
+                        Text(source.title).tag(source)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 24)
 
                 HStack(spacing: 0)
                 {
@@ -329,8 +339,8 @@ struct ExamBottomControlBar: View
     {
         switch term
         {
-        case "3": return "一"
-        case "12": return "二"
+        case "1": return "一"
+        case "2": return "二"
         default:
             return "一"
         }
@@ -338,33 +348,49 @@ struct ExamBottomControlBar: View
 
     private func fetchExamData()
     {
+        guard !userinfo.username.isEmpty else
+        {
+            alertTitle = "查询失败"
+            alertMessage = "好像忘记了登录，请先去登录吧！"
+            showAlert = true
+            return
+        }
+
         isLoading = true
         Task
         {
             do
             {
-                // 1. 使用 ScheduleQuery 的登录流程获取有效的 Cookie (JSESSIONID)
-                let cookie = try await scheduleQuery.loginAndGetCookie(
-                    username: userinfo.username,
-                    rsaPassword: userinfo.encryptedPasswordSchool
-                )
-
-                // 2. 使用获取到的 Cookie 进行考试查询
-                let result = try await examQuery.fetchExams(
-                    cookie: cookie,
-                    xnm: selectedYear,
-                    xqm: selectedTerm
-                )
+                let result: [Exam]
+                switch querySource
+                {
+                case .cas:
+                    let cookie = try await scheduleQuery.loginAndGetCookie(
+                        username: userinfo.username,
+                        rsaPassword: userinfo.encryptedPasswordSchool
+                    )
+                    result = try await examQuery.fetchExams(
+                        cookie: cookie,
+                        xnm: selectedYear,
+                        xqm: selectedTerm == "1" ? "3" : "12"
+                    )
+                case .shishanyouni:
+                    result = try await examQuery.fetchExamsFromShishanyouni(
+                        username: userinfo.username,
+                        encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                        xnm: selectedYear,
+                        xqm: selectedTerm
+                    )
+                }
 
                 await MainActor.run
                 {
                     self.exams = result
                     self.isLoading = false
-                    // 只有在数据为空时提示，避免正常有数据时弹窗打扰用户
                     if result.isEmpty
                     {
                         self.alertTitle = "提示"
-                        self.alertMessage = "该学期未查询到考试安排"
+                        self.alertMessage = "\(querySource.title) 服务器下该学期未查询到考试安排"
                         self.showAlert = true
                     }
                     UINotificationFeedbackGenerator().notificationOccurred(.success)

@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'shishanyouni' in project 'shishanyouni'
+➜ Explicit dependency on target 'ScheduleWidgetExtension' in project 'shishanyouni'
+Target 'ScheduleWidgetExtension' in project 'shishanyouni' (no dependencies)

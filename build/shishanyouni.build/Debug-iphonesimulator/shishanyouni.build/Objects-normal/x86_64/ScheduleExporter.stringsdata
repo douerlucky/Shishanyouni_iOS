@@ -1,0 +1,32 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Schedule/ScheduleExporter.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "第 %lld 周课表",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 62
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld月",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 65
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 81
+        }
+      }
+    ]
+  },
+  "version": 1
+}

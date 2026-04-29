@@ -1,0 +1,16 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/SchoolBus.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "校车查询",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 46
+        }
+      }
+    ]
+  },
+  "version": 1
+}

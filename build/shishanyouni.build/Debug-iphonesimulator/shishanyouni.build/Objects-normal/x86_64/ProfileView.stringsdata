@@ -1,0 +1,160 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Account/ProfileView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "我的",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 207
+        }
+      },
+      {
+        "comment": "",
+        "key": "账号设置",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 109
+        }
+      },
+      {
+        "comment": "",
+        "key": "个性化设置",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 191
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@，%@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 57
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@，%@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前为游客模式",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "公开信息与本地工具功能均可正常使用",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "绑定信息门户后可使用成绩、考试、体测等个性化校园服务",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 50
+        }
+      },
+      {
+        "comment": "",
+        "key": "账号设置",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "点击绑定信息门户账号",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "已绑定信息门户账号",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "昵称设置",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 127
+        }
+      },
+      {
+        "comment": "",
+        "key": "显示日期与时钟",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 150
+        }
+      },
+      {
+        "comment": "",
+        "key": "显示入校天数",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 168
+        }
+      },
+      {
+        "comment": "",
+        "key": "关于狮山有你iOS",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 185
+        }
+      },
+      {
+        "comment": "",
+        "key": "输入你的昵称",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 193
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 196
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 197
+        }
+      },
+      {
+        "comment": "",
+        "key": "请输入你想使用的昵称",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 203
+        }
+      }
+    ]
+  },
+  "version": 1
+}

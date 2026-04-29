@@ -1,0 +1,152 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Event/EventEditView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "基本信息",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "时间",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "备注",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "重复设置",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "预览",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 122
+        }
+      },
+      {
+        "comment": "",
+        "key": "标题",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 77
+        }
+      },
+      {
+        "comment": "",
+        "key": "日期",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 79
+        }
+      },
+      {
+        "comment": "",
+        "key": "全天",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 82
+        }
+      },
+      {
+        "comment": "",
+        "key": "开始时间",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "结束时间",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 90
+        }
+      },
+      {
+        "comment": "",
+        "key": "此日程将从选定日期开始重复，直到您手动删除",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 116
+        }
+      },
+      {
+        "comment": "",
+        "key": "重复",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "频率",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "间隔",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 111
+        }
+      },
+      {
+        "comment": "",
+        "key": "每 %lld %@",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 113
+        }
+      },
+      {
+        "comment": "",
+        "key": "全天",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 132
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ - %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 139
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 158
+        }
+      }
+    ]
+  },
+  "version": 1
+}

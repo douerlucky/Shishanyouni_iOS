@@ -1,0 +1,256 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/GymCloud/PhysicalTestCalculateView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "体测计算器",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 258
+        }
+      },
+      {
+        "comment": "",
+        "key": "预测年度: %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "输入数据即刻计算分值",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "本功能仅用于参考，不构成任何医疗或健康建议",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 117
+        }
+      },
+      {
+        "comment": "",
+        "key": "数据来源：%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 119
+        }
+      },
+      {
+        "comment": "",
+        "key": "其中 BMI 分类与分值计算同样依据该标准执行。",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 122
+        }
+      },
+      {
+        "comment": "",
+        "key": "查看官方标准说明",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "性别",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 145
+        }
+      },
+      {
+        "comment": "",
+        "key": "性别",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 147
+        }
+      },
+      {
+        "comment": "",
+        "key": "未选择",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 149
+        }
+      },
+      {
+        "comment": "",
+        "key": "男",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 150
+        }
+      },
+      {
+        "comment": "",
+        "key": "女",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 151
+        }
+      },
+      {
+        "comment": "",
+        "key": "年级",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 163
+        }
+      },
+      {
+        "comment": "",
+        "key": "年级",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 165
+        }
+      },
+      {
+        "comment": "",
+        "key": "单项成绩",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 204
+        }
+      },
+      {
+        "comment": "",
+        "key": "请先选择性别",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 212
+        }
+      },
+      {
+        "comment": "",
+        "key": "男女标准不同，请选择后开始计算",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 213
+        }
+      },
+      {
+        "comment": "",
+        "key": "切换预测学年",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 268
+        }
+      },
+      {
+        "comment": "",
+        "key": "年份",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 269
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 273
+        }
+      },
+      {
+        "comment": "",
+        "key": "分",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 439
+        }
+      },
+      {
+        "comment": "",
+        "key": "秒",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 456
+        }
+      },
+      {
+        "comment": "",
+        "key": "分",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 425
+        }
+      },
+      {
+        "comment": "",
+        "key": "秒",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 442
+        }
+      },
+      {
+        "comment": "",
+        "key": "输入",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 492
+        }
+      },
+      {
+        "comment": "",
+        "key": "输入",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 538
+        }
+      },
+      {
+        "comment": "",
+        "key": "身体形态 (BMI)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 690
+        }
+      },
+      {
+        "comment": "",
+        "key": "BMI 信息依据：%@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 726
+        }
+      },
+      {
+        "comment": "",
+        "key": "查看 BMI 官方标准说明",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 729
+        }
+      },
+      {
+        "comment": "",
+        "key": "已保存",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 950
+        }
+      },
+      {
+        "comment": "",
+        "key": "保存成绩",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 957
+        }
+      }
+    ]
+  },
+  "version": 1
+}

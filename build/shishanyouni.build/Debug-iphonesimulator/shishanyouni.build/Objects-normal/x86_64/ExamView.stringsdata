@@ -1,0 +1,120 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Exam/ExamView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "我的考试",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "未查询到任何考试安排",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 41
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在努力加载考试信息...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "好的",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 102
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@学分",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 138
+        }
+      },
+      {
+        "comment": "",
+        "key": "座位: %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "查询",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 246
+        }
+      },
+      {
+        "comment": "",
+        "key": "选择查询范围",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 266
+        }
+      },
+      {
+        "comment": "",
+        "key": "年份",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 272
+        }
+      },
+      {
+        "comment": "",
+        "key": "学期",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 291
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@学年",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 284
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@-%@学年",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 279
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 300
+        }
+      }
+    ]
+  },
+  "version": 1
+}

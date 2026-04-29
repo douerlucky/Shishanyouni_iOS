@@ -1,0 +1,16 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/SchoolCalendar.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "校历详情",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 45
+        }
+      }
+    ]
+  },
+  "version": 1
+}

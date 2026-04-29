@@ -1,0 +1,48 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Utils/Club/AllClub.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "全部社团",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 124
+        }
+      },
+      {
+        "comment": "",
+        "key": "搜索社团名称",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 120
+        }
+      },
+      {
+        "comment": "",
+        "key": "加载社团列表…",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 92
+        }
+      },
+      {
+        "comment": "",
+        "key": "重试",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "未找到%@相关社团",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 315
+        }
+      }
+    ]
+  },
+  "version": 1
+}

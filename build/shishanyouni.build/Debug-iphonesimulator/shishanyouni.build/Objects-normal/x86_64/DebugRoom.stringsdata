@@ -1,0 +1,160 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Debug/DebugRoom.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "打开登录页（WKWebView）",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前学号密码",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "测试查询课表接口",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 132
+        }
+      },
+      {
+        "comment": "",
+        "key": "测试考试查询接口",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 157
+        }
+      },
+      {
+        "comment": "",
+        "key": "测试 CAS 登录接口（MFA）",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 185
+        }
+      },
+      {
+        "comment": "",
+        "key": "测试南湖跑查询接口",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 209
+        }
+      },
+      {
+        "comment": "",
+        "key": "测试电费查询接口",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 237
+        }
+      },
+      {
+        "comment": "",
+        "key": "粘贴 Cookie（JSESSIONID=xxx）",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "🔐 RSA 加密实验室",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "学号",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 61
+        }
+      },
+      {
+        "comment": "",
+        "key": "输入原始密码",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "执行 RSA 加密",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 75
+        }
+      },
+      {
+        "comment": "",
+        "key": "设定该学号密码",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前 fpVisitorId: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 106
+        }
+      },
+      {
+        "comment": "",
+        "key": "MFA 使用随机 fpVisitorId（更容易触发 need=true）",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "重新生成 fpVisitorId",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 111
+        }
+      },
+      {
+        "comment": "",
+        "key": "预览验证码弹窗页面",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "HZAU Login",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 267
+        }
+      },
+      {
+        "comment": "",
+        "key": "关闭",
+        "location": {
+          "startingColumn": 48,
+          "startingLine": 273
+        }
+      }
+    ]
+  },
+  "version": 1
+}

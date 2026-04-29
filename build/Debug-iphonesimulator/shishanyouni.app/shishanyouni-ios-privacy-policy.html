@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>狮山有你 iOS - 隐私说明</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --brand: #0f766e;
+        --warn-bg: #fff7ed;
+        --warn-text: #9a3412;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        line-height: 1.7;
+      }
+
+      .container {
+        max-width: 860px;
+        margin: 24px auto;
+        padding: 0 16px 32px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 24px 20px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 26px;
+        line-height: 1.3;
+      }
+
+      h2 {
+        margin: 28px 0 10px;
+        font-size: 18px;
+        line-height: 1.4;
+        color: #111827;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      ul {
+        margin: 8px 0 8px 20px;
+        padding: 0;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .notice {
+        margin: 14px 0 18px;
+        padding: 12px 14px;
+        background: var(--warn-bg);
+        color: var(--warn-text);
+        border: 1px solid #fed7aa;
+        border-radius: 10px;
+        font-size: 14px;
+      }
+
+      .section-note {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .footer {
+        margin-top: 28px;
+        padding-top: 14px;
+        border-top: 1px dashed var(--line);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      a {
+        color: var(--brand);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 640px) {
+        .container {
+          margin: 12px auto;
+          padding: 0 12px 20px;
+        }
+
+        .card {
+          padding: 18px 14px;
+          border-radius: 12px;
+        }
+
+        h1 {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <article class="card">
+        <h1>狮山有你 iOS 隐私说明</h1>
+        <p class="meta">生效日期：2026年4月8日</p>
+        <p class="meta">更新日期：2026年4月8日</p>
+
+        <div class="notice">
+          本页面由第三方独立开发者整理，仅用于说明本应用当前版本的个人信息使用情况，不代表任何学校、机构或官方单位立场。
+        </div>
+
+        <h2>核心说明</h2>
+        <ul>
+          <li>
+            在您绑定账号、导入课表、查询成绩、查询考试信息时，因需向学校系统请求数据，会使用您填写的学号和密码进行登录/鉴权，以获取对应信息。
+          </li>
+          <li>
+            使用环湖跑成绩查询时，会使用您的信息门户账号与密码登录体测系统并读取成绩数据。
+          </li>
+          <li>
+            在课表功能中，会在本地保存课程信息（如课程名、教室、教师、周次等），用于课表显示与课程搜索相关功能；该部分不包含额外身份字段。
+          </li>
+        </ul>
+
+        <h2>实际收集与本地存储</h2>
+        <p>本应用会处理以下数据：</p>
+        <ul>
+          <li>登录信息：学号、密码，用于学校系统登录。</li>
+          <li>账号绑定：登录成功后会调用绑定接口提交学号与原始密码，用于账号绑定流程。</li>
+          <li>本地账号信息：学号、昵称保存在本地；密码在“记住密码”开启时保存到 iOS Keychain。</li>
+          <li>课表数据：导入课表和手动课表会保存在本地，用于课表展示与相关课程功能。</li>
+          <li>界面设置：如开学日期、背景图文件名、显示偏好等会保存在本地。</li>
+        </ul>
+
+        <h2>我们如何使用这些信息</h2>
+        <ul>
+          <li>用于登录校内系统并拉取课表、成绩、考试、环湖跑/体测等数据。</li>
+          <li>用于在设备本地展示与缓存课程、个性化设置。</li>
+        </ul>
+
+        <h2>涉及的第三方服务</h2>
+        <ul>
+          <li>lion.hzau.edu.cn（账号绑定、课表、成绩相关接口）</li>
+          <li>cas-paas.hzau.edu.cn（统一认证）</li>
+          <li>byjxyt.hzau.edu.cn（考试/课程查询接口）</li>
+          <li>tygl.hzau.edu.cn（环湖跑、体测）</li>
+        </ul>
+
+        <h2>我们如何保护信息</h2>
+        <p>
+          账号密码不写入应用源码；“记住密码”场景下密码存于 iOS Keychain。您可随时在应用内执行“清除保存并退出”，删除本地保存的学号、昵称与密码。
+        </p>
+
+        <h2>权限说明</h2>
+        <ul>
+          <li>本应用当前仅声明了相册写入权限（用于导出课表图片）。</li>
+          <li>未声明定位权限。</li>
+        </ul>
+
+        <h2>说明更新</h2>
+        <p>
+          若后续功能或数据处理方式发生变化，本页面会同步更新对应说明。
+        </p>
+
+        <h2>联系我们</h2>
+        <p>如您对以上说明有疑问，请联系我们：</p>
+        <ul>
+          <li>联系邮箱：278755305@qq.com</li>
+        </ul>
+
+        <p class="footer">
+          说明：本页面为第三方开发者版本，并非学校或官方机构公告。
+        </p>
+      </article>
+    </main>
+  </body>
+</html>

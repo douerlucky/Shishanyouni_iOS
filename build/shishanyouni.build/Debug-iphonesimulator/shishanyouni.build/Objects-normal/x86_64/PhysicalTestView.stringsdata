@@ -1,0 +1,192 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/GymCloud/PhysicalTestView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "体测成绩",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 273
+        }
+      },
+      {
+        "comment": "",
+        "key": "体测计算器",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "在体测结果出来之前，先自己预估一下吧！",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "测试年度: %@",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 142
+        }
+      },
+      {
+        "comment": "",
+        "key": "结果更新时间:\n%@",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 146
+        }
+      },
+      {
+        "comment": "",
+        "key": "本功能仅用于参考，不构成任何医疗或健康建议",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "数据来源：%@",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 171
+        }
+      },
+      {
+        "comment": "",
+        "key": "体测成绩展示及其中涉及的 BMI 相关信息均以该标准为依据。",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 174
+        }
+      },
+      {
+        "comment": "",
+        "key": "查看官方标准说明",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 177
+        }
+      },
+      {
+        "comment": "",
+        "key": "单项成绩",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 225
+        }
+      },
+      {
+        "comment": "",
+        "key": "身高",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 198
+        }
+      },
+      {
+        "comment": "",
+        "key": "体重",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 208
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 106,
+          "startingLine": 286
+        }
+      },
+      {
+        "comment": "",
+        "key": "未查询到成绩",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 307
+        }
+      },
+      {
+        "comment": "",
+        "key": "请尝试切换学年或重新登录",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 310
+        }
+      },
+      {
+        "comment": "",
+        "key": "切换查询学期",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 321
+        }
+      },
+      {
+        "comment": "",
+        "key": "确定",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 329
+        }
+      },
+      {
+        "comment": "",
+        "key": "年份",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 324
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在查询健康云...",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 352
+        }
+      },
+      {
+        "comment": "",
+        "key": "BMI 信息依据：%@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 594
+        }
+      },
+      {
+        "comment": "",
+        "key": "查看 BMI 官方标准说明",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 597
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 661
+        }
+      },
+      {
+        "comment": "",
+        "key": "同步成绩",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 678
+        }
+      }
+    ]
+  },
+  "version": 1
+}

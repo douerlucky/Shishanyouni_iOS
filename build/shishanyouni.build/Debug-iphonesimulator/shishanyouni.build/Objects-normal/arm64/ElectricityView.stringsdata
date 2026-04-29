@@ -1,0 +1,168 @@
+{
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/Electricity/ElectricityView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "电费查询",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 67
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在同步...",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "好",
+        "location": {
+          "startingColumn": 102,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前余额 (元)",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "电表读数 (度)",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 151
+        }
+      },
+      {
+        "comment": "",
+        "key": "%.2f",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 154
+        }
+      },
+      {
+        "comment": "",
+        "key": "尚未绑定房间",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 201
+        }
+      },
+      {
+        "comment": "",
+        "key": "绑定后可随时查看宿舍剩余电费",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 203
+        }
+      },
+      {
+        "comment": "",
+        "key": "绑定房间",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 274
+        }
+      },
+      {
+        "comment": "",
+        "key": "请选择宿舍房间号",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 220
+        }
+      },
+      {
+        "comment": "",
+        "key": "楼栋",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "楼层",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 237
+        }
+      },
+      {
+        "comment": "",
+        "key": "房间",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 249
+        }
+      },
+      {
+        "comment": "",
+        "key": "-",
+        "location": {
+          "startingColumn": 50,
+          "startingLine": 239
+        }
+      },
+      {
+        "comment": "",
+        "key": "-",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 251
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前选择",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 261
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 70,
+          "startingLine": 278
+        }
+      },
+      {
+        "comment": "",
+        "key": "完成",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 281
+        }
+      },
+      {
+        "comment": "",
+        "key": "重新绑定",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 519
+        }
+      },
+      {
+        "comment": "",
+        "key": "绑定房间",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 529
+        }
+      }
+    ]
+  },
+  "version": 1
+}
