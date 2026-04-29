@@ -16,6 +16,10 @@ private enum WidgetShared
     static let currentWeekKey = "schedule_current_week"
     static let backgroundImageFilenameKey = "scheduleBackgroundImageFilename"
     static let backgroundOpacityKey = "scheduleBackgroundOpacity"
+    
+    static let campusPassActiveKey = "iap_campus_pass_active" // 当前校园通行证是否有效
+    static let campusPassProductIDKey = "iap_campus_pass_product_id" // 当前生效的是哪个订阅商品
+    static let campusPassExpirationKey = "iap_campus_pass_expiration" // 订阅到期时间
 }
 
 struct WidgetCourse: Codable, Identifiable
@@ -550,8 +554,16 @@ struct ScheduleWidget: Widget
         { entry in
             if #available(iOS 17.0, *)
             {
-                ScheduleWidgetEntryView(entry: entry)
-                    .containerBackground(.clear, for: .widget)
+                if loadCampusPassActive()
+                {
+                    ScheduleWidgetEntryView(entry: entry)
+                        .containerBackground(.clear, for: .widget)
+                }
+                else
+                {
+                    Text("开通校园通行证后可用")
+                }
+                
             }
             else
             {
@@ -565,6 +577,14 @@ struct ScheduleWidget: Widget
         .supportedFamilies([.systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
+    
+    //加载校园通行证是否有效
+    private func loadCampusPassActive() -> Bool
+    {
+        let shared = UserDefaults(suiteName: WidgetShared.appGroupID)
+        return shared?.bool(forKey: WidgetShared.campusPassActiveKey) ?? false
+    }
+
 }
 
 extension Color

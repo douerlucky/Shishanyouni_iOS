@@ -242,7 +242,7 @@ struct AllScheduleSetting: View
 
     private func loadSavedCourses()
     {
-        courses = ScheduleSharedStore.loadCourses()
+        courses = WidgetSharedStore.loadCourses()
         sortCoursesByNameAndTime()
     }
 
@@ -256,7 +256,7 @@ struct AllScheduleSetting: View
 
     private func saveCourses()
     {
-        ScheduleSharedStore.saveCourses(courses)
+        WidgetSharedStore.saveCourses(courses)
     }
 
     private func sortCoursesByNameAndTime()

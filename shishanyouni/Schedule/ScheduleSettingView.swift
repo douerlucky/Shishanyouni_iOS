@@ -422,7 +422,7 @@ struct ScheduleSettingView: View {
     // MARK: - 持久化
 
     private func persistCourses(_ courses: [Course]) {
-        ScheduleSharedStore.saveCourses(courses)
+        WidgetSharedStore.saveCourses(courses)
         print("✅ 课表已保存到共享存储，共 \(courses.count) 条")
     }
 
@@ -459,7 +459,7 @@ struct ScheduleSettingView: View {
 
     private func clearAllCourses() {
         courses = []
-        ScheduleSharedStore.clearCourses()
+        WidgetSharedStore.clearCourses()
         print("✅ 所有课程已清空")
     }
 
@@ -479,8 +479,8 @@ struct ScheduleSettingView: View {
     private func saveSettings() {
         semesterStartDate   = tempStartDate
         savedTimestamp      = tempStartDate.timeIntervalSince1970
-        ScheduleSharedStore.saveSemesterStartTimestamp(savedTimestamp)
-        ScheduleSharedStore.saveBackgroundMeta(filename: backgroundImageFilename, opacity: backgroundOpacity)
+        WidgetSharedStore.saveSemesterStartTimestamp(savedTimestamp)
+        WidgetSharedStore.saveBackgroundMeta(filename: backgroundImageFilename, opacity: backgroundOpacity)
         showSaveConfirmation = true
     }
 
@@ -507,11 +507,11 @@ struct ScheduleSettingView: View {
             backgroundImageFilename = filename
 
             // 同步保存到 App Group 容器，供 Widget 读取
-            if let sharedDir = ScheduleSharedStore.sharedContainerURL() {
+            if let sharedDir = WidgetSharedStore.sharedContainerURL() {
                 let sharedURL = sharedDir.appendingPathComponent(filename)
                 try? data.write(to: sharedURL)
             }
-            ScheduleSharedStore.saveBackgroundMeta(filename: filename, opacity: backgroundOpacity)
+            WidgetSharedStore.saveBackgroundMeta(filename: filename, opacity: backgroundOpacity)
         } catch {
             print("Failed to save background image: \(error)")
         }
@@ -523,12 +523,12 @@ struct ScheduleSettingView: View {
                 .appendingPathComponent(backgroundImageFilename)
             try? FileManager.default.removeItem(at: fileURL)
 
-            if let sharedDir = ScheduleSharedStore.sharedContainerURL() {
+            if let sharedDir = WidgetSharedStore.sharedContainerURL() {
                 let sharedURL = sharedDir.appendingPathComponent(backgroundImageFilename)
                 try? FileManager.default.removeItem(at: sharedURL)
             }
             backgroundImageFilename = ""
-            ScheduleSharedStore.clearBackgroundMeta()
+            WidgetSharedStore.clearBackgroundMeta()
         }
     }
 }

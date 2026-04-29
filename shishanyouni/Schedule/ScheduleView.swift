@@ -77,7 +77,7 @@ struct ScheduleView: View
 
     private func saveCourses()
     {
-        ScheduleSharedStore.saveCourses(courses)
+        WidgetSharedStore.saveCourses(courses)
         print("✅ 课程保存成功，共 \(courses.count) 门")
     }
 
@@ -473,13 +473,13 @@ struct ScheduleView: View
         {
             semesterStartDate = Date(timeIntervalSince1970: savedTimestamp)
         }
-        else if let sharedTs = ScheduleSharedStore.loadSemesterStartTimestamp(), sharedTs > 0
+        else if let sharedTs = WidgetSharedStore.loadSemesterStartTimestamp(), sharedTs > 0
         {
             savedTimestamp = sharedTs
             semesterStartDate = Date(timeIntervalSince1970: sharedTs)
         }
 
-        courses = ScheduleSharedStore.loadCourses()
+        courses = WidgetSharedStore.loadCourses()
         print("✅ 已加载 \(courses.count) 门课程")
         loadBackgroundImage()
     }
@@ -505,7 +505,7 @@ struct ScheduleView: View
         }
         datesCurWeek = newDates
         weekDatesCurWeek = newWeekDates
-        ScheduleSharedStore.saveCurrentWeek(nowDisplayWeek)
+        WidgetSharedStore.saveCurrentWeek(nowDisplayWeek)
     }
 
     func calculateCurrentWeek() -> Int

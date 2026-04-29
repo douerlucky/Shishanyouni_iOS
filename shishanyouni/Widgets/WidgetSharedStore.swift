@@ -1,5 +1,5 @@
 //
-//  ScheduleSharedStore.swift
+//  WidgetSharedStore.swift
 //  shishanyouni
 //
 //  Shared storage bridge between App and Widget.
@@ -8,7 +8,7 @@
 import Foundation
 import WidgetKit
 
-enum ScheduleSharedStore
+enum WidgetSharedStore
 {
     static let appGroupID = "group.cn.edu.hzau.shishanyouni"
     static let widgetKind = "ScheduleWidget"
@@ -18,6 +18,10 @@ enum ScheduleSharedStore
     static let currentWeekKey = "schedule_current_week"
     static let backgroundImageFilenameKey = "scheduleBackgroundImageFilename"
     static let backgroundOpacityKey = "scheduleBackgroundOpacity"
+
+    static let campusPassActiveKey = "iap_campus_pass_active" // 当前校园通行证是否有效
+    static let campusPassProductIDKey = "iap_campus_pass_product_id" // 当前生效的是哪个订阅商品
+    static let campusPassExpirationKey = "iap_campus_pass_expiration" // 订阅到期时间
 
     static var sharedDefaults: UserDefaults?
     {
@@ -92,6 +96,51 @@ enum ScheduleSharedStore
         UserDefaults.standard.set(week, forKey: currentWeekKey)
         sharedDefaults?.set(week, forKey: currentWeekKey)
         reloadWidget()
+    }
+
+    static func saveSubscriptionStatus(isActive: Bool, productID: String?, expiration: TimeInterval?)
+    {
+        UserDefaults.standard.set(isActive, forKey: campusPassActiveKey)
+        sharedDefaults?.set(isActive, forKey: campusPassActiveKey)
+
+        UserDefaults.standard.set(productID, forKey: campusPassProductIDKey)
+        sharedDefaults?.set(productID, forKey: campusPassProductIDKey)
+
+        if let expiration
+        {
+            UserDefaults.standard.set(expiration, forKey: campusPassExpirationKey)
+            sharedDefaults?.set(expiration, forKey: campusPassExpirationKey)
+        }
+        else
+        {
+            UserDefaults.standard.removeObject(forKey: campusPassExpirationKey)
+            sharedDefaults?.removeObject(forKey: campusPassExpirationKey)
+        }
+
+        reloadWidget()
+    }
+
+    static func loadSubscriptionStatus() -> (isActive: Bool, productID: String?, expiration: TimeInterval?)
+    {
+        let isActive = sharedDefaults?.bool(forKey: campusPassActiveKey)
+            ?? UserDefaults.standard.bool(forKey: campusPassActiveKey)
+
+        let productID = sharedDefaults?.string(forKey: campusPassProductIDKey)
+            ?? UserDefaults.standard.string(forKey: campusPassProductIDKey)
+
+        let expirationValue = sharedDefaults?.object(forKey: campusPassExpirationKey)
+            ?? UserDefaults.standard.object(forKey: campusPassExpirationKey)
+        let expiration = expirationValue as? TimeInterval
+
+        return (isActive, productID, expiration)
+    }
+
+    static func clearWidgetPayload()
+    {
+        clearCourses()
+        UserDefaults.standard.removeObject(forKey: currentWeekKey)
+        sharedDefaults?.removeObject(forKey: currentWeekKey)
+        saveSubscriptionStatus(isActive: false, productID: nil, expiration: nil)
     }
 
     static func reloadWidget()

@@ -11,13 +11,15 @@ import SwiftUI
 struct shishanyouniApp: App
 {
     @StateObject private var userinfo = userInfo()
+    @StateObject private var iapStore = IAPStore()
     
     var body: some Scene
     {
         WindowGroup
         {
             MainTabView()
-            .environmentObject(userinfo)
+                .environmentObject(userinfo)
+                .environmentObject(iapStore)
         }
     }
 }
