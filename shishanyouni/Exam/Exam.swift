@@ -136,6 +136,26 @@ struct Exam: Identifiable, Decodable
         return ""
     }
 
+    var examStartDate: Date? {
+        guard let dateText = examDate.firstMatch(of: #"\d{4}-\d{1,2}-\d{1,2}"#) else {
+            return nil
+        }
+        let normalizedTime = examTime
+            .replacingOccurrences(of: "－", with: "-")
+            .replacingOccurrences(of: "–", with: "-")
+            .replacingOccurrences(of: "—", with: "-")
+        let parts = normalizedTime
+            .components(separatedBy: "-")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard let startTime = parts.first else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.date(from: "\(dateText) \(startTime)")
+    }
+
     var seatDisplayText: String {
         if let zwh, !zwh.isEmpty {
             return "座位: \(zwh)"
@@ -147,6 +167,21 @@ struct Exam: Identifiable, Decodable
         case .shishanyouni:
             return "不支持座位号"
         }
+    }
+}
+
+private extension String
+{
+    func firstMatch(of pattern: String) -> String?
+    {
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: self, range: NSRange(startIndex..., in: self)),
+              let range = Range(match.range, in: self)
+        else
+        {
+            return nil
+        }
+        return String(self[range])
     }
 }
 

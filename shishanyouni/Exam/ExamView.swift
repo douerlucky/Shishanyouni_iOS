@@ -128,6 +128,9 @@ struct ExamCard: View
     @State private var calendarAlertTitle = ""
     @State private var calendarAlertMessage = ""
 
+    @State private var now = Date()
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
     var body: some View
     {
         VStack(alignment: .leading, spacing: 12)
@@ -217,6 +220,11 @@ struct ExamCard: View
                             .font(.system(size: 16, weight: .semibold))
                     }
                 }
+
+                if let startDate = exam.examStartDate
+                {
+                    CountdownView(now: now, examStartDate: startDate)
+                }
             }
             .font(.subheadline)
             .foregroundColor(.secondary)
@@ -227,6 +235,9 @@ struct ExamCard: View
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         )
+        .onReceive(timer) { _ in
+            now = Date()
+        }
         .alert(calendarAlertTitle, isPresented: $showCalendarAlert)
         {
             Button("好的", role: .cancel) { }
@@ -388,6 +399,80 @@ struct ExamCard: View
                 && abs(event.startDate.timeIntervalSince(startDate)) < 60
                 && abs(event.endDate.timeIntervalSince(endDate)) < 60
         }
+    }
+}
+
+private struct CountdownView: View
+{
+    let now: Date
+    let examStartDate: Date
+
+    private var isPast: Bool { now >= examStartDate }
+
+    private var components: DateComponents
+    {
+        Calendar.current.dateComponents([.day, .hour, .minute, .second], from: now, to: examStartDate)
+    }
+
+    private var displayText: String
+    {
+        guard let d = components.day, let h = components.hour, let m = components.minute, let s = components.second else {
+            return ""
+        }
+        if isPast { return "考试已结束" }
+        let totalHours = d * 24 + h
+        if totalHours <= 0 {
+            if m <= 0 {
+                return "\(s)秒后"
+            }
+            return "\(m)分\(s)秒后"
+        }
+        if totalHours < 24 {
+            return "\(totalHours)时\(m)分后"
+        }
+        if d < 3 {
+            return "\(d)天\(h)时后"
+        }
+        return "还有\(d)天"
+    }
+
+    private var accentColor: Color
+    {
+        if isPast { return .secondary }
+        guard let d = components.day, let h = components.hour, let m = components.minute else {
+            return .secondary
+        }
+        let totalHours = d * 24 + h
+        if totalHours <= 0 && m < 30 { return .red }
+        if totalHours < 24 { return .orange }
+        return .blue
+    }
+
+    private var iconName: String
+    {
+        if isPast { return "checkmark.circle.fill" }
+        guard let d = components.day, let h = components.hour else { return "hourglass" }
+        let totalHours = d * 24 + h
+        if totalHours <= 0 { return "timer" }
+        if totalHours < 72 { return "hourglass" }
+        return "clock"
+    }
+
+    var body: some View
+    {
+        HStack(spacing: 6)
+        {
+            Image(systemName: iconName)
+                .font(.system(size: 13, weight: .semibold))
+            Text(displayText)
+                .font(.system(size: 13, weight: .semibold))
+        }
+        .foregroundColor(accentColor)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(accentColor.opacity(0.1))
+        .cornerRadius(8)
+        .padding(.top, 2)
     }
 }
 
