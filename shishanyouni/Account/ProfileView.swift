@@ -190,29 +190,29 @@ struct ProfileView: View
                 }
                 .tint(.accentColor)
 
-                NavigationLink
-                {
-                    SubscriptionView()
-                } label: {
-                    HStack(spacing: 15)
-                    {
-                        Image(systemName: "crown.fill")
-                            .foregroundColor(.white)
-                            .frame(width: 30, height: 30)
-                            .background(Color.orange)
-                            .cornerRadius(6)
-
-                        VStack(alignment: .leading)
-                        {
-                            Text("校园通行证")
-                                .foregroundColor(.primary)
-
-                            Text(iapStore.hasActiveSubscription ? "会员已激活，可继续测试小组件订阅链路" : "进入订阅测试页，读取本地 StoreKit 商品")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
+//                NavigationLink
+//                {
+//                    SubscriptionView()
+//                } label: {
+//                    HStack(spacing: 15)
+//                    {
+//                        Image(systemName: "crown.fill")
+//                            .foregroundColor(.white)
+//                            .frame(width: 30, height: 30)
+//                            .background(Color.orange)
+//                            .cornerRadius(6)
+//
+//                        VStack(alignment: .leading)
+//                        {
+//                            Text("校园通行证")
+//                                .foregroundColor(.primary)
+//
+//                            Text(iapStore.hasActiveSubscription ? "会员已激活，可继续测试小组件订阅链路" : "进入订阅测试页，读取本地 StoreKit 商品")
+//                                .font(.footnote)
+//                                .foregroundColor(.secondary)
+//                        }
+//                    }
+//                }
 
                 NavigationLink
                 {

@@ -134,6 +134,138 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         return cookieJar.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
     }
 
+    private func extractToken(from urlString: String?) -> String?
+    {
+        guard let urlString,
+              let components = URLComponents(string: urlString)
+        else
+        {
+            return nil
+        }
+        return components.queryItems?.first(where: { $0.name == "token" })?.value
+    }
+
+    private func extractJWT(from text: String?) -> String?
+    {
+        guard let text, !text.isEmpty else
+        {
+            return nil
+        }
+
+        let pattern = #"eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else
+        {
+            return nil
+        }
+
+        let range = NSRange(text.startIndex ..< text.endIndex, in: text)
+        guard let match = regex.firstMatch(in: text, options: [], range: range),
+              let matchRange = Range(match.range, in: text)
+        else
+        {
+            return nil
+        }
+
+        return String(text[matchRange])
+    }
+
+    private func extractToken(from response: HTTPURLResponse) -> String?
+    {
+        let candidateHeaderKeys = [
+            "Authorization",
+            "authorization",
+            "X-Access-Token",
+            "x-access-token",
+            "token",
+            "Token",
+            "Admin-Token",
+        ]
+
+        for key in candidateHeaderKeys
+        {
+            if let value = response.value(forHTTPHeaderField: key), !value.isEmpty
+            {
+                if key.lowercased() == "authorization"
+                {
+                    return value.replacingOccurrences(of: "Bearer ", with: "")
+                }
+                return value
+            }
+        }
+
+        return extractJWT(from: response.value(forHTTPHeaderField: "Set-Cookie"))
+    }
+
+    private func findSessionTokenInCookies() -> String?
+    {
+        let tokenCookieNames = [
+            "token",
+            "Token",
+            "TOKEN",
+            "authorization",
+            "Authorization",
+            "x-access-token",
+            "X-Access-Token",
+            "satoken",
+            "sa-token",
+            "Admin-Token",
+        ]
+
+        for name in tokenCookieNames
+        {
+            if let value = cookieJar[name], !value.isEmpty
+            {
+                return value
+            }
+        }
+
+        for value in cookieJar.values
+        {
+            if let token = extractJWT(from: value)
+            {
+                return token
+            }
+        }
+        return nil
+    }
+
+    private func finalizePrepositionIfNeeded(prepositionURL: String, token: String) async throws -> String
+    {
+        guard let url = URL(string: prepositionURL) else
+        {
+            return token
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+        request.setValue("https://sdgl.hzau.edu.cn", forHTTPHeaderField: "Referer")
+        request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0", forHTTPHeaderField: "User-Agent")
+
+        let (data, response) = try await session.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse
+        {
+            extractCookies(from: httpResponse)
+            print("[Electricity][CAS] GET preposition -> \(httpResponse.statusCode), Location: \(httpResponse.allHeaderFields["Location"] as? String ?? "nil")")
+
+            if let redirectedLocation = httpResponse.allHeaderFields["Location"] as? String,
+               let redirectedToken = extractToken(from: redirectedLocation),
+               !redirectedToken.isEmpty
+            {
+                print("[Electricity][CAS] preposition 二次跳转后更新 token，前缀: \(redirectedToken.prefix(24))...")
+                return redirectedToken
+            }
+        }
+
+        if let bodyToken = extractJWT(from: String(data: data, encoding: .utf8)), !bodyToken.isEmpty
+        {
+            print("[Electricity][CAS] preposition 页面响应体中发现 token，前缀: \(bodyToken.prefix(24))...")
+            return bodyToken
+        }
+
+        return token
+    }
+
     private func formEncode(_ str: String) -> String
     {
         var allowed = CharacterSet.alphanumerics
@@ -141,15 +273,34 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         return str.addingPercentEncoding(withAllowedCharacters: allowed) ?? str
     }
 
-    private func standardHeaders(token: String) -> [String: String]
+    private func standardHeaders(
+        token: String,
+        referer: String = "https://sdgl.hzau.edu.cn/mobile/pages/module/search-meter",
+        includeCookies: Bool = false
+    ) -> [String: String]
     {
-        return [
+        var headers: [String: String] = [
             "Accept": "*/*",
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-            "Authorization": "Bearer \(token)",
-            "Referer": "https://sdgl.hzau.edu.cn/mobile/pages/module/search-meter",
+            "Referer": referer,
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         ]
+
+        if !token.isEmpty
+        {
+            headers["Authorization"] = "Bearer \(token)"
+        }
+
+        if includeCookies
+        {
+            let cookieHeader = getCookieHeader()
+            if !cookieHeader.isEmpty
+            {
+                headers["Cookie"] = cookieHeader
+            }
+        }
+
+        return headers
     }
 
     private func performMFAIfNeeded(username: String, password: String, mfaCodeProvider: MFACodeProvider?) async throws -> String {
@@ -264,6 +415,9 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     func loginAndGetToken(username: String, rsaPassword: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> String
     {
+        // 每次重新登录前清理旧会话，避免混入过期 Cookie
+        cookieJar.removeAll()
+
         // --- Step 1: GET 获取 execution ---
         var request1 = URLRequest(url: URL(string: ssoLoginURL)!)
         request1.httpMethod = "GET"
@@ -294,7 +448,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         var request2 = URLRequest(url: URL(string: ssoLoginURL)!)
         request2.httpMethod = "POST"
         request2.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request2.allHTTPHeaderFields = standardHeaders(token: "") // 初始化时 Token 为空
+        request2.allHTTPHeaderFields = standardHeaders(token: "", includeCookies: true) // 初始化时 Token 为空
         request2.setValue(ssoLoginURL, forHTTPHeaderField: "Referer")
         request2.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
         request2.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
@@ -322,6 +476,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
             throw NSError(domain: "LoginFailed_NoTicketLocation", code: 401)
         }
         extractCookies(from: httpResponse2)
+        print("[Electricity][CAS] POST /cas/login -> \(httpResponse2.statusCode), Location: \(location3)")
 
         // --- Step 3: GET Ticket 链接 ---
         var request3 = URLRequest(url: URL(string: location3)!)
@@ -335,16 +490,93 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         {
             throw NSError(domain: "Step3Failed_NoFinalLocation", code: 500)
         }
+        extractCookies(from: httpResponse3)
+        print("[Electricity][CAS] GET callback -> \(httpResponse3.statusCode), Location: \(location4)")
 
-        // --- Step 4: 解析 Token ---
-        guard let urlComponents = URLComponents(string: location4),
-              let token = urlComponents.queryItems?.first(where: { $0.name == "token" })?.value
-        else
+        // 老链路里 token 可能直接出现在这一跳的 Location 上
+        if let token = extractToken(from: location4), !token.isEmpty
         {
-            throw NSError(domain: "TokenNotFound", code: 404)
+            print("[Electricity][CAS] 从 callback 跳转中拿到 token，前缀: \(token.prefix(24))...")
+            return try await finalizePrepositionIfNeeded(prepositionURL: location4, token: token)
         }
 
-        return token
+        // --- Step 4: 跟到最终回调，收齐业务侧会话 Cookie ---
+        var request4 = URLRequest(url: URL(string: location4)!)
+        request4.httpMethod = "GET"
+        request4.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+        request4.setValue("https://sdgl.hzau.edu.cn", forHTTPHeaderField: "Referer")
+
+        var reachedMobilePage = false
+
+        let (data4, response4) = try await session.data(for: request4)
+        if let httpResponse4 = response4 as? HTTPURLResponse
+        {
+            extractCookies(from: httpResponse4)
+            print("[Electricity][CAS] GET preposition/mobile -> \(httpResponse4.statusCode), Location: \(httpResponse4.allHeaderFields["Location"] as? String ?? "nil")")
+
+            if let token = extractToken(from: httpResponse4), !token.isEmpty
+            {
+                print("[Electricity][CAS] 从响应头拿到 token，前缀: \(token.prefix(24))...")
+                return token
+            }
+
+            if let token = extractJWT(from: String(data: data4, encoding: .utf8)), !token.isEmpty
+            {
+                print("[Electricity][CAS] 从响应体拿到 token，前缀: \(token.prefix(24))...")
+                return token
+            }
+
+            if let redirectAfterCallback = httpResponse4.allHeaderFields["Location"] as? String
+            {
+                if let token = extractToken(from: redirectAfterCallback), !token.isEmpty
+                {
+                    return token
+                }
+
+                if redirectAfterCallback.contains("/mobile"),
+                   let mobileURL = URL(string: redirectAfterCallback)
+                {
+                    reachedMobilePage = true
+                    var request5 = URLRequest(url: mobileURL)
+                    request5.httpMethod = "GET"
+                    request5.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
+                    request5.setValue("https://sdgl.hzau.edu.cn", forHTTPHeaderField: "Referer")
+
+                    let (data5, response5) = try await session.data(for: request5)
+                    if let httpResponse5 = response5 as? HTTPURLResponse
+                    {
+                        extractCookies(from: httpResponse5)
+                        print("[Electricity][CAS] GET /mobile -> \(httpResponse5.statusCode), Location: \(httpResponse5.allHeaderFields["Location"] as? String ?? "nil")")
+
+                        if let token = extractToken(from: httpResponse5), !token.isEmpty
+                        {
+                            print("[Electricity][CAS] 从 /mobile 响应头拿到 token，前缀: \(token.prefix(24))...")
+                            return token
+                        }
+
+                        if let token = extractJWT(from: String(data: data5, encoding: .utf8)), !token.isEmpty
+                        {
+                            print("[Electricity][CAS] 从 /mobile 响应体拿到 token，前缀: \(token.prefix(24))...")
+                            return token
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Step 5: 尝试从 Cookie 中恢复 Token；拿不到就退化为纯 Cookie 会话 ---
+        if let cookieToken = findSessionTokenInCookies(), !cookieToken.isEmpty
+        {
+            print("[Electricity][CAS] 从 Cookie 恢复 token，前缀: \(cookieToken.prefix(24))...")
+            return cookieToken
+        }
+
+        if reachedMobilePage || location4.contains("/mobile")
+        {
+            print("[Electricity] 回调已跳转到 /mobile，但未在 URL 中携带 token，当前改走 Cookie 会话。")
+            return ""
+        }
+        throw NSError(domain: "TokenNotFound", code: 404)
     }
 
     // MARK: - 第一步：获取楼栋列表 (getBuildList)
@@ -353,10 +585,19 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
     {
         let url = "\(apiBase)/baseBuildings/getBuildList?size=999&current=1"
         var request = URLRequest(url: URL(string: url)!)
-        request.allHTTPHeaderFields = standardHeaders(token: token)
+        request.allHTTPHeaderFields = standardHeaders(
+            token: token,
+            referer: "https://sdgl.hzau.edu.cn/mobile/pages/module/search?url=%2Fpages%2FbindingAccount%2Faccountbind"
+        )
+        print("[Electricity][API] getBuildList auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(BuildingLevelRoomResponse.self, from: data)
+
+        guard response.code == 200 else
+        {
+            throw NSError(domain: "QueryFailed", code: response.code, userInfo: ["msg": response.msg])
+        }
 
         if case let .object(page) = response.data
         {
@@ -371,10 +612,19 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
     {
         let url = "\(apiBase)/rooms/getAllFoolNumByBuildId?buildingId=\(buildingId)"
         var request = URLRequest(url: URL(string: url)!)
-        request.allHTTPHeaderFields = standardHeaders(token: token)
+        request.allHTTPHeaderFields = standardHeaders(
+            token: token,
+            referer: "https://sdgl.hzau.edu.cn/mobile/pages/module/search?url=%2Fpages%2FbindingAccount%2Faccountbind"
+        )
+        print("[Electricity][API] getFloorList auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(BuildingLevelRoomResponse.self, from: data)
+
+        guard response.code == 200 else
+        {
+            throw NSError(domain: "QueryFailed", code: response.code, userInfo: ["msg": response.msg])
+        }
 
         if case let .array(items) = response.data
         {
@@ -389,10 +639,19 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
     {
         let url = "\(apiBase)/rooms/getRoomListByBuildIdAndFloor?floorNum=\(floorNum)&buildingId=\(buildingId)"
         var request = URLRequest(url: URL(string: url)!)
-        request.allHTTPHeaderFields = standardHeaders(token: token)
+        request.allHTTPHeaderFields = standardHeaders(
+            token: token,
+            referer: "https://sdgl.hzau.edu.cn/mobile/pages/module/search?url=%2Fpages%2FbindingAccount%2Faccountbind"
+        )
+        print("[Electricity][API] getRoomList auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(BuildingLevelRoomResponse.self, from: data)
+
+        guard response.code == 200 else
+        {
+            throw NSError(domain: "QueryFailed", code: response.code, userInfo: ["msg": response.msg])
+        }
 
         if case let .array(items) = response.data
         {
@@ -401,11 +660,11 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         return []
     }
 
-    // MARK: - 最终步：查询电费账户信息 (selectRoomsAccountPage)
+    // MARK: - 最终步：查询房间/电费信息 (queryRoomList)
 
     func fetchElectricityAccount(token: String, roomId: String) async throws -> [ElectricityRecord]
     {
-        let queryURL = "\(apiBase)/rooms/selectRoomsAccountPage"
+        let queryURL = "\(apiBase)/rooms/queryRoomList"
         var components = URLComponents(string: queryURL)!
         components.queryItems = [
             URLQueryItem(name: "size", value: "10"),
@@ -415,10 +674,15 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         ]
 
         var request = URLRequest(url: components.url!)
-        request.allHTTPHeaderFields = standardHeaders(token: token)
+        request.allHTTPHeaderFields = standardHeaders(
+            token: token,
+            referer: "https://sdgl.hzau.edu.cn/mobile/pages/bindingAccount/accountbind"
+        )
+        print("[Electricity][API] queryRoomList roomId: \(roomId), auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(ElectricityResponse.self, from: data)
+        print("[Electricity][API] queryRoomList response code: \(response.code), msg: \(response.msg)")
 
         if response.code == 200, let records = response.data?.records
         {

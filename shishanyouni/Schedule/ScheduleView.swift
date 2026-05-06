@@ -83,108 +83,104 @@ struct ScheduleView: View
 
     var body: some View
     {
-        NavigationStack
+        VStack(spacing: 0)
         {
-            VStack(spacing: 0)
+            // 顶部月份 + 星期头
+            HStack(spacing: 0)
             {
-                // 顶部月份 + 星期头
-                HStack(spacing: 0)
-                {
-                    Text("\(nowDisplayMonth)月")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(width: 60)
-                        .padding(.vertical, 8)
+                Text("\(nowDisplayMonth)月")
+                    .font(.system(size: 13, weight: .medium))
+                    .frame(width: 60)
+                    .padding(.vertical, 8)
 
-                    WeekHeaderView(
-                        weekDatesCurWeek: $weekDatesCurWeek,
-                        datesCurWeek: $datesCurWeek
-                    )
-                }
-                .opacity(scheduleContentOpacity)
-                .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
-                
-                .background(Color(.secondarySystemBackground).opacity(0.5))
-                .clipShape(Capsule())
-                .padding(.horizontal, 10)
-                .padding(.top, 10)
-
-                // 课表主体 + 底部控制条
-                pageBodyView
-            }
-            .background
-            {
-                if let backgroundImage = backgroundImage
-                {
-                    Image(uiImage: backgroundImage)
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea() // 穿透灵动岛和底部
-                        .opacity(backgroundOpacity)
-                }
-            }
-            .onChange(of: backgroundImageFilename)
-            { _ in
-                loadBackgroundImage()
-            }
-            .onChange(of: savedTimestamp)
-            { _ in
-                loadSavedData()
-                updateDatesForDisplayWeek()
-            }
-            .toolbar
-            {
-                ToolbarItem(placement: .navigationBarLeading)
-                {
-                    Button(action: { showSettings = true })
-                    { Image(systemName: "gearshape").fontWeight(.medium) }
-                }
-                ToolbarItem(placement: .navigationBarTrailing)
-                {
-                    Button(action: {
-                        exportScheduleAsImage(
-                            courses: courses,
-                            week: nowDisplayWeek,
-                            datesCurWeek: datesCurWeek,
-                            month: nowDisplayMonth
-                        )
-                        {
-                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                            showSaveSuccess = true
-                        }
-                    })
-                    { Image(systemName: "square.and.arrow.down").fontWeight(.medium) }
-                }
-                ToolbarItem(placement: .navigationBarTrailing)
-                {
-                    NavigationLink(destination: AllScheduleSetting())
-                    {
-                        Image(systemName: "rectangle.stack")
-                            .fontWeight(.medium)
-                    }
-                }
-            }
-            .sheet(isPresented: $showSettings)
-            {
-                ScheduleSettingView(semesterStartDate: $semesterStartDate, courses: $courses)
-                    .environmentObject(userinfo)
-            }
-            .sheet(item: $editCourseContext)
-            { course in
-                ManualCourseEditorView(courses: $courses, mode: .edit(course))
-            }
-            .sheet(item: $addCourseContext)
-            { context in
-                ManualCourseEditorView(
-                    courses: $courses,
-                    mode: .add(prefillWeekday: context.day, prefillPeriod: context.period)
+                WeekHeaderView(
+                    weekDatesCurWeek: $weekDatesCurWeek,
+                    datesCurWeek: $datesCurWeek
                 )
             }
-            .onAppear
+            .opacity(scheduleContentOpacity)
+            .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
+            .background(Color(.secondarySystemBackground).opacity(0.5))
+            .clipShape(Capsule())
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+
+            // 课表主体 + 底部控制条
+            pageBodyView
+        }
+        .background
+        {
+            if let backgroundImage = backgroundImage
             {
-                loadSavedData()
-                self.nowDisplayWeek = calculateCurrentWeek()
-                updateDatesForDisplayWeek()
+                Image(uiImage: backgroundImage)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea() // 穿透灵动岛和底部
+                    .opacity(backgroundOpacity)
             }
+        }
+        .onChange(of: backgroundImageFilename)
+        { _ in
+            loadBackgroundImage()
+        }
+        .onChange(of: savedTimestamp)
+        { _ in
+            loadSavedData()
+            updateDatesForDisplayWeek()
+        }
+        .toolbar
+        {
+            ToolbarItem(placement: .navigationBarLeading)
+            {
+                Button(action: { showSettings = true })
+                { Image(systemName: "gearshape").fontWeight(.medium) }
+            }
+            ToolbarItem(placement: .navigationBarTrailing)
+            {
+                Button(action: {
+                    exportScheduleAsImage(
+                        courses: courses,
+                        week: nowDisplayWeek,
+                        datesCurWeek: datesCurWeek,
+                        month: nowDisplayMonth
+                    )
+                    {
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        showSaveSuccess = true
+                    }
+                })
+                { Image(systemName: "square.and.arrow.down").fontWeight(.medium) }
+            }
+            ToolbarItem(placement: .navigationBarTrailing)
+            {
+                NavigationLink(destination: AllScheduleSetting())
+                {
+                    Image(systemName: "rectangle.stack")
+                        .fontWeight(.medium)
+                }
+            }
+        }
+        .sheet(isPresented: $showSettings)
+        {
+            ScheduleSettingView(semesterStartDate: $semesterStartDate, courses: $courses)
+                .environmentObject(userinfo)
+        }
+        .sheet(item: $editCourseContext)
+        { course in
+            ManualCourseEditorView(courses: $courses, mode: .edit(course))
+        }
+        .sheet(item: $addCourseContext)
+        { context in
+            ManualCourseEditorView(
+                courses: $courses,
+                mode: .add(prefillWeekday: context.day, prefillPeriod: context.period)
+            )
+        }
+        .onAppear
+        {
+            loadSavedData()
+            self.nowDisplayWeek = calculateCurrentWeek()
+            updateDatesForDisplayWeek()
         }
         .alert("保存成功", isPresented: $showSaveSuccess)
         {

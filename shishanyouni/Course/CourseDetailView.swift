@@ -13,6 +13,8 @@ struct CourseDetailView: View
     @EnvironmentObject var userinfo: userInfo
     @State private var groupedClasses: [String: [CourseClassInfo]] = [:]
     @State private var isLoading = true
+    @State private var showAddAlert = false
+    @State private var addAlertMessage = ""
 
     private let scheduleQuery = ScheduleQuery()
 
@@ -61,14 +63,27 @@ struct CourseDetailView: View
                                 .textSelection(.enabled)
                             HStack
                             {
-                                Text(course.kch)
-                                    .monospaced()
-                                    .foregroundColor(.secondary)
-                                    .textSelection(.enabled)
-                                Text(course.kkbmmc ?? "未知单位")
+                                if course.querySource == .cas, let displayCode = course.displayCode
+                                {
+                                    Text(displayCode)
+                                        .monospaced()
+                                        .foregroundColor(.secondary)
+                                        .textSelection(.enabled)
+                                }
+                                Text(course.kkbmmc ?? course.teacherName ?? "未知单位")
                                     .foregroundColor(.secondary)
                             }
                             .font(.subheadline)
+                            if course.querySource == .shishanyouni
+                            {
+                                if let className = course.className, !className.isEmpty
+                                {
+                                    Text(className)
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(2)
+                                }
+                            }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
@@ -81,7 +96,14 @@ struct CourseDetailView: View
                         { jxbId in
                             if let classInfos = groupedClasses[jxbId], let first = classInfos.first
                             {
-                                ClassGroupCard(jxbmc: first.jxbmc, infos: classInfos)
+                                ClassGroupCard(
+                                    jxbmc: first.jxbmc,
+                                    infos: classInfos,
+                                    showHeader: course.querySource == .cas,
+                                    onAddToSchedule: { infos in
+                                        addToSchedule(infos)
+                                    }
+                                )
                                     .padding(.horizontal)
                             }
                         }
@@ -98,6 +120,12 @@ struct CourseDetailView: View
         {
             fetchData()
         }
+        .alert("添加到课表", isPresented: $showAddAlert)
+        {
+            Button("好的", role: .cancel) {}
+        } message: {
+            Text(addAlertMessage)
+        }
     }
 
     private func fetchData()
@@ -106,17 +134,27 @@ struct CourseDetailView: View
         {
             do
             {
-                let cookie = try await scheduleQuery.loginAndGetCookie(
-                    username: userinfo.username,
-                    rsaPassword: userinfo.encryptedPasswordSchool
-                )
-                // 使用 AllCourseQuery 里的新方法进行 POST 请求
-                let results = try await AllCourseQuery.shared.fetchCourseClasses(
-                    cookie: cookie,
-                    xnm: course.xnm,
-                    xqm: course.xqm,
-                    kch_id: course.kch_id
-                )
+                let results: [CourseClassInfo]
+                switch course.querySource
+                {
+                case .cas:
+                    let cookie = try await scheduleQuery.loginAndGetCookie(
+                        username: userinfo.username,
+                        rsaPassword: userinfo.encryptedPasswordSchool
+                    )
+                    results = try await AllCourseQuery.shared.fetchCourseClasses(
+                        cookie: cookie,
+                        xnm: course.xnm,
+                        xqm: course.xqm,
+                        kch_id: course.kch_id
+                    )
+                case .shishanyouni:
+                    guard let classCode = course.classCode, !classCode.isEmpty else
+                    {
+                        throw AllCourseQueryError.apiError("缺少 classCode，无法查询狮山有你课程详情。")
+                    }
+                    results = try await AllCourseQuery.shared.fetchLionCourseClasses(classCode: classCode)
+                }
 
                 await MainActor.run
                 {
@@ -132,6 +170,165 @@ struct CourseDetailView: View
             }
         }
     }
+
+    private func addToSchedule(_ infos: [CourseClassInfo])
+    {
+        let parsedCourses = infos.compactMap { makeScheduleCourse(from: $0) }
+        guard !parsedCourses.isEmpty
+        else
+        {
+            addAlertMessage = "这个教学班的星期、节次或周次解析失败，暂时不能加入课表。"
+            showAddAlert = true
+            return
+        }
+
+        var savedCourses = WidgetSharedStore.loadCourses()
+        let coursesToAdd = parsedCourses.filter
+        { newCourse in
+            !savedCourses.contains(where: { isSameScheduleCourse($0, newCourse) })
+        }
+
+        guard !coursesToAdd.isEmpty else
+        {
+            addAlertMessage = "这个教学班已经在课表里啦。"
+            showAddAlert = true
+            return
+        }
+
+        savedCourses.append(contentsOf: coursesToAdd)
+        WidgetSharedStore.saveCourses(savedCourses)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        addAlertMessage = "已添加「\(course.kcmc)」的 \(coursesToAdd.count) 条上课安排到课表。"
+        showAddAlert = true
+    }
+
+    private func makeScheduleCourse(from info: CourseClassInfo) -> Course?
+    {
+        guard let day = resolvedDay(for: info),
+              let periods = resolvedPeriods(for: info)
+        else { return nil }
+
+        let weekNumbers = resolvedWeeks(for: info)
+        guard !weekNumbers.isEmpty else { return nil }
+
+        let weekList = Array(weekNumbers).sorted()
+        return Course(
+            id: "rub_\(UUID().uuidString)",
+            name: course.kcmc,
+            day: day,
+            start: periods.lowerBound,
+            step: periods.upperBound - periods.lowerBound + 1,
+            room: normalizedOptional(info.cdmc),
+            teacher: normalizedOptional(info.xm ?? course.teacherName),
+            weekList: weekList,
+            weeks: normalizedOptional(info.zcd) ?? weekText(from: weekList),
+            term: "\(course.xnm)-\(course.xqm)",
+            colorRandom: stableColorIndex(for: course.kcmc),
+            customColorHex: nil,
+            isManual: true
+        )
+    }
+
+    private func resolvedDay(for info: CourseClassInfo) -> Int?
+    {
+        if let dayNumber = info.dayNumber { return dayNumber }
+        guard let text = info.xqjmc else { return nil }
+        if text.contains("一") { return 1 }
+        if text.contains("二") { return 2 }
+        if text.contains("三") { return 3 }
+        if text.contains("四") { return 4 }
+        if text.contains("五") { return 5 }
+        if text.contains("六") { return 6 }
+        if text.contains("日") || text.contains("天") { return 7 }
+        return nil
+    }
+
+    private func resolvedPeriods(for info: CourseClassInfo) -> ClosedRange<Int>?
+    {
+        if let start = info.startPeriod, let end = info.endPeriod
+        {
+            return start ... end
+        }
+
+        guard let text = info.jc else { return nil }
+        let numbers = extractNumbers(from: text)
+        guard let first = numbers.first else { return nil }
+        return first ... (numbers.dropFirst().first ?? first)
+    }
+
+    private func resolvedWeeks(for info: CourseClassInfo) -> Set<Int>
+    {
+        if let weekNumbers = info.weekNumbers, !weekNumbers.isEmpty
+        {
+            return Set(weekNumbers)
+        }
+        return parseWeeks(from: info.zcd ?? "")
+    }
+
+    private func parseWeeks(from text: String) -> Set<Int>
+    {
+        var result = Set<Int>()
+        let segments = text.replacingOccurrences(of: "，", with: ",").split(separator: ",")
+        for rawSegment in segments
+        {
+            let segment = String(rawSegment)
+            let numbers = extractNumbers(from: segment)
+            guard let first = numbers.first else { continue }
+            let isEven = segment.contains("双")
+            let isOdd = segment.contains("单")
+
+            if let last = numbers.dropFirst().first
+            {
+                for week in first ... last where (!isEven || week % 2 == 0) && (!isOdd || week % 2 == 1)
+                {
+                    result.insert(week)
+                }
+            }
+            else if (!isEven || first % 2 == 0) && (!isOdd || first % 2 == 1)
+            {
+                result.insert(first)
+            }
+        }
+        return result
+    }
+
+    private func extractNumbers(from text: String) -> [Int]
+    {
+        let regex = try? NSRegularExpression(pattern: #"\d+"#)
+        let range = NSRange(text.startIndex ..< text.endIndex, in: text)
+        return regex?.matches(in: text, range: range).compactMap
+        { match in
+            guard let swiftRange = Range(match.range, in: text) else { return nil }
+            return Int(text[swiftRange])
+        } ?? []
+    }
+
+    private func normalizedOptional(_ value: String?) -> String?
+    {
+        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+        return value
+    }
+
+    private func weekText(from weekList: [Int]) -> String
+    {
+        weekList.sorted().map { "\($0)" }.joined(separator: ",") + "周"
+    }
+
+    private func stableColorIndex(for name: String) -> Int
+    {
+        name.unicodeScalars.reduce(0) { ($0 * 31 + Int($1.value)) % 32 }
+    }
+
+    private func isSameScheduleCourse(_ lhs: Course, _ rhs: Course) -> Bool
+    {
+        lhs.name == rhs.name
+            && lhs.day == rhs.day
+            && lhs.start == rhs.start
+            && lhs.step == rhs.step
+            && lhs.room == rhs.room
+            && lhs.teacher == rhs.teacher
+            && lhs.weekList == rhs.weekList
+    }
 }
 
 // MARK: - 教学班分组卡片视图
@@ -140,64 +337,87 @@ struct ClassGroupCard: View
 {
     let jxbmc: String
     let infos: [CourseClassInfo]
+    let showHeader: Bool
+    let onAddToSchedule: ([CourseClassInfo]) -> Void
 
     var body: some View
     {
         VStack(alignment: .leading, spacing: 0)
         {
             // Header: 教学班名称和选课人数
-            HStack
+            if showHeader
             {
-                Text(jxbmc)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.blue)
-                Spacer()
-            }
-            .padding()
-            .background(Color.blue.opacity(0.05))
-
-            // 教师信息
-            if let teacher = infos.first?.xm
-            {
-                HStack(spacing: 8)
+                HStack
                 {
-                    Image(systemName: "person.circle.fill")
+                    Text(jxbmc)
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.blue)
-                    Text(teacher)
-                        .font(.system(size: 16, weight: .medium))
-                    if let title = infos.first?.zcmc
+                    Spacer()
+                }
+                .padding()
+                .background(Color.blue.opacity(0.05))
+            }
+
+            HStack(alignment: .center, spacing: 12)
+            {
+                VStack(alignment: .leading, spacing: 8)
+                {
+                    // 教师信息
+                    if let teacher = infos.first?.xm
                     {
-                        Text(title)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        HStack(spacing: 8)
+                        {
+                            Image(systemName: "person.circle.fill")
+                                .foregroundColor(.blue)
+                            Text(teacher)
+                                .font(.system(size: 16, weight: .medium))
+                            if let title = infos.first?.zcmc
+                            {
+                                Text(title)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+
+                    // 开课班级
+                    if let composition = infos.first?.jxbzc
+                    {
+                        HStack(spacing: 6)
+                        {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 10, weight: .bold))
+
+                            Text(composition)
+                                .font(.system(size: 11, weight: .medium))
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .foregroundColor(.secondary)
+                        .background(
+                            Capsule()
+                                .fill(Color.secondary.opacity(0.1))
+                        )
                     }
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
-            }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            // 开课班级
-            if let composition = infos.first?.jxbzc
-            {
-                HStack(spacing: 6)
+                Button(action: { onAddToSchedule(infos) })
                 {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 10, weight: .bold))
-
-                    Text(composition)
-                        .font(.system(size: 11, weight: .medium))
-                        .lineLimit(1) // 防止文字过长换行破坏胶囊形状
+                    Label("添加到课表", systemImage: "plus.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.blue.opacity(0.12))
+                        .foregroundColor(.blue)
+                        .clipShape(Capsule())
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .foregroundColor(.secondary)
-                .background(
-                    Capsule()
-                        .fill(Color.secondary.opacity(0.1)) // 淡淡的灰色背景
-                )
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 8)
 
             // 具体安排列表
             VStack(alignment: .leading, spacing: 8)
@@ -233,14 +453,5 @@ struct ClassGroupCard: View
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-    }
-}
-
-#Preview
-{
-    NavigationStack
-    {
-        CourseDetailView(course: CourseInfo(row_id: "1", kch_id: "C46C66E5119F258DE053868F45D3567E", kch: "317300007046", kcmc: "计算机组成与结构", kkbmmc: "信息学院", kclbmc: "必修", xnm: "2025", xqm: "12", kcxzmc: "专业课"))
-            .environmentObject(userInfo())
     }
 }

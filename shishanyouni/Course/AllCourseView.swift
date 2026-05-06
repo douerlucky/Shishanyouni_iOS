@@ -13,6 +13,8 @@ struct AllCourseView: View
     @State private var searchText: String = ""
     @State private var courses: [CourseInfo] = []
     @State private var isLoading = false
+    @State private var querySource: CourseQuerySource = .shishanyouni
+    @State private var showSourcePicker = false
     @FocusState private var isSearchFocused: Bool
 
     // MARK: - Filter States
@@ -56,7 +58,7 @@ struct AllCourseView: View
                                     .font(.title3)
                                     .fontWeight(.bold)
 
-                                Text(searchText.isEmpty ? "在下方输入框开始查询" : "换个关键词，或者切换学期试试看吧")
+                                Text(searchText.isEmpty ? "在下方输入框开始查询" : emptyHintText)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -94,26 +96,48 @@ struct AllCourseView: View
                 {
                     Spacer() // 整体推到底部
 
-                    // 1. 学期选择气泡
-                    Button(action: { showPicker = true })
+                    HStack
                     {
-                        HStack(spacing: 6)
+                        Button(action: { showSourcePicker = true })
                         {
-                            Image(systemName: "calendar")
-                            Text("\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
-                            Image(systemName: "chevron.up")
-                                .font(.system(size: 10, weight: .bold))
+                            HStack(spacing: 6)
+                            {
+                                Text(querySource.title)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .font(.system(size: 13, weight: .bold))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.15))
+                            .foregroundColor(.blue)
+                            .clipShape(Capsule())
+                            .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
                         }
-                        .font(.system(size: 13, weight: .bold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.15))
-                        .foregroundColor(.blue)
-                        .clipShape(Capsule())
-                        // 建议在这里加一点点阴影，防止在 List 上看不清
-                        .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+                        .optionalLiquidGlass()
+
+                        if querySource == .cas
+                        {
+                            Button(action: { showPicker = true })
+                            {
+                                HStack(spacing: 6)
+                                {
+                                    Image(systemName: "calendar")
+                                    Text("\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
+                                    Image(systemName: "chevron.up")
+                                        .font(.system(size: 10, weight: .bold))
+                                }
+                                .font(.system(size: 13, weight: .bold))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Color.blue.opacity(0.15))
+                                .foregroundColor(.blue)
+                                .clipShape(Capsule())
+                                .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
+                            }
+                            .optionalLiquidGlass()
+                        }
                     }
-                    .optionalLiquidGlass()
 
                     // 2. 底部搜索框
                     HStack
@@ -121,7 +145,7 @@ struct AllCourseView: View
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.secondary)
 
-                        TextField("输入课程名称或代码", text: $searchText)
+                        TextField(searchPlaceholder, text: $searchText)
                             .focused($isSearchFocused)
                             .submitLabel(.search)
                             .onSubmit { performSearch() }
@@ -208,6 +232,67 @@ struct AllCourseView: View
                 }
                 .presentationDetents([.height(350)])
             }
+            .sheet(isPresented: $showSourcePicker)
+            {
+                VStack(spacing: 18)
+                {
+                    VStack(spacing: 6)
+                    {
+                        Text("选择数据源")
+                            .font(.headline)
+                    }
+                    .padding(.horizontal, 28)
+
+                    VStack(spacing: 12)
+                    {
+                        ForEach(CourseQuerySource.allCases)
+                        { source in
+                            Button(action: {
+                                switchSource(to: source)
+                                showSourcePicker = false
+                            })
+                            {
+                                HStack
+                                {
+                                    Text(source.title)
+                                        .font(.system(size: 17, weight: .bold))
+                                    Spacer()
+                                    if querySource == source
+                                    {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.blue)
+                                    }
+                                }
+                                .foregroundColor(querySource == source ? .blue : .primary)
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 15)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(querySource == source ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
+                                )
+                                .optionalLiquidGlass()
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    Button("取消")
+                    {
+                        showSourcePicker = false
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .padding(.top,24)
+                    .buttonStyle(.plain)
+
+
+                }
+                .presentationDetents([.height(300)])
+                .presentationDragIndicator(.hidden)
+            }
         }
     }
 
@@ -223,17 +308,24 @@ struct AllCourseView: View
         {
             do
             {
-                let cookie = try await scheduleQuery.loginAndGetCookie(
-                    username: userinfo.username,
-                    rsaPassword: userinfo.encryptedPasswordSchool
-                )
+                let result: [CourseInfo]
+                switch querySource
+                {
+                case .cas:
+                    let cookie = try await scheduleQuery.loginAndGetCookie(
+                        username: userinfo.username,
+                        rsaPassword: userinfo.encryptedPasswordSchool
+                    )
 
-                let result = try await AllCourseQuery.shared.fetchAllCourses(
-                    cookie: cookie,
-                    xnm: selectedYear,
-                    xqm: selectedTerm,
-                    kch: searchText
-                )
+                    result = try await AllCourseQuery.shared.fetchAllCourses(
+                        cookie: cookie,
+                        xnm: selectedYear,
+                        xqm: selectedTerm,
+                        kch: searchText
+                    )
+                case .shishanyouni:
+                    result = try await AllCourseQuery.shared.fetchLionCourses(keyword: searchText)
+                }
 
                 await MainActor.run
                 {
@@ -270,6 +362,35 @@ struct AllCourseView: View
         default: return "未知"
         }
     }
+
+    private var searchPlaceholder: String
+    {
+        switch querySource
+        {
+        case .cas:
+            return "输入课程名称或代码"
+        case .shishanyouni:
+            return "输入课程名、教师名或教学班"
+        }
+    }
+
+    private var emptyHintText: String
+    {
+        switch querySource
+        {
+        case .cas:
+            return "换个关键词，或者切换学期试试看吧"
+        case .shishanyouni:
+            return "可以试试课程名、教师名或教学班"
+        }
+    }
+
+    private func switchSource(to source: CourseQuerySource)
+    {
+        guard querySource != source else { return }
+        querySource = source
+        courses = []
+    }
 }
 
 struct AllCourseCardRow: View
@@ -286,13 +407,16 @@ struct AllCourseCardRow: View
                     .font(.system(size: 18, weight: .bold))
                     .textSelection(.enabled)
                 Spacer()
-                Text(course.kch)
-                    .font(.caption)
-                    .monospacedDigit()
-                    .padding(4)
-                    .background(Color.secondary.opacity(0.1))
-                    .cornerRadius(4)
-                    .textSelection(.enabled)
+                if let displayCode = course.displayCode
+                {
+                    Text(displayCode)
+                        .font(.caption)
+                        .monospacedDigit()
+                        .padding(4)
+                        .background(Color.secondary.opacity(0.1))
+                        .cornerRadius(4)
+                        .textSelection(.enabled)
+                }
             }
 
             VStack(alignment: .leading, spacing: 8)
@@ -301,9 +425,24 @@ struct AllCourseCardRow: View
                 {
                     Image(systemName: "graduationcap.circle.fill")
                         .foregroundColor(.blue)
-                    Text(course.kkbmmc ?? "未知学院")
+                    Text(course.kkbmmc ?? course.teacherName ?? "未知信息")
                         .font(.system(size: 15))
                         .foregroundColor(.secondary)
+                }
+
+                if course.querySource == .shishanyouni
+                {
+                    if let siteName = course.siteName, !siteName.isEmpty
+                    {
+                        HStack(spacing: 5)
+                        {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundColor(.orange)
+                            Text(siteName)
+                                .font(.system(size: 15))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
 
                 HStack(spacing: 8)

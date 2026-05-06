@@ -75,8 +75,10 @@ struct DebugRoom: View
                     Button("执行 RSA 加密")
                     {
                         userinfo.performSchoolEncryption()
+                        userinfo.performShishanyouniEncryption()
                         print("✅ 加密成功!")
                         print(userinfo.encryptedPasswordSchool)
+                        print(userinfo.encryptedPasswordShishanyouni)
                     }
                     .buttonStyle(.bordered)
 

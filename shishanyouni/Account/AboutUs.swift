@@ -37,7 +37,7 @@ struct AboutUs: View
                     Text("iOS版UI设计：douer_lucky")
                     Text("iOS版开发：douer_lucky、澜沧")
 
-                    Text("版本 1.1.1")
+                    Text("版本 1.2")
                     Text("反馈QQ群聊（长按复制）：1090311516")
                         .textSelection(.enabled)
                         .onTapGesture
@@ -61,7 +61,7 @@ struct AboutUs: View
                     Text("狮山有你 iOS 是一款校园信息与学习生活工具应用，提供课表管理、课程查询、考试信息、空教室、校历、校车、校园攻略与社团信息等功能。部分个性化服务可在用户自愿登录其校园账号后使用，其余公开内容与本地工具功能无需登录也可体验。")
                         .lineSpacing(4)
 
-                    Text("沸点工作室移动 App 开发组 & Swift Coding Club HZAU 是一个专注于移动应用设计与开发的团队，持续进行 UI 交互设计、iOS 开发与相关技术实践。")
+                    Text("沸点工作室移动 App 开发组 & Swift Coding Club HZAU 是一个专注于移动应用设计与开发的团队，持续进行 UI 交互设计、iOS或鸿蒙开发与相关技术实践。")
 
                     Text("狮山有你 iOS 由独立开发者与学生团队持续维护。我们希望通过清晰、可靠、易用的产品设计，整理校园公开信息，并为有需要的用户提供便捷的移动端信息查询与学习生活辅助体验。")
                         .lineSpacing(4)

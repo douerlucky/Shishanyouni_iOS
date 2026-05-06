@@ -1,4 +1,5 @@
 
+import EventKit
 import SwiftUI
 
 struct ExamView: View
@@ -14,7 +15,13 @@ struct ExamView: View
 
     @State var selectedYear = "2025"
     @State var selectedTerm = "2"
-    @State private var querySource: ExamQuerySource = .cas
+    @AppStorage("examQuerySource") private var querySourceRaw = ExamQuerySource.cas.rawValue
+
+    private var querySource: ExamQuerySource
+    {
+        get { ExamQuerySource(rawValue: querySourceRaw) ?? .cas }
+        nonmutating set { querySourceRaw = newValue.rawValue }
+    }
 
     // 声明查询工具
     private let scheduleQuery = ScheduleQuery()
@@ -92,7 +99,10 @@ struct ExamView: View
                 alertMessage: $alertMessage,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
-                querySource: $querySource,
+                querySource: Binding(
+                    get: { querySource },
+                    set: { querySource = $0 }
+                ),
                 scheduleQuery: scheduleQuery,
                 examQuery: examQuery
             )
@@ -113,6 +123,10 @@ struct ExamView: View
 struct ExamCard: View
 {
     let exam: Exam
+    @State private var isAddingToCalendar = false
+    @State private var showCalendarAlert = false
+    @State private var calendarAlertTitle = ""
+    @State private var calendarAlertMessage = ""
 
     var body: some View
     {
@@ -135,11 +149,35 @@ struct ExamCard: View
                         .cornerRadius(4)
                 }
                 Spacer()
-                if let xf = exam.xf
+
+                VStack(alignment: .trailing, spacing: 8)
                 {
-                    Text("\(xf)学分")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
+                    if let xf = exam.xf
+                    {
+                        Text("\(xf)学分")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Button(action: {
+                        Task { await addExamToCalendar() }
+                    })
+                    {
+                        HStack(spacing: 5)
+                        {
+                            Image(systemName: isAddingToCalendar ? "hourglass" : "calendar.badge.plus")
+                                .font(.system(size: 13, weight: .bold))
+                            Text("日历")
+                                .font(.system(size: 13, weight: .bold))
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.blue.opacity(0.12))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isAddingToCalendar)
                 }
             }
 
@@ -189,6 +227,200 @@ struct ExamCard: View
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         )
+        .alert(calendarAlertTitle, isPresented: $showCalendarAlert)
+        {
+            Button("好的", role: .cancel) { }
+        } message: {
+            Text(calendarAlertMessage)
+        }
+    }
+
+    @MainActor
+    private func setCalendarAlert(title: String, message: String)
+    {
+        calendarAlertTitle = title
+        calendarAlertMessage = message
+        showCalendarAlert = true
+    }
+
+    private func addExamToCalendar() async
+    {
+        await MainActor.run { isAddingToCalendar = true }
+        defer {
+            Task { @MainActor in
+                isAddingToCalendar = false
+            }
+        }
+
+        do
+        {
+            let store = EKEventStore()
+            let granted = try await requestCalendarAccess(store)
+            guard granted else
+            {
+                await setCalendarAlert(title: "无法添加", message: "需要允许访问系统日历，才可以帮你把考试安排塞进去哦。")
+                return
+            }
+
+            let (startDate, endDate) = try parseExamDateRange()
+            if hasExistingEvent(in: store, startDate: startDate, endDate: endDate)
+            {
+                await setCalendarAlert(title: "已经添加过啦", message: "系统日历里已经有这场考试，不会重复添加。")
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                return
+            }
+
+            guard let calendar = store.defaultCalendarForNewEvents else
+            {
+                await setCalendarAlert(title: "添加失败", message: "没有找到可以写入的默认日历。")
+                return
+            }
+
+            let event = EKEvent(eventStore: store)
+            event.title = exam.kcmc
+            event.startDate = startDate
+            event.endDate = endDate
+            event.calendar = calendar
+            event.location = examLocation
+            event.notes = "考试类型：\(exam.ksmc)"
+            event.alarms = [EKAlarm(relativeOffset: -24 * 60 * 60)]
+
+            try store.save(event, span: .thisEvent, commit: true)
+            await setCalendarAlert(title: "添加成功", message: "已添加到系统日历，并设置为考前 1 天提醒。")
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+        catch
+        {
+            await setCalendarAlert(title: "添加失败", message: error.localizedDescription)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        }
+    }
+
+    private var examLocation: String
+    {
+        let room = (exam.cdmc ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return room.isEmpty ? "华中农业大学" : "华中农业大学\(room)"
+    }
+
+    private func requestCalendarAccess(_ store: EKEventStore) async throws -> Bool
+    {
+        try await withCheckedThrowingContinuation
+        { continuation in
+            if #available(iOS 17.0, *)
+            {
+                store.requestFullAccessToEvents
+                { granted, error in
+                    if let error
+                    {
+                        continuation.resume(throwing: error)
+                    }
+                    else
+                    {
+                        continuation.resume(returning: granted)
+                    }
+                }
+            }
+            else
+            {
+                store.requestAccess(to: .event)
+                { granted, error in
+                    if let error
+                    {
+                        continuation.resume(throwing: error)
+                    }
+                    else
+                    {
+                        continuation.resume(returning: granted)
+                    }
+                }
+            }
+        }
+    }
+
+    private func parseExamDateRange() throws -> (Date, Date)
+    {
+        guard let dateText = exam.examDate.firstMatch(of: #"\d{4}-\d{1,2}-\d{1,2}"#) else
+        {
+            throw CalendarAddError.invalidExamDate
+        }
+
+        let normalizedTime = exam.examTime
+            .replacingOccurrences(of: "－", with: "-")
+            .replacingOccurrences(of: "–", with: "-")
+            .replacingOccurrences(of: "—", with: "-")
+        let parts = normalizedTime
+            .components(separatedBy: "-")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard parts.count >= 2 else
+        {
+            throw CalendarAddError.invalidExamTime
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+
+        guard let startDate = formatter.date(from: "\(dateText) \(parts[0])"),
+              let endDate = formatter.date(from: "\(dateText) \(parts[1])"),
+              endDate > startDate
+        else
+        {
+            throw CalendarAddError.invalidExamTime
+        }
+
+        return (startDate, endDate)
+    }
+
+    private func hasExistingEvent(in store: EKEventStore, startDate: Date, endDate: Date) -> Bool
+    {
+        let predicate = store.predicateForEvents(
+            withStart: startDate.addingTimeInterval(-60),
+            end: endDate.addingTimeInterval(60),
+            calendars: nil
+        )
+
+        return store.events(matching: predicate).contains
+        { event in
+            event.title == exam.kcmc
+                && abs(event.startDate.timeIntervalSince(startDate)) < 60
+                && abs(event.endDate.timeIntervalSince(endDate)) < 60
+        }
+    }
+}
+
+private enum CalendarAddError: LocalizedError
+{
+    case invalidExamDate
+    case invalidExamTime
+
+    var errorDescription: String?
+    {
+        switch self
+        {
+        case .invalidExamDate:
+            return "考试日期格式看起来不太对，暂时没法添加到日历。"
+        case .invalidExamTime:
+            return "考试时间格式看起来不太对，暂时没法添加到日历。"
+        }
+    }
+}
+
+private extension String
+{
+    func firstMatch(of pattern: String) -> String?
+    {
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: self, range: NSRange(startIndex..., in: self)),
+              let range = Range(match.range, in: self)
+        else
+        {
+            return nil
+        }
+
+        return String(self[range])
     }
 }
 
@@ -206,6 +438,7 @@ struct ExamBottomControlBar: View
     @Binding var querySource: ExamQuerySource
 
     @State private var showPicker = false
+    @State private var showSourcePicker = false
     @EnvironmentObject var userinfo: userInfo
 
     let scheduleQuery: ScheduleQuery
@@ -218,12 +451,28 @@ struct ExamBottomControlBar: View
     {
         HStack(spacing: 15)
         {
+            Button(action: { showSourcePicker = true })
+            {
+                HStack(spacing: 6)
+                {
+                    Text(querySource.title)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .font(.system(size: 14, weight: .bold))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(.systemBackground).opacity(0.9))
+                .clipShape(Capsule())
+            }
+            .optionalLiquidGlass()
+
             // 学期选择器
             Button(action: { showPicker = true })
             {
                 HStack
                 {
-                    Text("\(querySource.title) · \(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
+                    Text("\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
                         .font(.system(size: 14, weight: .bold))
                     Image(systemName: "chevron.up")
                         .font(.system(size: 10, weight: .bold))
@@ -259,6 +508,65 @@ struct ExamBottomControlBar: View
         .glassBackground(cornerRadius: 64)
         .padding(.bottom, 25)
 
+        .sheet(isPresented: $showSourcePicker)
+        {
+            VStack(spacing: 18)
+            {
+                VStack(spacing: 6)
+                {
+                    Text("选择数据源")
+                        .font(.headline)
+                }
+                .padding(.horizontal, 28)
+
+                VStack(spacing: 12)
+                {
+                    ForEach(ExamQuerySource.allCases)
+                    { source in
+                        Button(action: {
+                            switchSource(to: source)
+                            showSourcePicker = false
+                        })
+                        {
+                            HStack
+                            {
+                                Text(source.title)
+                                    .font(.system(size: 17, weight: .bold))
+                                Spacer()
+                                if querySource == source
+                                {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .foregroundColor(querySource == source ? .blue : .primary)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 15)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(querySource == source ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
+                            )
+                            .optionalLiquidGlass()
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Button("取消")
+                {
+                    showSourcePicker = false
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.secondary)
+                .padding(.top, 24)
+                .buttonStyle(.plain)
+            }
+            .presentationDetents([.height(300)])
+            .presentationDragIndicator(.hidden)
+        }
+
         .sheet(isPresented: $showPicker)
         {
             VStack(spacing: 20)
@@ -266,16 +574,6 @@ struct ExamBottomControlBar: View
                 Text("选择查询范围")
                     .font(.headline)
                     .padding(.top, 20)
-
-                Picker("查询服务器", selection: $querySource)
-                {
-                    ForEach(ExamQuerySource.allCases)
-                    { source in
-                        Text(source.title).tag(source)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 24)
 
                 HStack(spacing: 0)
                 {
@@ -321,6 +619,13 @@ struct ExamBottomControlBar: View
             }
             .presentationDetents([.height(350)])
         }
+    }
+
+    private func switchSource(to source: ExamQuerySource)
+    {
+        guard querySource != source else { return }
+        querySource = source
+        exams = []
     }
 
     private func formatYearAbbreviation(_ year: String) -> String

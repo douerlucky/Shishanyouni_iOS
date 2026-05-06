@@ -12,6 +12,8 @@ struct NanhuRunView: View
     @EnvironmentObject var userinfo: userInfo
     @State private var runScores: [RunScore] = []
     @State private var isLoading = false
+    @State private var querySource: NanhuRunQuerySource = .cas
+    @State private var hasLoadedScores = false
 
     // 弹窗状态
     @State private var showAlert = false
@@ -36,10 +38,10 @@ struct NanhuRunView: View
             {
                 VStack(spacing: 12)
                 {
-                    Image(systemName: "figure.run.circle")
+                    Image(systemName: hasLoadedScores ? "figure.run.circle" : "arrow.clockwise.circle")
                         .font(.system(size: 60))
                         .foregroundColor(.secondary.opacity(0.6))
-                    Text("暂无环湖跑数据")
+                    Text(hasLoadedScores ? "暂无环湖跑数据" : "点击下方按钮同步数据")
                         .font(.headline)
                         .foregroundColor(.secondary)
                 }
@@ -72,7 +74,7 @@ struct NanhuRunView: View
                         ProgressView()
                             .scaleEffect(1.5)
                             .tint(.white)
-                        Text("正在同步南湖跑成绩...")
+                        Text("正在通过\(querySource.title)同步南湖跑成绩...")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.white)
                     }
@@ -87,7 +89,10 @@ struct NanhuRunView: View
             VStack
             {
                 Spacer()
-                NanhuRunQueryButton(fetchNanhuRunData: { fetchData() })
+                NanhuRunQueryButton(
+                    querySource: $querySource,
+                    fetchNanhuRunData: { fetchData() }
+                )
             }
         }
         .navigationTitle("环湖跑成绩")
@@ -113,26 +118,47 @@ struct NanhuRunView: View
 
     private func fetchData()
     {
+        guard !userinfo.username.isEmpty else
+        {
+            alertTitle = "获取失败"
+            alertMessage = "好像忘记了登录，请先去登录吧！"
+            showAlert = true
+            return
+        }
+
         isLoading = true
         Task
         {
             do
             {
-                // 1. 登录并获取双 Cookie
-                let cookie = try await runQuery.loginAndGetRunCookie(
-                    username: userinfo.username,
-                    rsaPassword: userinfo.encryptedPasswordSchool,
-                    mfaCodeProvider: { phone in
-                        await requestMFACode(maskedPhone: phone)
-                    }
-                )
+                let scores: [RunScore]
+                switch querySource
+                {
+                case .cas:
+                    let cookie = try await runQuery.loginAndGetRunCookie(
+                        username: userinfo.username,
+                        rsaPassword: userinfo.encryptedPasswordSchool,
+                        mfaCodeProvider: { phone in
+                            await requestMFACode(maskedPhone: phone)
+                        }
+                    )
 
-                // 2. 获取成绩
-                let scores = try await runQuery.fetchRunScores(cookie: cookie)
+                    scores = try await runQuery.fetchRunScores(cookie: cookie)
+                case .shishanyouni:
+                    guard !userinfo.encryptedPasswordShishanyouni.isEmpty else
+                    {
+                        throw NanhuRunQueryError.apiError("未找到狮山有你绑定信息，请重新登录后再试。")
+                    }
+                    scores = try await runQuery.fetchRunScoresFromShishanyouni(
+                        username: userinfo.username,
+                        encryptedPassword: userinfo.encryptedPasswordShishanyouni
+                    )
+                }
 
                 await MainActor.run
                 {
                     self.runScores = scores
+                    self.hasLoadedScores = true
                     self.isLoading = false
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }
@@ -243,13 +269,33 @@ struct BlurView: UIViewRepresentable
 
 struct NanhuRunQueryButton: View
 {
+    @Binding var querySource: NanhuRunQuerySource
     var fetchNanhuRunData: () -> Void
+    @State private var showSourcePicker = false
 
     var body: some View
     {
         HStack(spacing: 20)
         {
-            // 2. 刷新/查询按钮（中间核心位置）
+            Button(action: {
+                showSourcePicker = true
+            })
+            {
+                HStack(spacing: 6)
+                {
+                    Text(querySource.title)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .font(.system(size: 15, weight: .bold))
+                .padding(.vertical, 12)
+                .padding(.horizontal, 18)
+                .background(Color(uiColor: .systemBackground).opacity(0.92))
+                .foregroundColor(.primary)
+                .clipShape(Capsule())
+            }
+            .optionalLiquidGlass()
+
             Button(action: {
                 fetchNanhuRunData()
             })
@@ -269,6 +315,64 @@ struct NanhuRunQueryButton: View
         .glassBackground(cornerRadius: 64)
         .padding(.horizontal, 20)
         .padding(.bottom, 30) // 距离底部安全区域的距离
+        .sheet(isPresented: $showSourcePicker)
+        {
+            VStack(spacing: 18)
+            {
+                VStack(spacing: 6)
+                {
+                    Text("选择数据源")
+                        .font(.headline)
+                }
+                .padding(.horizontal, 28)
+
+                VStack(spacing: 12)
+                {
+                    ForEach(NanhuRunQuerySource.allCases)
+                    { source in
+                        Button(action: {
+                            querySource = source
+                            showSourcePicker = false
+                        })
+                        {
+                            HStack
+                            {
+                                Text(source.title)
+                                    .font(.system(size: 17, weight: .bold))
+                                Spacer()
+                                if querySource == source
+                                {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .foregroundColor(querySource == source ? .blue : .primary)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 15)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(querySource == source ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
+                            )
+                            .optionalLiquidGlass()
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Button("取消")
+                {
+                    showSourcePicker = false
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.secondary)
+                .padding(.top, 24)
+                .buttonStyle(.plain)
+            }
+            .presentationDetents([.height(300)])
+            .presentationDragIndicator(.hidden)
+        }
     }
 }
 

@@ -27,6 +27,8 @@ struct ElectricityView: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var sessionToken: String = ""
+    @State private var loginTask: Task<String, Error>?
 
     private let query = ElectricityQuery()
 
@@ -387,7 +389,8 @@ struct ElectricityView: View
                     {
                         self.selectedFloorId = first.value
                         // 加载第一层的房间
-                        fetchRooms(buildingId: buildingId, floor: first.value)
+                        let floorNum = first.value.components(separatedBy: "-").first ?? first.value
+                        fetchRooms(buildingId: buildingId, floor: floorNum)
                     }
                 }
             }
@@ -458,13 +461,27 @@ struct ElectricityView: View
         {
             isLoading = false
             alertTitle = "错误"
+            if let nsError = error as NSError?, nsError.code == 401 || nsError.code == 403
+            {
+                sessionToken = ""
+                loginTask = nil
+            }
             if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
             {
                 self.alertMessage = "好像忘记了登录，请先去登录吧！"
             }
             else
             {
-                alertMessage = error.localizedDescription
+                if let nsError = error as NSError?,
+                   let serverMessage = nsError.userInfo["msg"] as? String,
+                   !serverMessage.isEmpty
+                {
+                    alertMessage = "\(serverMessage)（code: \(nsError.code)）"
+                }
+                else
+                {
+                    alertMessage = error.localizedDescription
+                }
             }
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             showAlert = true
@@ -472,13 +489,49 @@ struct ElectricityView: View
     }
 
     private func loginToken() async throws -> String {
-        try await query.loginAndGetToken(
-            username: userinfo.username,
-            rsaPassword: userinfo.encryptedPasswordSchool,
-            mfaCodeProvider: { phone in
-                await requestMFACode(maskedPhone: phone)
+        if !sessionToken.isEmpty
+        {
+            return sessionToken
+        }
+
+        if let existingTask = loginTask
+        {
+            return try await existingTask.value
+        }
+
+        let task = Task<String, Error> {
+            try await query.loginAndGetToken(
+                username: userinfo.username,
+                rsaPassword: userinfo.encryptedPasswordSchool,
+                mfaCodeProvider: { phone in
+                    await requestMFACode(maskedPhone: phone)
+                }
+            )
+        }
+
+        await MainActor.run
+        {
+            loginTask = task
+        }
+
+        do
+        {
+            let token = try await task.value
+            await MainActor.run
+            {
+                sessionToken = token
+                loginTask = nil
             }
-        )
+            return token
+        }
+        catch
+        {
+            await MainActor.run
+            {
+                loginTask = nil
+            }
+            throw error
+        }
     }
 
     @MainActor

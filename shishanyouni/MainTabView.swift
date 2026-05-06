@@ -7,10 +7,21 @@
 
 // MainTabView.swift
 import SwiftUI
+import UIKit
 
 struct MainTabView: View
 {
     @EnvironmentObject var userinfo: userInfo
+
+    init()
+    {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.systemBackground
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     var body: some View
     {
@@ -45,6 +56,8 @@ struct MainTabView: View
             }
         }
         .accentColor(.blue)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(Color(uiColor: .systemBackground), for: .tabBar)
     }
 }
 

@@ -7,6 +7,25 @@
 
 import Foundation
 
+enum NanhuRunQuerySource: String, CaseIterable, Identifiable
+{
+    case cas = "cas"
+    case shishanyouni = "shishanyouni"
+
+    var id: String { rawValue }
+
+    var title: String
+    {
+        switch self
+        {
+        case .cas:
+            return "CAS"
+        case .shishanyouni:
+            return "狮山有你"
+        }
+    }
+}
+
 // 环湖跑成绩数据结构
 struct RunScore: Identifiable, Codable
 {
@@ -40,6 +59,50 @@ struct PhysicalScore: Identifiable, Codable
     var details: [PhysicalDetail] = []
 }
 
+private struct LionSouthlakeResponse: Decodable
+{
+    let msg: String?
+    let code: Int
+    let data: LionSouthlakeData?
+    let success: Bool?
+
+    var isSuccess: Bool
+    {
+        success == true || code == 2 || code == 200
+    }
+}
+
+private struct LionSouthlakeData: Decodable
+{
+    let items: [LionSouthlakeItem]?
+}
+
+private struct LionSouthlakeItem: Decodable
+{
+    let term: String
+    let num: String
+}
+
+enum NanhuRunQueryError: LocalizedError
+{
+    case invalidURL
+    case invalidResponse
+    case apiError(String)
+
+    var errorDescription: String?
+    {
+        switch self
+        {
+        case .invalidURL:
+            return "南湖跑查询地址无效。"
+        case .invalidResponse:
+            return "南湖跑查询返回了无法识别的响应。"
+        case let .apiError(message):
+            return message
+        }
+    }
+}
+
 class GymCloudQuery: NSObject, URLSessionTaskDelegate
 {
     // 南湖跑系统的地址
@@ -49,6 +112,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
     private let scoreURL = "http://tygl.hzau.edu.cn/main.php?module=stu&title=stu_sun_score"
     private let physicalURL = "http://tygl.hzau.edu.cn/main.php?module=stu&title=stu_ht_score"
     private let rootURL = "http://tygl.hzau.edu.cn/"
+    private let lionSouthlakeURL = "https://lion.hzau.edu.cn/app/ios/southlake"
 
     // 手动存储 cookies (用于登录过程中的状态追踪)
     private var cookieJar: [String: String] = [:]
@@ -331,6 +395,45 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         }
 
         return parseScoresFrom(html: html)
+    }
+
+    func fetchRunScoresFromShishanyouni(username: String, encryptedPassword: String) async throws -> [RunScore]
+    {
+        guard let url = URL(string: lionSouthlakeURL) else
+        {
+            throw NanhuRunQueryError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "username": username,
+            "password": encryptedPassword,
+        ])
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else
+        {
+            throw NanhuRunQueryError.invalidResponse
+        }
+
+        let decoded = try JSONDecoder().decode(LionSouthlakeResponse.self, from: data)
+        guard decoded.isSuccess else
+        {
+            throw NanhuRunQueryError.apiError(decoded.msg ?? "狮山有你南湖跑查询失败。")
+        }
+
+        return (decoded.data?.items ?? []).compactMap
+        { item in
+            let parts = item.term.split(separator: "-", maxSplits: 2).map(String.init)
+            guard parts.count == 3 else { return nil }
+            return RunScore(
+                schoolYear: "\(parts[0])-\(parts[1])",
+                semester: parts[2],
+                count: item.num
+            )
+        }
     }
 
     private func parseScoresFrom(html: String) -> [RunScore]
