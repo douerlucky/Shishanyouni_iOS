@@ -38,6 +38,7 @@ struct HomeView: View
     @State private var navigateToStrategy = false
     @State private var navigateToClub = false
     @State private var navigateToGIS = false
+    @State private var navigateToLibrary = false
 
     @State private var currentTime = Date() // 储存当前时间
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect() // 创建一个定时器
@@ -199,6 +200,10 @@ struct HomeView: View
                         {
                             navigateElectricity = true
                         }
+                        MenuGridItem(title: "图书馆座位", icon: "building.columns.fill", color: HomeMenuColor.cyan2)
+                        {
+                            navigateToLibrary = true
+                        }
                     }
                     
                     MenuGridItem(title: "校园地图", icon: "map.fill", color: HomeMenuColor.green2)
@@ -264,6 +269,8 @@ struct HomeView: View
             { AllClub() }
             .navigationDestination(isPresented: $navigateToGIS)
             { SchoolGISView() }
+            .navigationDestination(isPresented: $navigateToLibrary)
+            { LibraryOverviewView() }
         }
     }
 }
