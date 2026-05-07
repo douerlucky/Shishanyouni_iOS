@@ -29,7 +29,7 @@ struct SubscriptionView: View
                 colors: [
                     Color.orange.opacity(0.12),
                     Color.blue.opacity(0.08),
-                    Color.white,
+                    Color(.systemBackground),
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -119,7 +119,7 @@ struct SubscriptionView: View
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color.black.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
             }
             .buttonStyle(.plain)
         }

@@ -448,6 +448,7 @@ struct ElectricityView: View
                 {
                     self.electricityRecords = records
                     self.isLoading = false
+                    ElectricityBGTaskManager.shared.scheduleNext()
                 }
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }

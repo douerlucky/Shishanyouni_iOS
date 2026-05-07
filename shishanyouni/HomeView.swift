@@ -2,20 +2,20 @@ import SwiftUI
 
 private enum HomeMenuColor
 {
-    static let red1 = Color(red: 0.89, green: 0.24, blue: 0.22)
-    static let red2 = Color(red: 0.80, green: 0.18, blue: 0.30)
-    static let orange1 = Color(red: 0.95, green: 0.47, blue: 0.18)
-    static let orange2 = Color(red: 0.90, green: 0.58, blue: 0.16)
-    static let yellow1 = Color(red: 0.86, green: 0.73, blue: 0.16)
-    static let yellow2 = Color(red: 0.72, green: 0.76, blue: 0.18)
-    static let green1 = Color(red: 0.26, green: 0.69, blue: 0.31)
-    static let green2 = Color(red: 0.15, green: 0.71, blue: 0.47)
-    static let cyan1 = Color(red: 0.12, green: 0.70, blue: 0.74)
-    static let cyan2 = Color(red: 0.13, green: 0.63, blue: 0.86)
-    static let blue1 = Color(red: 0.20, green: 0.49, blue: 0.92)
-    static let blue2 = Color(red: 0.30, green: 0.40, blue: 0.88)
-    static let purple1 = Color(red: 0.50, green: 0.34, blue: 0.86)
-    static let purple2 = Color(red: 0.69, green: 0.34, blue: 0.78)
+    static let red1 = Color.adaptive(light: Color(red: 0.89, green: 0.24, blue: 0.22), dark: Color(red: 0.95, green: 0.40, blue: 0.38))
+    static let red2 = Color.adaptive(light: Color(red: 0.80, green: 0.18, blue: 0.30), dark: Color(red: 0.88, green: 0.35, blue: 0.45))
+    static let orange1 = Color.adaptive(light: Color(red: 0.95, green: 0.47, blue: 0.18), dark: Color(red: 0.98, green: 0.60, blue: 0.35))
+    static let orange2 = Color.adaptive(light: Color(red: 0.90, green: 0.58, blue: 0.16), dark: Color(red: 0.94, green: 0.68, blue: 0.32))
+    static let yellow1 = Color.adaptive(light: Color(red: 0.86, green: 0.73, blue: 0.16), dark: Color(red: 0.90, green: 0.78, blue: 0.30))
+    static let yellow2 = Color.adaptive(light: Color(red: 0.72, green: 0.76, blue: 0.18), dark: Color(red: 0.78, green: 0.80, blue: 0.32))
+    static let green1 = Color.adaptive(light: Color(red: 0.26, green: 0.69, blue: 0.31), dark: Color(red: 0.35, green: 0.75, blue: 0.40))
+    static let green2 = Color.adaptive(light: Color(red: 0.15, green: 0.71, blue: 0.47), dark: Color(red: 0.28, green: 0.76, blue: 0.55))
+    static let cyan1 = Color.adaptive(light: Color(red: 0.12, green: 0.70, blue: 0.74), dark: Color(red: 0.28, green: 0.78, blue: 0.80))
+    static let cyan2 = Color.adaptive(light: Color(red: 0.13, green: 0.63, blue: 0.86), dark: Color(red: 0.30, green: 0.72, blue: 0.90))
+    static let blue1 = Color.adaptive(light: Color(red: 0.20, green: 0.49, blue: 0.92), dark: Color(red: 0.38, green: 0.62, blue: 0.95))
+    static let blue2 = Color.adaptive(light: Color(red: 0.30, green: 0.40, blue: 0.88), dark: Color(red: 0.45, green: 0.52, blue: 0.92))
+    static let purple1 = Color.adaptive(light: Color(red: 0.50, green: 0.34, blue: 0.86), dark: Color(red: 0.60, green: 0.48, blue: 0.92))
+    static let purple2 = Color.adaptive(light: Color(red: 0.69, green: 0.34, blue: 0.78), dark: Color(red: 0.78, green: 0.48, blue: 0.85))
 }
 
 struct HomeView: View

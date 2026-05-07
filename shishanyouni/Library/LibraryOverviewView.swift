@@ -31,7 +31,7 @@ struct LibraryOverviewView: View
                     .padding(.vertical, 16)
                     .background(
                         LinearGradient(
-                            colors: [Color(red: 0.26, green: 0.69, blue: 0.31), Color(red: 0.15, green: 0.55, blue: 0.35)],
+                            colors: [AdaptiveColors.libraryGreen1, AdaptiveColors.libraryGreen2],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -62,7 +62,7 @@ struct LibraryOverviewView: View
             {
                 Image(systemName: "building.columns.fill")
                     .font(.title2)
-                    .foregroundColor(Color(red: 0.26, green: 0.69, blue: 0.31))
+                    .foregroundColor(AdaptiveColors.statGreen)
                 Text("实时座位状态")
                     .font(.title3)
                     .fontWeight(.bold)
@@ -90,17 +90,17 @@ struct LibraryOverviewView: View
                     StatItem(
                         value: "\(s.available)",
                         label: "当前可用",
-                        color: Color(red: 0.49, green: 0.78, blue: 0.54)
+                        color: AdaptiveColors.libraryStatGreen
                     )
                     StatItem(
                         value: "\(s.inUse)",
                         label: "已使用",
-                        color: Color(red: 0.07, green: 0.47, blue: 0.84)
+                        color: AdaptiveColors.statBlue
                     )
                     StatItem(
                         value: "\(s.notSignedIn)",
                         label: "未签到",
-                        color: Color(red: 0.94, green: 0.46, blue: 0.22)
+                        color: AdaptiveColors.statOrange
                     )
                 }
             }

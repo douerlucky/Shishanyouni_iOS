@@ -121,10 +121,10 @@ struct GlassBackground: ViewModifier
                             RoundedRectangle(cornerRadius: cornerRadius)
                                 .strokeBorder(
                                     LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.3),
-                                            Color.white.opacity(0.1),
-                                        ],
+                                    colors: [
+                                        AdaptiveColors.glassStroke,
+                                        AdaptiveColors.glassStrokeBottom,
+                                    ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),

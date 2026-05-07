@@ -151,6 +151,7 @@ class userInfo: ObservableObject
         UserDefaults.standard.removeObject(forKey: StorageKey.savedNickname)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedCASBound)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedBackendBound)
+        UserDefaults.standard.removeObject(forKey: "encrypted_password_school")
 
         // 清空当前数据
         username = ""
@@ -176,6 +177,7 @@ class userInfo: ObservableObject
         UserDefaults.standard.removeObject(forKey: StorageKey.savedNickname)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedCASBound)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedBackendBound)
+        UserDefaults.standard.removeObject(forKey: "encrypted_password_school")
 
         print("已清除本地保存的账号信息，保留当前会话")
     }
@@ -192,6 +194,7 @@ class userInfo: ObservableObject
         if let result = encryptSchoolPassword(password: plainPassword)
         {
             encryptedPasswordSchool = result
+            UserDefaults.standard.set(result, forKey: "encrypted_password_school")
         }
     }
 

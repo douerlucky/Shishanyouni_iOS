@@ -155,7 +155,7 @@ struct ImageCropperView: View {
                             .foregroundColor(.black)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(Color.white)
+                            .background(AdaptiveColors.cropButtonBg)
                             .clipShape(Capsule())
                     }
                 }
@@ -298,13 +298,13 @@ private struct CropGridLines: View {
         ZStack {
             ForEach(1..<3) { i in
                 Rectangle()
-                    .fill(Color.white.opacity(0.3))
+                                .fill(AdaptiveColors.cropGridOverlay)
                     .frame(width: 0.5, height: height)
                     .offset(x: width / 3 * CGFloat(i) - width / 2)
             }
             ForEach(1..<3) { i in
                 Rectangle()
-                    .fill(Color.white.opacity(0.3))
+                                .fill(AdaptiveColors.cropGridOverlay)
                     .frame(width: width, height: 0.5)
                     .offset(y: height / 3 * CGFloat(i) - height / 2)
             }
