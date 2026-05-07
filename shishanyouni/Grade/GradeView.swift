@@ -349,6 +349,8 @@ struct GradeInquiry: View
     @State var selectedYear = "2025"
     @State var selectedTerm = "2"
 
+    @State private var navigateToAnalysis = false
+
     /// 被排除（不计入统计）的课程 ID 集合
     @State private var excludedIDs: Set<String> = []
 
@@ -471,6 +473,29 @@ struct GradeInquiry: View
         .navigationTitle("成绩查询")
         .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.large)
+        .toolbar
+        {
+            if !Grades.isEmpty
+            {
+                ToolbarItem(placement: .topBarTrailing)
+                {
+                    Button(action: { navigateToAnalysis = true })
+                    {
+                        HStack(spacing: 4)
+                        {
+                            Image(systemName: "chart.bar.xaxis.ascending")
+                            Text("分析")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                    }
+                }
+            }
+        }
+        .navigationDestination(isPresented: $navigateToAnalysis)
+        {
+            GPAnalysisView()
+                .environmentObject(userinfo)
+        }
         .alert(alertTitle, isPresented: $showAlert)
         {
             Button("好的", role: .cancel) { }
