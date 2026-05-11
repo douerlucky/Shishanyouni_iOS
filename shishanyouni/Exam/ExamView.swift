@@ -12,6 +12,10 @@ struct ExamView: View
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
 
     @State var selectedYear = "2025"
     @State var selectedTerm = "2"
@@ -103,6 +107,9 @@ struct ExamView: View
                     get: { querySource },
                     set: { querySource = $0 }
                 ),
+                requestMFACode: { phone in
+                    await requestMFACode(maskedPhone: phone)
+                },
                 scheduleQuery: scheduleQuery,
                 examQuery: examQuery
             )
@@ -115,6 +122,38 @@ struct ExamView: View
         } message: {
             Text(alertMessage)
         }
+        .sheet(isPresented: $showMFASheet)
+        {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
+    }
+}
+
+extension ExamView
+{
+    @MainActor
+    private func requestMFACode(maskedPhone: String?) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?)
+    {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
     }
 }
 
@@ -526,6 +565,7 @@ struct ExamBottomControlBar: View
     @State private var showSourcePicker = false
     @EnvironmentObject var userinfo: userInfo
 
+    let requestMFACode: MFACodeProvider
     let scheduleQuery: ScheduleQuery
     let examQuery: ExamQuery
 
@@ -757,7 +797,8 @@ struct ExamBottomControlBar: View
                 case .cas:
                     let cookie = try await scheduleQuery.loginAndGetCookie(
                         username: userinfo.username,
-                        rsaPassword: userinfo.encryptedPasswordSchool
+                        rsaPassword: userinfo.encryptedPasswordSchool,
+                        mfaCodeProvider: requestMFACode
                     )
                     result = try await examQuery.fetchExams(
                         cookie: cookie,

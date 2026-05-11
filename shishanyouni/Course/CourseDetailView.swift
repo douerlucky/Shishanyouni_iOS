@@ -15,6 +15,10 @@ struct CourseDetailView: View
     @State private var isLoading = true
     @State private var showAddAlert = false
     @State private var addAlertMessage = ""
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
 
     private let scheduleQuery = ScheduleQuery()
 
@@ -126,6 +130,15 @@ struct CourseDetailView: View
         } message: {
             Text(addAlertMessage)
         }
+        .sheet(isPresented: $showMFASheet)
+        {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
     }
 
     private func fetchData()
@@ -140,7 +153,10 @@ struct CourseDetailView: View
                 case .cas:
                     let cookie = try await scheduleQuery.loginAndGetCookie(
                         username: userinfo.username,
-                        rsaPassword: userinfo.encryptedPasswordSchool
+                        rsaPassword: userinfo.encryptedPasswordSchool,
+                        mfaCodeProvider: { phone in
+                            await requestMFACode(maskedPhone: phone)
+                        }
                     )
                     results = try await AllCourseQuery.shared.fetchCourseClasses(
                         cookie: cookie,
@@ -328,6 +344,29 @@ struct CourseDetailView: View
             && lhs.room == rhs.room
             && lhs.teacher == rhs.teacher
             && lhs.weekList == rhs.weekList
+    }
+}
+
+extension CourseDetailView
+{
+    @MainActor
+    private func requestMFACode(maskedPhone: String?) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?)
+    {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
     }
 }
 
