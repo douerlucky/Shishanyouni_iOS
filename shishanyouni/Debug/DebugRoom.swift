@@ -186,13 +186,13 @@ struct DebugRoom: View
 
                 Button("测试 CAS 登录接口（MFA）")
                 {
-                    let loginChecker = LoginChecker()
+                    let casBinder = CASBinder()
                     Task
                     {
                         do
                         {
                             print("🚀 开始测试 CAS 登录 + MFA...")
-                            let result = try await loginChecker.checkLogin(
+                            let result = try await casBinder.bind(
                                 username: userinfo.username,
                                 password: userinfo.encryptedPasswordSchool,
                                 mfaCodeProvider: { phone in

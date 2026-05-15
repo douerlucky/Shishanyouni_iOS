@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ExamQuerySource: String, CaseIterable, Identifiable {
+enum ExamQuerySource: String, CaseIterable, Identifiable, Codable {
     case cas = "cas"
     case shishanyouni = "shishanyouni"
 
@@ -64,7 +64,7 @@ enum ExamQueryError: LocalizedError {
     }
 }
 
-struct Exam: Identifiable, Decodable
+struct Exam: Identifiable, Codable
 {
     var id: String {
         if let rowID = rowID {
@@ -93,6 +93,8 @@ struct Exam: Identifiable, Decodable
         case zwh
         case xf
         case jxbmc
+        case bj
+        case querySource
     }
 
     init(from decoder: Decoder) throws {
@@ -105,8 +107,22 @@ struct Exam: Identifiable, Decodable
         zwh = try container.decodeIfPresent(String.self, forKey: .zwh)
         xf = try container.decodeIfPresent(String.self, forKey: .xf)
         jxbmc = try container.decodeIfPresent(String.self, forKey: .jxbmc)
-        bj = nil
-        querySource = .cas
+        bj = try container.decodeIfPresent(String.self, forKey: .bj)
+        querySource = try container.decodeIfPresent(ExamQuerySource.self, forKey: .querySource) ?? .cas
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(rowID, forKey: .rowID)
+        try container.encode(kcmc, forKey: .kcmc)
+        try container.encode(ksmc, forKey: .ksmc)
+        try container.encode(kssj, forKey: .kssj)
+        try container.encodeIfPresent(cdmc, forKey: .cdmc)
+        try container.encodeIfPresent(zwh, forKey: .zwh)
+        try container.encodeIfPresent(xf, forKey: .xf)
+        try container.encodeIfPresent(jxbmc, forKey: .jxbmc)
+        try container.encodeIfPresent(bj, forKey: .bj)
+        try container.encode(querySource, forKey: .querySource)
     }
 
     fileprivate init(from item: LionExamItem) {
@@ -192,7 +208,7 @@ class ExamQuery
 
     func fetchExams(cookie: String, xnm: String, xqm: String) async throws -> [Exam]
     {
-        let urlString = "http://byjxyt.hzau.edu.cn/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"
+        let urlString = "https://byjxyt.hzau.edu.cn/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -200,7 +216,7 @@ class ExamQuery
         request.setValue("application/x-www-form-urlencoded;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue("http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
+        request.setValue("https://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")

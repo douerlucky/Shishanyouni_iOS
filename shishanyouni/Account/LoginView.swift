@@ -7,6 +7,25 @@
 
 import SwiftUI
 
+private enum LoginBindingSource: String, CaseIterable, Identifiable
+{
+    case shishanyouni
+    case cas
+
+    var id: String { rawValue }
+
+    var title: String
+    {
+        switch self
+        {
+        case .shishanyouni:
+            return "狮山有你服务器"
+        case .cas:
+            return "CAS"
+        }
+    }
+}
+
 struct LoginView: View
 {
     @EnvironmentObject var userinfo: userInfo
@@ -26,8 +45,17 @@ struct LoginView: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaFromShishanyouni = false
+    @State private var shishanyouniMFASessionId: String?
+    @AppStorage("login_binding_source") private var bindingSourceRawValue = LoginBindingSource.shishanyouni.rawValue
 
-    var loginChecker: LoginChecker = LoginChecker()
+    private var bindingSource: LoginBindingSource
+    {
+        get { LoginBindingSource(rawValue: bindingSourceRawValue) ?? .shishanyouni }
+        nonmutating set { bindingSourceRawValue = newValue.rawValue }
+    }
+
+    var casBinder: CASBinder = CASBinder()
 
     var body: some View
     {
@@ -51,6 +79,20 @@ struct LoginView: View
 
                 VStack(spacing: 16)
                 {
+                    Picker("绑定方式", selection: Binding(
+                        get: { bindingSource },
+                        set: { bindingSource = $0 }
+                    ))
+                    {
+                        ForEach(LoginBindingSource.allCases)
+                        { source in
+                            Text(source.title)
+                                .tag(source)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.bottom, 2)
+
                     // 学号行
                     HStack(spacing: 8)
                     {
@@ -131,44 +173,75 @@ struct LoginView: View
                         Task
                         {
                             defer { isLoading = false }
-                            guard let schoolPassword = encryptSchoolPassword(password: password) else {
-                                await MainActor.run {
-                                    self.alertTitle = "出现错误"
-                                    self.alertMessage = "CAS 密码加密失败，请稍后重试或联系开发者检查公钥配置。"
-                                    self.showAlert = true
-                                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                                }
-                                return
-                            }
-                            guard let shishanyouniPassword = encryptShishanyouniPassword(password: password) else {
-                                await MainActor.run {
-                                    self.alertTitle = "出现错误"
-                                    self.alertMessage = "狮山有你后端密码加密失败，请稍后重试或联系开发者检查公钥配置。"
-                                    self.showAlert = true
-                                    UINotificationFeedbackGenerator().notificationOccurred(.error)
-                                }
+                            if TestAccount.matches(username: username, password: password)
+                            {
+                                completeTestAccountBinding()
                                 return
                             }
 
-                            async let casAttempt = performCASBinding(username: username, encryptedPassword: schoolPassword)
-                            async let backendAttempt = performBackendBinding(username: username, encryptedPassword: shishanyouniPassword)
-                            let (casResult, backendResult) = await (casAttempt, backendAttempt)
-                            let casBound = casResult.0
-                            let backendBound = backendResult.0
+                            let selectedSource = bindingSource
+                            let schoolPassword = encryptSchoolPassword(password: password)
+                            let shishanyouniPassword = encryptShishanyouniPassword(password: password)
+                            let bindingResult: (Bool, String?)
+
+                            switch selectedSource
+                            {
+                            case .shishanyouni:
+                                guard let shishanyouniPassword else
+                                {
+                                    await MainActor.run
+                                    {
+                                        self.alertTitle = "出现错误"
+                                        self.alertMessage = "狮山有你后端密码加密失败，请稍后重试或联系开发者检查公钥配置。"
+                                        self.showAlert = true
+                                        UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                    }
+                                    return
+                                }
+                                bindingResult = await performShishanyouniBinding(username: username, encryptedPassword: shishanyouniPassword)
+                            case .cas:
+                                guard let schoolPassword else
+                                {
+                                    await MainActor.run
+                                    {
+                                        self.alertTitle = "出现错误"
+                                        self.alertMessage = "CAS 密码加密失败，请稍后重试或联系开发者检查公钥配置。"
+                                        self.showAlert = true
+                                        UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                    }
+                                    return
+                                }
+                                bindingResult = await performCASBinding(username: username, encryptedPassword: schoolPassword)
+                            }
+
+                            let isBound = bindingResult.0
 
                             await MainActor.run
                             {
-                                if casBound || backendBound
+                                if isBound
                                 {
                                     userinfo.username = username
                                     userinfo.plainPassword = password
-                                    userinfo.encryptedPasswordSchool = schoolPassword
-                                    userinfo.encryptedPasswordShishanyouni = shishanyouniPassword
+                                    if let schoolPassword
+                                    {
+                                        userinfo.encryptedPasswordSchool = schoolPassword
+                                    }
+                                    if let shishanyouniPassword
+                                    {
+                                        userinfo.encryptedPasswordShishanyouni = shishanyouniPassword
+                                    }
+
+                                    switch selectedSource
+                                    {
+                                    case .shishanyouni:
+                                        userinfo.updateBindingStatus(casBound: userinfo.isCASBound, shishanyouniBound: true)
+                                    case .cas:
+                                        userinfo.updateBindingStatus(casBound: true, shishanyouniBound: userinfo.isShishanyouniBound)
+                                    }
                                 }
-                                userinfo.updateBindingStatus(casBound: casBound, shishanyouniBound: backendBound)
                                 refreshBindingStatusText()
 
-                                if casBound || backendBound
+                                if isBound
                                 {
                                     if rememberPassword
                                     {
@@ -180,18 +253,17 @@ struct LoginView: View
                                     }
                                 }
 
-                                let alert = buildBindingAlerts(
-                                    casBound: casBound,
-                                    casMessage: casResult.1,
-                                    backendBound: backendBound,
-                                    backendMessage: backendResult.1
+                                let alert = buildSingleBindingAlert(
+                                    source: selectedSource,
+                                    isBound: isBound,
+                                    message: bindingResult.1
                                 )
 
                                 self.alertTitle = alert.0
                                 self.alertMessage = alert.1
                                 self.showAlert = true
 
-                                if casBound || backendBound
+                                if isBound
                                 {
                                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                                 }
@@ -262,7 +334,7 @@ struct LoginView: View
                         .scaleEffect(1.5)
                         .tint(.blue)
 
-                    Text("正在绑定CAS与\n狮山有你")
+                    Text("正在绑定\n\(bindingSource.title)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -301,6 +373,10 @@ struct LoginView: View
             MFACodeInputSheet(
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
+                fromShishanyouni: mfaFromShishanyouni,
+                onSendCode: {
+                    await sendShishanyouniMFACode()
+                },
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
@@ -309,10 +385,37 @@ struct LoginView: View
 }
 
 extension LoginView {
+    @MainActor
+    private func completeTestAccountBinding()
+    {
+        TestAccount.apply(to: userinfo)
+        refreshBindingStatusText()
+
+        if rememberPassword
+        {
+            userinfo.saveUserInfo()
+        }
+        else
+        {
+            userinfo.clearSavedCredentials()
+        }
+
+        let alert = buildBindingAlerts(
+            casBound: true,
+            casMessage: nil,
+            backendBound: true,
+            backendMessage: nil
+        )
+        alertTitle = alert.0
+        alertMessage = alert.1
+        showAlert = true
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
     private func performCASBinding(username: String, encryptedPassword: String) async -> (Bool, String?) {
         do
         {
-            let result = try await loginChecker.checkLogin(
+            let result = try await casBinder.bind(
                 username: username,
                 password: encryptedPassword,
                 mfaCodeProvider: { phone in
@@ -333,11 +436,31 @@ extension LoginView {
         }
     }
 
-    private func performBackendBinding(username: String, encryptedPassword: String) async -> (Bool, String?) {
+    private func performShishanyouniBinding(username: String, encryptedPassword: String) async -> (Bool, String?) {
         do
         {
-            try await AccountBinder().bind(username: username, password: encryptedPassword)
-            return (true, nil)
+            let binder = ShishanyouniBinder()
+            let result = try await binder.bind(username: username, password: encryptedPassword)
+            switch result
+            {
+            case .success:
+                return (true, nil)
+            case let .needMFA(phone, sessionId, message):
+                guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+                      !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                else
+                {
+                    return (false, "已取消短信验证码验证。")
+                }
+
+                let token = try await binder.submitCode(sessionId: sessionId, smsCode: smsCode)
+                await MainActor.run
+                {
+                    userinfo.updateShishanyouniToken(token)
+                    shishanyouniMFASessionId = nil
+                }
+                return (true, message)
+            }
         }
         catch
         {
@@ -360,6 +483,14 @@ extension LoginView {
         }
 
         return ("绑定结果", messages.joined(separator: "\n"))
+    }
+
+    private func buildSingleBindingAlert(source: LoginBindingSource, isBound: Bool, message: String?) -> (String, String) {
+        if isBound
+        {
+            return ("绑定成功", "\(source.title) 已绑定成功。")
+        }
+        return ("绑定失败", "绑定 \(source.title) 有问题：\(message ?? "请稍后重试。")")
     }
 
     @MainActor
@@ -398,9 +529,40 @@ extension LoginView {
     private func requestMFACode(maskedPhone: String?) async -> String? {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
+        mfaFromShishanyouni = false
+        shishanyouniMFASessionId = nil
         showMFASheet = true
         return await withCheckedContinuation { continuation in
             mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String? {
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaFromShishanyouni = true
+        shishanyouniMFASessionId = sessionId
+        showMFASheet = true
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    private func sendShishanyouniMFACode() async -> String? {
+        guard let sessionId = await MainActor.run(body: { shishanyouniMFASessionId }) else
+        {
+            return "短信验证会话已失效，请重新绑定。"
+        }
+
+        do
+        {
+            try await ShishanyouniBinder().sendCode(sessionId: sessionId)
+            return nil
+        }
+        catch
+        {
+            return error.localizedDescription
         }
     }
 
@@ -409,6 +571,10 @@ extension LoginView {
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
+        if code == nil
+        {
+            shishanyouniMFASessionId = nil
+        }
     }
 }
 

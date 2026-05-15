@@ -15,6 +15,7 @@ class userInfo: ObservableObject
         static let savedNickname = "saved_nickname"
         static let savedCASBound = "saved_cas_bound"
         static let savedBackendBound = "saved_backend_bound"
+        static let savedShishanyouniToken = "saved_shishanyouni_token"
     }
 
     // 使用 @Published，这样当这些值改变时，所有引用的页面都会自动刷新
@@ -23,6 +24,7 @@ class userInfo: ObservableObject
     @Published var plainPassword: String = ""
     @Published var encryptedPasswordSchool: String = ""
     @Published var encryptedPasswordShishanyouni: String = ""
+    @Published var shishanyouniToken: String = ""
     @Published var isCASBound: Bool = false
     @Published var isShishanyouniBound: Bool = false
 
@@ -95,14 +97,29 @@ class userInfo: ObservableObject
             // 从 Keychain 读取密码
             if let savedPassword = KeychainHelper.shared.get(for: savedUsername)
             {
-                plainPassword = savedPassword
-                performSchoolEncryption()
-                performShishanyouniEncryption()
+                if TestAccount.matches(username: savedUsername, password: savedPassword)
+                {
+                    TestAccount.apply(to: self)
+                }
+                else
+                {
+                    plainPassword = savedPassword
+                    performSchoolEncryption()
+                    performShishanyouniEncryption()
+                }
                 print("✅ 已自动加载学号: \(username)")
             }
             nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname) ?? ""
-            isCASBound = UserDefaults.standard.bool(forKey: StorageKey.savedCASBound)
-            isShishanyouniBound = UserDefaults.standard.bool(forKey: StorageKey.savedBackendBound)
+            shishanyouniToken = UserDefaults.standard.string(forKey: StorageKey.savedShishanyouniToken) ?? ""
+            if TestAccount.matches(username: username, password: plainPassword)
+            {
+                updateBindingStatus(casBound: true, shishanyouniBound: true)
+            }
+            else
+            {
+                isCASBound = UserDefaults.standard.bool(forKey: StorageKey.savedCASBound)
+                isShishanyouniBound = UserDefaults.standard.bool(forKey: StorageKey.savedBackendBound)
+            }
         }
         else
         {
@@ -128,6 +145,7 @@ class userInfo: ObservableObject
         let success = KeychainHelper.shared.save(password: plainPassword, for: username)
 
         UserDefaults.standard.set(nickname, forKey: StorageKey.savedNickname)
+        UserDefaults.standard.set(shishanyouniToken, forKey: StorageKey.savedShishanyouniToken)
         persistBindingStatus()
 
         if success
@@ -151,6 +169,7 @@ class userInfo: ObservableObject
         UserDefaults.standard.removeObject(forKey: StorageKey.savedNickname)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedCASBound)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedBackendBound)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedShishanyouniToken)
         UserDefaults.standard.removeObject(forKey: "encrypted_password_school")
 
         // 清空当前数据
@@ -158,6 +177,7 @@ class userInfo: ObservableObject
         plainPassword = ""
         encryptedPasswordSchool = ""
         encryptedPasswordShishanyouni = ""
+        shishanyouniToken = ""
         nickname = ""
         isCASBound = false
         isShishanyouniBound = false
@@ -177,6 +197,7 @@ class userInfo: ObservableObject
         UserDefaults.standard.removeObject(forKey: StorageKey.savedNickname)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedCASBound)
         UserDefaults.standard.removeObject(forKey: StorageKey.savedBackendBound)
+        UserDefaults.standard.removeObject(forKey: StorageKey.savedShishanyouniToken)
         UserDefaults.standard.removeObject(forKey: "encrypted_password_school")
 
         print("已清除本地保存的账号信息，保留当前会话")
@@ -186,6 +207,12 @@ class userInfo: ObservableObject
     {
         isCASBound = casBound
         isShishanyouniBound = shishanyouniBound
+    }
+
+    func updateShishanyouniToken(_ token: String)
+    {
+        shishanyouniToken = token
+        UserDefaults.standard.set(token, forKey: StorageKey.savedShishanyouniToken)
     }
 
     // 加密方法
@@ -208,7 +235,7 @@ class userInfo: ObservableObject
 
     func loadUserNickname()
     {
-        let nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname)
+        nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname) ?? ""
     }
 
     func saveUserNickname()

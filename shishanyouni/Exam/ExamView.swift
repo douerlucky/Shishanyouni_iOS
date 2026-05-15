@@ -131,11 +131,43 @@ struct ExamView: View
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
         }
+        .onAppear
+        {
+            loadCachedExams()
+        }
+        .onChange(of: selectedYear)
+        { _ in
+            loadCachedExams()
+        }
+        .onChange(of: selectedTerm)
+        { _ in
+            loadCachedExams()
+        }
+        .onChange(of: querySourceRaw)
+        { _ in
+            loadCachedExams()
+        }
     }
 }
 
 extension ExamView
 {
+    private var examCacheParts: [String]
+    {
+        [querySource.rawValue, selectedYear, selectedTerm]
+    }
+
+    private func loadCachedExams()
+    {
+        guard !userinfo.username.isEmpty else { return }
+        exams = AcademicQueryCache.load(
+            [Exam].self,
+            namespace: "exam",
+            username: userinfo.username,
+            parts: examCacheParts
+        ) ?? []
+    }
+
     @MainActor
     private func requestMFACode(maskedPhone: String?) async -> String?
     {
@@ -816,6 +848,12 @@ struct ExamBottomControlBar: View
 
                 await MainActor.run
                 {
+                    AcademicQueryCache.save(
+                        result,
+                        namespace: "exam",
+                        username: userinfo.username,
+                        parts: [querySource.rawValue, selectedYear, selectedTerm]
+                    )
                     self.exams = result
                     self.isLoading = false
                     if result.isEmpty

@@ -200,7 +200,7 @@ struct HomeView: View
                         {
                             navigateElectricity = true
                         }
-                        MenuGridItem(title: "图书馆座位", icon: "building.columns.fill", color: HomeMenuColor.cyan2)
+                        MenuGridItem(title: "图书馆预约（beta）", icon: "building.columns.fill", color: HomeMenuColor.cyan2)
                         {
                             navigateToLibrary = true
                         }

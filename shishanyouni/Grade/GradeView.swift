@@ -502,6 +502,35 @@ struct GradeInquiry: View
         } message: {
             Text(alertMessage)
         }
+        .onAppear
+        {
+            loadCachedGrades()
+        }
+        .onChange(of: selectedYear)
+        { _ in
+            loadCachedGrades()
+        }
+        .onChange(of: selectedTerm)
+        { _ in
+            loadCachedGrades()
+        }
+    }
+
+    private var gradeCacheParts: [String]
+    {
+        [selectedYear, selectedTerm]
+    }
+
+    private func loadCachedGrades()
+    {
+        guard !userinfo.username.isEmpty else { return }
+        Grades = AcademicQueryCache.load(
+            [Grade].self,
+            namespace: "grade",
+            username: userinfo.username,
+            parts: gradeCacheParts
+        ) ?? []
+        excludedIDs = []
     }
 }
 
@@ -562,6 +591,12 @@ struct BottomButtonView: View
                         )
                         await MainActor.run
                         {
+                            AcademicQueryCache.save(
+                                Grades,
+                                namespace: "grade",
+                                username: userinfo.username,
+                                parts: [selectedYear, selectedTerm]
+                            )
                             onGradesLoaded?()
                             alertTitle   = "查询成功"
                             alertMessage = "一共找到了 \(Grades.count) 门课的成绩"

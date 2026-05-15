@@ -7,20 +7,68 @@
 
 import Foundation
 
-struct BindResponse: Codable {
-    let msg: String
-    let code: Int
-    let data: String?
-    let timestamp: Int64
-    let fail: Bool
-    let success: Bool
+/// 狮山有你后端绑定接口返回结构。
+struct ShishanyouniBindResponse {
+    let msg: String? //返回处理消息(失败时返回对应错误信息)
+    let code: Int? //响应编码(200是成功，其它都是失败)
+    let data: ShishanyouniBindData? //需要短信验证码时包含手机号和 sessionId
+
+    init(json: [String: Any])
+    {
+        msg = json["msg"] as? String
+        code = Self.intValue(from: json["code"])
+
+        if let dataJSON = json["data"] as? [String: Any]
+        {
+            data = ShishanyouniBindData(json: dataJSON)
+        }
+        else
+        {
+            data = nil
+        }
+    }
+
+    static func intValue(from value: Any?) -> Int?
+    {
+        if let intValue = value as? Int
+        {
+            return intValue
+        }
+        if let stringValue = value as? String
+        {
+            return Int(stringValue)
+        }
+        if let numberValue = value as? NSNumber
+        {
+            return numberValue.intValue
+        }
+        return nil
+    }
 }
 
-enum AccountBindError: LocalizedError {
+/// 狮山有你绑定需要短信验证码时返回的 data。
+struct ShishanyouniBindData {
+    let phone: String?
+    let sessionId: String?
+
+    init(json: [String: Any])
+    {
+        phone = json["phone"] as? String
+        sessionId = json["sessionId"] as? String
+    }
+}
+
+enum ShishanyouniBindResult {
+    case success
+    case needMFA(phone: String, sessionId: String, message: String)
+}
+
+/// 狮山有你后端绑定过程中可能出现的错误。
+enum ShishanyouniBindError: LocalizedError {
     case invalidURL
     case requestFailed(String)
     case invalidResponse
-    case serverRejected(String)
+    case serverRejected(code: Int?, message: String)
 
     var errorDescription: String? {
         switch self {
@@ -30,18 +78,25 @@ enum AccountBindError: LocalizedError {
             return message
         case .invalidResponse:
             return "狮山有你后端返回了无法识别的响应。"
-        case let .serverRejected(message):
+        case let .serverRejected(code, message):
+            if let code
+            {
+                return "code \(code)：\(message)"
+            }
             return message
         }
     }
 }
 
-class AccountBinder {
-    private let bindURL = "https://lion.hzau.edu.cn/app/ios/bind"
+/// 只负责调用狮山有你服务器的账号绑定接口。
+class ShishanyouniBinder {
+    private let bindURL = "https://lion.hzau.edu.cn/app/ios/v2/bind"
+    private let sendCodeURL = "https://lion.hzau.edu.cn/app/ios/v2/sendCode"
+    private let submitCodeURL = "https://lion.hzau.edu.cn/app/ios/v2/submitCode"
 
-    func bind(username: String, password: String, type: Int = 0) async throws {
+    func bind(username: String, password: String, type: Int = 0) async throws -> ShishanyouniBindResult {
         guard let url = URL(string: bindURL) else {
-            throw AccountBindError.invalidURL
+            throw ShishanyouniBindError.invalidURL
         }
 
         var request = URLRequest(url: url)
@@ -55,7 +110,7 @@ class AccountBinder {
         ]
 
         guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
-            throw AccountBindError.requestFailed("狮山有你后端请求体编码失败。")
+            throw ShishanyouniBindError.requestFailed("狮山有你后端请求体编码失败。")
         }
         request.httpBody = bodyData
 
@@ -63,23 +118,31 @@ class AccountBinder {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let http = response as? HTTPURLResponse else {
-                throw AccountBindError.invalidResponse
+                throw ShishanyouniBindError.invalidResponse
             }
-            print("[AccountBinder] 状态码: \(http.statusCode)")
+            print("[ShishanyouniBinder] 状态码: \(http.statusCode)")
 
-            let result = try JSONDecoder().decode(BindResponse.self, from: data)
+            let responseText = String(data: data, encoding: .utf8) ?? ""
+            print("[ShishanyouniBinder] 响应: \(responseText.prefix(500))")
 
-            if result.success {
-                print("[AccountBinder] 绑定成功: \(result.msg)")
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw ShishanyouniBindError.invalidResponse
+            }
+            let result = ShishanyouniBindResponse(json: json)
+
+            if result.code == 200 {
+                print("[ShishanyouniBinder] 绑定成功: \(result.msg ?? "成功")")
+                return .success
+            } else if result.code == 22, let phone = result.data?.phone, let sessionId = result.data?.sessionId {
+                print("[ShishanyouniBinder] 需要短信验证: phone=\(phone), sessionId=\(sessionId)")
+                return .needMFA(phone: phone, sessionId: sessionId, message: result.msg ?? "需要短信验证码登录")
             } else {
-                print("[AccountBinder] 绑定失败 (code \(result.code)): \(result.msg)")
-                throw AccountBindError.serverRejected(result.msg)
+                let message = result.msg ?? "狮山有你后端绑定失败。"
+                print("[ShishanyouniBinder] 绑定失败 (code \(result.code ?? -1)): \(message)")
+                throw ShishanyouniBindError.serverRejected(code: result.code, message: message)
             }
-        } catch let error as AccountBindError {
+        } catch let error as ShishanyouniBindError {
             throw error
-        } catch let error as DecodingError {
-            print("[AccountBinder] 解码失败: \(error.localizedDescription)")
-            throw AccountBindError.invalidResponse
         } catch let error as URLError {
             let message: String
             switch error.code {
@@ -88,21 +151,87 @@ class AccountBinder {
             default:
                 message = error.localizedDescription
             }
-            print("[AccountBinder] 请求异常: \(message)")
-            throw AccountBindError.requestFailed(message)
+            print("[ShishanyouniBinder] 请求异常: \(message)")
+            throw ShishanyouniBindError.requestFailed(message)
         } catch {
-            print("[AccountBinder] 请求异常: \(error.localizedDescription)")
-            throw AccountBindError.requestFailed(error.localizedDescription)
+            print("[ShishanyouniBinder] 请求异常: \(error.localizedDescription)")
+            throw ShishanyouniBindError.requestFailed(error.localizedDescription)
         }
+    }
+
+    func sendCode(sessionId: String) async throws {
+        var components = URLComponents(string: sendCodeURL)
+        components?.queryItems = [URLQueryItem(name: "sessionId", value: sessionId)]
+        guard let url = components?.url else {
+            throw ShishanyouniBindError.invalidURL
+        }
+
+        let json = try await postQuery(url: url, label: "发送短信验证码")
+        let response = ShishanyouniCodeResponse(json: json)
+        guard response.code == 2 else {
+            throw ShishanyouniBindError.serverRejected(code: response.code, message: response.msg ?? "短信验证码发送失败。")
+        }
+        print("[ShishanyouniBinder] 短信验证码发送成功")
+    }
+
+    func submitCode(sessionId: String, smsCode: String) async throws -> String {
+        var components = URLComponents(string: submitCodeURL)
+        components?.queryItems = [
+            URLQueryItem(name: "sessionId", value: sessionId),
+            URLQueryItem(name: "smsCode", value: smsCode)
+        ]
+        guard let url = components?.url else {
+            throw ShishanyouniBindError.invalidURL
+        }
+
+        let json = try await postQuery(url: url, label: "提交短信验证码")
+        let response = ShishanyouniCodeResponse(json: json)
+        guard response.code == 2, let token = response.data, !token.isEmpty else {
+            throw ShishanyouniBindError.serverRejected(code: response.code, message: response.msg ?? "短信验证码校验失败。")
+        }
+        print("[ShishanyouniBinder] 短信验证码校验成功，已获取 token")
+        return token
+    }
+
+    private func postQuery(url: URL, label: String) async throws -> [String: Any] {
+        var request = URLRequest(url: url, timeoutInterval: .infinity)
+        request.httpMethod = "POST"
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ShishanyouniBindError.invalidResponse
+        }
+        print("[ShishanyouniBinder] \(label)状态码: \(http.statusCode)")
+        let responseText = String(data: data, encoding: .utf8) ?? ""
+        print("[ShishanyouniBinder] \(label)响应: \(responseText.prefix(500))")
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ShishanyouniBindError.invalidResponse
+        }
+        return json
     }
 }
 
-enum LoginResult {
+struct ShishanyouniCodeResponse {
+    let msg: String?
+    let code: Int?
+    let data: String?
+
+    init(json: [String: Any])
+    {
+        msg = json["msg"] as? String
+        code = ShishanyouniBindResponse.intValue(from: json["code"])
+        data = json["data"] as? String
+    }
+}
+
+enum CASBindResult {
     case success
     case failure(message: String)
 }
 
-class LoginChecker: NSObject, URLSessionTaskDelegate {
+/// 只负责学校 CAS 登录校验和短信 MFA 流程。
+class CASBinder: NSObject, URLSessionTaskDelegate {
     private let loginURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https://portal-paas.hzau.edu.cn/"
     private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
     private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
@@ -259,7 +388,8 @@ class LoginChecker: NSObject, URLSessionTaskDelegate {
         return state
     }
     
-    func checkLogin(username: String, password: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> LoginResult {
+    /// 校验 CAS 账号密码；如服务端要求短信验证，会通过 `mfaCodeProvider` 弹出验证码输入。
+    func bind(username: String, password: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> CASBindResult {
         // 清空之前的 cookies
         cookieJar.removeAll()
         

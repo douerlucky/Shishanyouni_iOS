@@ -18,7 +18,7 @@ struct LionGradeResponse: Decodable
     let fail: Bool?
 }
 
-struct Grade: Identifiable, Decodable
+struct Grade: Identifiable, Codable
 {
     let jxb_id: String
     var id: String { jxb_id }

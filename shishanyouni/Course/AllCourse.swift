@@ -346,7 +346,7 @@ class AllCourseQuery
     /// 获取课程列表
     func fetchAllCourses(cookie: String, xnm: String, xqm: String, kch: String) async throws -> [CourseInfo]
     {
-        let urlString = "http://byjxyt.hzau.edu.cn/kbdy/kckbdy_cxKckbdyList.html?gnmkdm=N214520"
+        let urlString = "https://byjxyt.hzau.edu.cn/kbdy/kckbdy_cxKckbdyList.html?gnmkdm=N214520"
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -397,7 +397,7 @@ class AllCourseQuery
     /// 获取指定课程的教学班列表
     func fetchCourseClasses(cookie: String, xnm: String, xqm: String, kch_id: String) async throws -> [CourseClassInfo]
     {
-        let urlString = "http://byjxyt.hzau.edu.cn/kbdy/kckbdy_cxKcKb.html?gnmkdm=N214520"
+        let urlString = "https://byjxyt.hzau.edu.cn/kbdy/kckbdy_cxKcKb.html?gnmkdm=N214520"
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -493,7 +493,7 @@ class AllCourseQuery
         request.setValue("application/x-www-form-urlencoded;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue("http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
+        request.setValue("https://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
