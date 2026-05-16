@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum NanhuRunQuerySource: String, CaseIterable, Identifiable
+enum NanhuRunQuerySource: String, QuerySourceOption
 {
     case cas = "cas"
     case shishanyouni = "shishanyouni"
@@ -214,7 +214,12 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             guard let provider = mfaCodeProvider else {
                 throw CASMFAError.needCodeInput
             }
-            guard let code = await provider(CASMFADebug.maskedPhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            let code = await MFACodeContext.requestCode(
+                using: provider,
+                maskedPhone: CASMFADebug.maskedPhone,
+                sendCodeAction: { nil }
+            )
+            guard let code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw CASMFAError.cancelled
             }
             return ""
@@ -275,24 +280,36 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.initFailed
         }
 
-        var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
-        sendRequest.httpMethod = "POST"
-        sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
-        sendRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
+        let sendCodeAction: () async -> String? = {
+            do
+            {
+                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+                sendRequest.httpMethod = "POST"
+                sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
+                sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+                sendRequest.setValue(self.getCookieHeader(), forHTTPHeaderField: "Cookie")
+                sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
 
-        let (sendData, sendResponse) = try await session.data(for: sendRequest)
-        guard let sendHTTP = sendResponse as? HTTPURLResponse else {
-            throw NSError(domain: "MFASendFailed", code: 500)
-        }
-        extractCookies(from: sendHTTP)
-        let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
-        guard sendResult.code == 0 else {
-            throw CASMFAError.sendFailed
+                let (sendData, sendResponse) = try await self.session.data(for: sendRequest)
+                guard let sendHTTP = sendResponse as? HTTPURLResponse else {
+                    return CASMFAError.sendFailed.localizedDescription
+                }
+                self.extractCookies(from: sendHTTP)
+                let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
+                return sendResult.code == 0 ? nil : CASMFAError.sendFailed.localizedDescription
+            }
+            catch
+            {
+                return error.localizedDescription
+            }
         }
 
-        guard let code = await provider(initInfo.securePhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let code = await MFACodeContext.requestCode(
+            using: provider,
+            maskedPhone: initInfo.securePhone,
+            sendCodeAction: sendCodeAction
+        )
+        guard let code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CASMFAError.cancelled
         }
 
@@ -439,7 +456,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         return parseScoresFrom(html: html)
     }
 
-    func fetchRunScoresFromShishanyouni(username: String, encryptedPassword: String) async throws -> [RunScore]
+    func fetchRunScoresFromShishanyouni(username: String, encryptedPassword: String, token: String = "") async throws -> [RunScore]
     {
         guard let url = URL(string: lionSouthlakeURL) else
         {
@@ -449,10 +466,15 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: [
+        var payload: [String: Any] = [
             "username": username,
             "password": encryptedPassword,
-        ])
+        ]
+        if !token.isEmpty
+        {
+            payload["token"] = token
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else
@@ -460,10 +482,12 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             throw NanhuRunQueryError.invalidResponse
         }
 
+        try ShishanyouniAPIError.throwIfMFAResponse(data)
+
         let decoded = try JSONDecoder().decode(LionSouthlakeResponse.self, from: data)
         guard decoded.isSuccess else
         {
-            throw NanhuRunQueryError.apiError(decoded.msg ?? "狮山有你南湖跑查询失败。")
+            throw ShishanyouniAPIError.apiError(code: decoded.code, message: decoded.msg ?? "狮山有你南湖跑查询失败。")
         }
 
         return (decoded.data?.items ?? []).compactMap

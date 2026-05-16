@@ -424,7 +424,12 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
             {
                 throw CASMFAError.needCodeInput
             }
-            guard let code = await provider(CASMFADebug.maskedPhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
+            let code = await MFACodeContext.requestCode(
+                using: provider,
+                maskedPhone: CASMFADebug.maskedPhone,
+                sendCodeAction: { nil }
+            )
+            guard let code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
             {
                 throw CASMFAError.cancelled
             }
@@ -494,26 +499,37 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.initFailed
         }
 
-        var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
-        sendRequest.httpMethod = "POST"
-        sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
-        sendRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
+        let sendCodeAction: () async -> String? = {
+            do
+            {
+                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+                sendRequest.httpMethod = "POST"
+                sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
+                sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+                sendRequest.setValue(self.getCookieHeader(), forHTTPHeaderField: "Cookie")
+                sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
 
-        let (sendData, sendResponse) = try await session.data(for: sendRequest)
-        guard let sendHTTP = sendResponse as? HTTPURLResponse else
-        {
-            throw NSError(domain: "MFASendFailed", code: 500)
-        }
-        extractCookies(from: sendHTTP)
-        let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
-        guard sendResult.code == 0 else
-        {
-            throw CASMFAError.sendFailed
+                let (sendData, sendResponse) = try await self.session.data(for: sendRequest)
+                guard let sendHTTP = sendResponse as? HTTPURLResponse else
+                {
+                    return CASMFAError.sendFailed.localizedDescription
+                }
+                self.extractCookies(from: sendHTTP)
+                let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
+                return sendResult.code == 0 ? nil : CASMFAError.sendFailed.localizedDescription
+            }
+            catch
+            {
+                return error.localizedDescription
+            }
         }
 
-        guard let code = await provider(initInfo.securePhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
+        let code = await MFACodeContext.requestCode(
+            using: provider,
+            maskedPhone: initInfo.securePhone,
+            sendCodeAction: sendCodeAction
+        )
+        guard let code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
         {
             throw CASMFAError.cancelled
         }

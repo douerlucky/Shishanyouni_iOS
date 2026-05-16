@@ -165,7 +165,7 @@ class FavoriteClassroomStore: ObservableObject
 
 class ClassroomService
 {
-    private let baseURL = "https://lion.hzau.edu.cn//app/ios/freeroom/getToday"
+    private let baseURL = "https://lion.hzau.edu.cn//app/ios/v2/freeroom/getToday"
 
     /// 获取空教室数据，转换为 RoomStatus（arrayIndex 为 0-based）
     func fetchEmptyRooms(dateStr: String, siteName: String) async throws -> [RoomStatus]

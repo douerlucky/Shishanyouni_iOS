@@ -394,6 +394,7 @@ struct ScheduleSettingView: View {
             let result = try await ScheduleService.fetchCourses(
                 username: userinfo.username,
                 password: userinfo.encryptedPasswordShishanyouni,
+                token:    userinfo.shishanyouniToken,
                 year:     selectedYear,
                 term:     selectedTerm
             )

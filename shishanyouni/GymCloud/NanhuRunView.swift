@@ -23,6 +23,7 @@ struct NanhuRunView: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaSendCodeAction: (() async -> String?)?
 
     private let runQuery = GymCloudQuery()
 
@@ -110,6 +111,7 @@ struct NanhuRunView: View
             MFACodeInputSheet(
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
+                onSendCode: $mfaSendCodeAction,
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
@@ -151,7 +153,8 @@ struct NanhuRunView: View
                     }
                     scores = try await runQuery.fetchRunScoresFromShishanyouni(
                         username: userinfo.username,
-                        encryptedPassword: userinfo.encryptedPasswordShishanyouni
+                        encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                        token: userinfo.shishanyouniToken
                     )
                 }
 
@@ -190,6 +193,8 @@ extension NanhuRunView {
     private func requestMFACode(maskedPhone: String?) async -> String? {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation { continuation in
             mfaContinuation = continuation
@@ -201,6 +206,7 @@ extension NanhuRunView {
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
+        mfaSendCodeAction = nil
     }
 }
 
@@ -271,30 +277,18 @@ struct NanhuRunQueryButton: View
 {
     @Binding var querySource: NanhuRunQuerySource
     var fetchNanhuRunData: () -> Void
-    @State private var showSourcePicker = false
 
     var body: some View
     {
         HStack(spacing: 20)
         {
-            Button(action: {
-                showSourcePicker = true
-            })
-            {
-                HStack(spacing: 6)
-                {
-                    Text(querySource.title)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                .font(.system(size: 15, weight: .bold))
-                .padding(.vertical, 12)
-                .padding(.horizontal, 18)
-                .background(Color(uiColor: .systemBackground).opacity(0.92))
-                .foregroundColor(.primary)
-                .clipShape(Capsule())
-            }
-            .optionalLiquidGlass()
+            QuerySourcePickerButton(
+                selection: $querySource,
+                fontSize: 15,
+                horizontalPadding: 18,
+                verticalPadding: 12,
+                background: Color(uiColor: .systemBackground).opacity(0.92)
+            )
 
             Button(action: {
                 fetchNanhuRunData()
@@ -315,64 +309,6 @@ struct NanhuRunQueryButton: View
         .glassBackground(cornerRadius: 64)
         .padding(.horizontal, 20)
         .padding(.bottom, 30) // 距离底部安全区域的距离
-        .sheet(isPresented: $showSourcePicker)
-        {
-            VStack(spacing: 18)
-            {
-                VStack(spacing: 6)
-                {
-                    Text("选择数据源")
-                        .font(.headline)
-                }
-                .padding(.horizontal, 28)
-
-                VStack(spacing: 12)
-                {
-                    ForEach(NanhuRunQuerySource.allCases)
-                    { source in
-                        Button(action: {
-                            querySource = source
-                            showSourcePicker = false
-                        })
-                        {
-                            HStack
-                            {
-                                Text(source.title)
-                                    .font(.system(size: 17, weight: .bold))
-                                Spacer()
-                                if querySource == source
-                                {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                            .foregroundColor(querySource == source ? .blue : .primary)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 15)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(querySource == source ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
-                            )
-                            .optionalLiquidGlass()
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 24)
-
-                Button("取消")
-                {
-                    showSourcePicker = false
-                }
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.top, 24)
-                .buttonStyle(.plain)
-            }
-            .presentationDetents([.height(300)])
-            .presentationDragIndicator(.hidden)
-        }
     }
 }
 

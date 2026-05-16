@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum CourseQuerySource: String, CaseIterable, Identifiable
+enum CourseQuerySource: String, QuerySourceOption
 {
     case cas = "cas"
     case shishanyouni = "shishanyouni"
@@ -340,8 +340,8 @@ class AllCourseQuery
 {
     static let shared = AllCourseQuery()
 
-    private let lionKeywordURL = "https://lion.hzau.edu.cn/app/ios/rub/keyword"
-    private let lionDetailURL = "https://lion.hzau.edu.cn/app/ios/rub/getByClassCode"
+    private let lionKeywordURL = "https://lion.hzau.edu.cn/app/ios/v2/rub/keyword"
+    private let lionDetailURL = "https://lion.hzau.edu.cn/app/ios/v2/rub/getByClassCode"
 
     /// 获取课程列表
     func fetchAllCourses(cookie: String, xnm: String, xqm: String, kch: String) async throws -> [CourseInfo]

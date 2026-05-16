@@ -58,11 +58,6 @@ struct ShishanyouniBindData {
     }
 }
 
-enum ShishanyouniBindResult {
-    case success
-    case needMFA(phone: String, sessionId: String, message: String)
-}
-
 /// 狮山有你后端绑定过程中可能出现的错误。
 enum ShishanyouniBindError: LocalizedError {
     case invalidURL
@@ -94,7 +89,7 @@ class ShishanyouniBinder {
     private let sendCodeURL = "https://lion.hzau.edu.cn/app/ios/v2/sendCode"
     private let submitCodeURL = "https://lion.hzau.edu.cn/app/ios/v2/submitCode"
 
-    func bind(username: String, password: String, type: Int = 0) async throws -> ShishanyouniBindResult {
+    func bind(username: String, password: String, type: Int = 0) async throws {
         guard let url = URL(string: bindURL) else {
             throw ShishanyouniBindError.invalidURL
         }
@@ -130,18 +125,21 @@ class ShishanyouniBinder {
             }
             let result = ShishanyouniBindResponse(json: json)
 
-            if result.code == 200 {
+            if result.code == 200 || result.code == 2 {
                 print("[ShishanyouniBinder] 绑定成功: \(result.msg ?? "成功")")
-                return .success
-            } else if result.code == 22, let phone = result.data?.phone, let sessionId = result.data?.sessionId {
-                print("[ShishanyouniBinder] 需要短信验证: phone=\(phone), sessionId=\(sessionId)")
-                return .needMFA(phone: phone, sessionId: sessionId, message: result.msg ?? "需要短信验证码登录")
+                return
+            } else if result.code == 22 {
+                print("[ShishanyouniBinder] 需要短信验证")
+                try ShishanyouniAPIError.throwIfMFAResponse(data)
+                throw ShishanyouniAPIError.invalidResponse
             } else {
                 let message = result.msg ?? "狮山有你后端绑定失败。"
                 print("[ShishanyouniBinder] 绑定失败 (code \(result.code ?? -1)): \(message)")
-                throw ShishanyouniBindError.serverRejected(code: result.code, message: message)
+                throw ShishanyouniAPIError.apiError(code: result.code, message: message)
             }
         } catch let error as ShishanyouniBindError {
+            throw error
+        } catch let error as ShishanyouniAPIError {
             throw error
         } catch let error as URLError {
             let message: String
@@ -186,7 +184,9 @@ class ShishanyouniBinder {
 
         let json = try await postQuery(url: url, label: "提交短信验证码")
         let response = ShishanyouniCodeResponse(json: json)
-        guard response.code == 2, let token = response.data, !token.isEmpty else {
+        guard let token = response.data, !token.isEmpty,
+              response.code == 0 || response.code == 2 || response.code == 200
+        else {
             throw ShishanyouniBindError.serverRejected(code: response.code, message: response.msg ?? "短信验证码校验失败。")
         }
         print("[ShishanyouniBinder] 短信验证码校验成功，已获取 token")
@@ -284,7 +284,12 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
             guard let provider = mfaCodeProvider else {
                 throw CASMFAError.needCodeInput
             }
-            guard let code = await provider(CASMFADebug.maskedPhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            let code = await MFACodeContext.requestCode(
+                using: provider,
+                maskedPhone: CASMFADebug.maskedPhone,
+                sendCodeAction: { nil }
+            )
+            guard let code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw CASMFAError.cancelled
             }
             return ""
@@ -345,25 +350,37 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
             throw CASMFAError.initFailed
         }
 
-        var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
-        sendRequest.httpMethod = "POST"
-        sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
-        sendRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
+        let sendCodeAction: () async -> String? = {
+            do
+            {
+                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+                sendRequest.httpMethod = "POST"
+                sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
+                sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+                sendRequest.setValue(self.getCookieHeader(), forHTTPHeaderField: "Cookie")
+                sendRequest.httpBody = try JSONSerialization.data(withJSONObject: ["gid": initInfo.gid], options: [])
 
-        let (sendData, sendResponse) = try await session.data(for: sendRequest)
-        guard let sendHTTP = sendResponse as? HTTPURLResponse else {
-            throw NSError(domain: "MFASendFailed", code: 500)
+                let (sendData, sendResponse) = try await self.session.data(for: sendRequest)
+                guard let sendHTTP = sendResponse as? HTTPURLResponse else {
+                    return CASMFAError.sendFailed.localizedDescription
+                }
+                self.extractCookies(from: sendHTTP)
+
+                let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
+                return sendResult.code == 0 ? nil : CASMFAError.sendFailed.localizedDescription
+            }
+            catch
+            {
+                return error.localizedDescription
+            }
         }
-        extractCookies(from: sendHTTP)
 
-        let sendResult = try JSONDecoder().decode(CASMFACommonResponse.self, from: sendData)
-        guard sendResult.code == 0 else {
-            throw CASMFAError.sendFailed
-        }
-
-        guard let code = await provider(initInfo.securePhone), !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let code = await MFACodeContext.requestCode(
+            using: provider,
+            maskedPhone: initInfo.securePhone,
+            sendCodeAction: sendCodeAction
+        )
+        guard let code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CASMFAError.cancelled
         }
 

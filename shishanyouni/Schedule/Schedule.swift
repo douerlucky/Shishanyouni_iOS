@@ -26,6 +26,26 @@ struct TimetableData: Decodable
     /// 开学日期，格式 "yyyy-MM-dd"，如 "2026-03-02"
     let startDate: String?
     let loadTime: Int64?
+
+    private enum CodingKeys: String, CodingKey
+    {
+        case timetableModels
+        case timeTable
+        case others
+        case startDate
+        case loadTime
+    }
+
+    init(from decoder: Decoder) throws
+    {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        timetableModels = try container.decodeIfPresent([TimetableModel].self, forKey: .timetableModels)
+            ?? container.decodeIfPresent([TimetableModel].self, forKey: .timeTable)
+            ?? []
+        others = try container.decodeIfPresent([String].self, forKey: .others)
+        startDate = try container.decodeIfPresent(String.self, forKey: .startDate)
+        loadTime = try container.decodeIfPresent(Int64.self, forKey: .loadTime)
+    }
 }
 
 // 单条课程
@@ -42,6 +62,48 @@ struct TimetableModel: Decodable
     let colorRandom: Int // 随机数 课程颜色
     let weeks: String?
     let time: String?
+
+    private enum CodingKeys: String, CodingKey
+    {
+        case name
+        case room
+        case teacher
+        case weekList
+        case weeks
+        case start
+        case period
+        case step
+        case length
+        case day
+        case term
+        case colorRandom
+        case week
+        case time
+    }
+
+    init(from decoder: Decoder) throws
+    {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        room = try container.decodeIfPresent(String.self, forKey: .room)
+        teacher = try container.decodeIfPresent(String.self, forKey: .teacher)
+        let decodedWeekList = try container.decodeIfPresent([Int].self, forKey: .weekList) ?? []
+        let decodedWeeks = try container.decodeIfPresent([Int].self, forKey: .weeks) ?? []
+        // 新接口会同时返回 weekList: [] 和真正有效的 weeks: [...]，空 weekList 不能优先覆盖。
+        weekList = decodedWeekList.isEmpty ? decodedWeeks : decodedWeekList
+        start = try container.decodeIfPresent(Int.self, forKey: .start)
+            ?? container.decodeIfPresent(Int.self, forKey: .period)
+            ?? 1
+        step = try container.decodeIfPresent(Int.self, forKey: .step)
+            ?? container.decodeIfPresent(Int.self, forKey: .length)
+            ?? 1
+        day = try container.decode(Int.self, forKey: .day)
+        term = try container.decodeIfPresent(String.self, forKey: .term)
+        colorRandom = try container.decodeIfPresent(Int.self, forKey: .colorRandom)
+            ?? abs(name.hashValue % 32)
+        weeks = try container.decodeIfPresent(String.self, forKey: .week)
+        time = try container.decodeIfPresent(String.self, forKey: .time)
+    }
 }
 
 // 课程数据模型
@@ -139,12 +201,13 @@ extension Course
 
 struct ScheduleService
 {
-    private static let apiURL = "https://lion.hzau.edu.cn/app/ios/timetable"
+    private static let apiURL = "https://lion.hzau.edu.cn/app/ios/v2/timetable"
 
     struct FetchRequest: Encodable
     {
         let username: String
         let password: String
+        let token: String?
         let type: Int = 0
         /// 学年起始年份，如 "2025" 表示 2025-2026 学年
         let year: String
@@ -156,6 +219,7 @@ struct ScheduleService
     static func fetchCourses(
         username: String,
         password: String,
+        token: String = "",
         year: String,
         term: String
     ) async throws -> (courses: [Course], startDate: Date?)
@@ -167,6 +231,7 @@ struct ScheduleService
         }
 
         let body = FetchRequest(username: username, password: password,
+                                token: token.isEmpty ? nil : token,
                                 year: year, term: term)
 
         var request = URLRequest(url: url)
@@ -194,6 +259,8 @@ struct ScheduleService
             print("📥 原始响应（前500字）：\(raw.prefix(500))")
         }
 
+        try ShishanyouniAPIError.throwIfMFAResponse(data)
+
         let decoded: TimetableResponse
         do
         {
@@ -207,7 +274,7 @@ struct ScheduleService
         guard decoded.isSuccess, let payload = decoded.data
         else
         {
-            throw ScheduleError.apiError(decoded.msg ?? "未知错误，code=\(decoded.code)")
+            throw ShishanyouniAPIError.apiError(code: decoded.code, message: decoded.msg ?? "未知错误")
         }
 
         // 同一课程名使用相同颜色（沿用服务端 colorRandom）

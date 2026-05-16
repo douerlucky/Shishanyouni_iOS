@@ -27,6 +27,7 @@ struct ElectricityView: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaSendCodeAction: (() async -> String?)?
     @State private var sessionToken: String = ""
     @State private var loginTask: Task<String, Error>?
 
@@ -88,6 +89,7 @@ struct ElectricityView: View
             MFACodeInputSheet(
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
+                onSendCode: $mfaSendCodeAction,
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
@@ -539,6 +541,8 @@ struct ElectricityView: View
     private func requestMFACode(maskedPhone: String?) async -> String? {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation { continuation in
             mfaContinuation = continuation
@@ -550,6 +554,7 @@ struct ElectricityView: View
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
+        mfaSendCodeAction = nil
     }
 }
 

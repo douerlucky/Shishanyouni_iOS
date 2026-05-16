@@ -65,6 +65,7 @@ struct MainTabView: View
 {
     MainTabView()
         .environmentObject(userInfo())
+        .environmentObject(IAPStore(autoload: false))
 }
 
 extension View

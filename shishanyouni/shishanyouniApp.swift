@@ -18,6 +18,11 @@ struct shishanyouniApp: App
 
     init()
     {
+        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else
+        {
+            return
+        }
+
         requestNotificationPermission()
         ElectricityBGTaskManager.shared.register()
     }

@@ -35,7 +35,7 @@ class StrategyDetailViewModel: ObservableObject
 
     func fetchDetail(id: Int)
     {
-        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/guide/findbyid?id=\(id)") else { return }
+        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/v2/guide/findbyid?id=\(id)") else { return }
         isLoading = true
         errorMessage = nil
 

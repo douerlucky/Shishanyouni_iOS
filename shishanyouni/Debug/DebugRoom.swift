@@ -16,6 +16,7 @@ struct DebugRoom: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaSendCodeAction: (() async -> String?)?
     @State private var randomFPVisitorEnabled = CASMFADebug.randomFPVisitorEnabled
     @State private var fpRefreshTick = 0
 
@@ -121,6 +122,7 @@ struct DebugRoom: View
                     {
                         mfaMaskedPhone = "133****0922"
                         mfaCode = ""
+                        mfaSendCodeAction = { nil }
                         showMFASheet = true
                     }
                     .buttonStyle(.borderedProminent)
@@ -282,6 +284,7 @@ struct DebugRoom: View
                         MFACodeInputSheet(
                             maskedPhone: mfaMaskedPhone,
                             code: $mfaCode,
+                            onSendCode: $mfaSendCodeAction,
                             onCancel: {
                                 resolveMFACode(nil)
                             },
@@ -315,6 +318,8 @@ struct DebugRoom: View
     {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
         showMFASheet = true
 
         return await withCheckedContinuation { continuation in
@@ -327,6 +332,7 @@ struct DebugRoom: View
     {
         mfaContinuation?.resume(returning: value?.trimmingCharacters(in: .whitespacesAndNewlines))
         mfaContinuation = nil
+        mfaSendCodeAction = nil
         showMFASheet = false
     }
 }

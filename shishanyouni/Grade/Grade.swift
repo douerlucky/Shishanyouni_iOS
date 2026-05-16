@@ -43,11 +43,11 @@ struct Grade: Identifiable, Codable
 
 class GradeService
 {
-    private let baseURL = "https://lion.hzau.edu.cn//app/ios/score"
+    private let baseURL = "https://lion.hzau.edu.cn//app/ios/v2/score"
 
     /// xnm: 学年开始年份（如 "2025" 代表 2025-2026 学年）
     /// xqm: 学期（"1" 第一学期，"2" 第二学期）
-    func fetchGrades(username: String, password: String, xnm: String, xqm: String) async throws -> [Grade]
+    func fetchGrades(username: String, password: String, token: String = "", xnm: String, xqm: String) async throws -> [Grade]
     {
         print("收到的rsa密钥:", password)
 
@@ -58,13 +58,17 @@ class GradeService
         }
 
         // 构建 JSON body
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "xnm":  xnm,
             "xqm":  xqm,
             "yhm":  username,
             "mm":   password,
             "type": 1
         ]
+        if !token.isEmpty
+        {
+            body["token"] = token
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -79,13 +83,14 @@ class GradeService
                           userInfo: [NSLocalizedDescriptionKey: "网络请求失败"])
         }
 
+        try ShishanyouniAPIError.throwIfMFAResponse(data)
+
         let decoded = try JSONDecoder().decode(LionGradeResponse.self, from: data)
 
         guard decoded.code == 2 else
         {
             let msg = decoded.msg ?? "服务器返回未知错误"
-            throw NSError(domain: "GradeService", code: decoded.code ?? -1,
-                          userInfo: [NSLocalizedDescriptionKey: msg])
+            throw ShishanyouniAPIError.apiError(code: decoded.code, message: msg)
         }
 
         return decoded.data ?? []

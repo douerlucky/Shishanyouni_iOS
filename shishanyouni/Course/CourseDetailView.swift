@@ -19,6 +19,7 @@ struct CourseDetailView: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaSendCodeAction: (() async -> String?)?
 
     private let scheduleQuery = ScheduleQuery()
 
@@ -135,6 +136,7 @@ struct CourseDetailView: View
             MFACodeInputSheet(
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
+                onSendCode: $mfaSendCodeAction,
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
@@ -354,6 +356,8 @@ extension CourseDetailView
     {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation
         { continuation in
@@ -367,6 +371,7 @@ extension CourseDetailView
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
+        mfaSendCodeAction = nil
     }
 }
 

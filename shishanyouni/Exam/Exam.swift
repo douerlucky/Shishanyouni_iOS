@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ExamQuerySource: String, CaseIterable, Identifiable, Codable {
+enum ExamQuerySource: String, QuerySourceOption, Codable {
     case cas = "cas"
     case shishanyouni = "shishanyouni"
 
@@ -204,7 +204,7 @@ private extension String
 class ExamQuery
 {
     static let shared = ExamQuery()
-    private let lionURL = "https://lion.hzau.edu.cn/app/ios/exam"
+    private let lionURL = "https://lion.hzau.edu.cn/app/ios/v2/exam"
 
     func fetchExams(cookie: String, xnm: String, xqm: String) async throws -> [Exam]
     {
@@ -238,7 +238,7 @@ class ExamQuery
         return response.items
     }
 
-    func fetchExamsFromShishanyouni(username: String, encryptedPassword: String, xnm: String, xqm: String) async throws -> [Exam] {
+    func fetchExamsFromShishanyouni(username: String, encryptedPassword: String, token: String = "", xnm: String, xqm: String) async throws -> [Exam] {
         guard let url = URL(string: lionURL) else {
             throw ExamQueryError.invalidURL
         }
@@ -247,13 +247,17 @@ class ExamQuery
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "xnm": xnm,
             "xqm": xqm,
             "yhm": username,
             "mm": encryptedPassword,
             "type": 1,
         ]
+        if !token.isEmpty
+        {
+            payload["token"] = token
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -261,9 +265,11 @@ class ExamQuery
             throw ExamQueryError.invalidResponse
         }
 
+        try ShishanyouniAPIError.throwIfMFAResponse(data)
+
         let decoded = try JSONDecoder().decode(LionExamResponse.self, from: data)
         guard decoded.isSuccess else {
-            throw ExamQueryError.apiError(decoded.msg ?? "狮山有你考试查询失败。")
+            throw ShishanyouniAPIError.apiError(code: decoded.code, message: decoded.msg ?? "狮山有你考试查询失败。")
         }
 
         return (decoded.data ?? [])

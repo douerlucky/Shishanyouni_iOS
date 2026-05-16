@@ -68,7 +68,7 @@ class GPAnalysisViewModel: ObservableObject
     private let years = ["2022", "2023", "2024", "2025"]
     private let terms: [(String, String)] = [("1", "一"), ("2", "二")]
 
-    func fetchAllSemesters(username: String, password: String) async
+    func fetchAllSemesters(username: String, password: String, token: String) async
     {
         isLoading = true
         errorMessage = nil
@@ -84,6 +84,7 @@ class GPAnalysisViewModel: ObservableObject
                     let grades = try await gradeService.fetchGrades(
                         username: username,
                         password: password,
+                        token: token,
                         xnm: year,
                         xqm: termCode
                     )
@@ -198,7 +199,8 @@ struct GPAnalysisView: View
                     {
                         Task { await vm.fetchAllSemesters(
                             username: userinfo.username,
-                            password: userinfo.encryptedPasswordShishanyouni
+                            password: userinfo.encryptedPasswordShishanyouni,
+                            token: userinfo.shishanyouniToken
                         )}
                     }
                     .buttonStyle(.borderedProminent)
@@ -219,7 +221,8 @@ struct GPAnalysisView: View
             {
                 await vm.fetchAllSemesters(
                     username: userinfo.username,
-                    password: userinfo.encryptedPasswordShishanyouni
+                    password: userinfo.encryptedPasswordShishanyouni,
+                    token: userinfo.shishanyouniToken
                 )
             }
         }

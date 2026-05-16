@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 private enum LoginBindingSource: String, CaseIterable, Identifiable
 {
@@ -47,12 +48,18 @@ struct LoginView: View
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaFromShishanyouni = false
     @State private var shishanyouniMFASessionId: String?
+    @State private var mfaSendCodeAction: (() async -> String?)?
     @AppStorage("login_binding_source") private var bindingSourceRawValue = LoginBindingSource.shishanyouni.rawValue
 
     private var bindingSource: LoginBindingSource
     {
         get { LoginBindingSource(rawValue: bindingSourceRawValue) ?? .shishanyouni }
         nonmutating set { bindingSourceRawValue = newValue.rawValue }
+    }
+
+    private var isRunningInPreview: Bool
+    {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
 
     var casBinder: CASBinder = CASBinder()
@@ -109,14 +116,12 @@ struct LoginView: View
                         .clipShape(Capsule())
 
                         // 右边：学号输入胶囊
-                        TextField("请输入学号", text: $username)
-                            .padding(.horizontal, 16)
-                            .frame(height: 44)
-                            .background(Color(.systemGray6))
-                            .clipShape(Capsule())
-                            .keyboardType(.numberPad)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                        loginInputField(
+                            placeholder: "请输入学号",
+                            text: $username,
+                            isSecure: false,
+                            keyboardType: .numberPad
+                        )
                     }
 
                     // 密码行
@@ -135,13 +140,12 @@ struct LoginView: View
                         .clipShape(Capsule())
 
                         // 右边：密码输入胶囊
-                        SecureField("请输入密码", text: $password)
-                            .padding(.horizontal, 16)
-                            .frame(height: 44)
-                            .background(Color(.systemGray6))
-                            .clipShape(Capsule())
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                        loginInputField(
+                            placeholder: "请输入密码",
+                            text: $password,
+                            isSecure: true,
+                            keyboardType: .default
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -291,8 +295,8 @@ struct LoginView: View
 
                 VStack(spacing: 12)
                 {
-                    bindingIndicator(title: "CAS 连接", isBound: userinfo.isCASBound, message: casStatusMessage)
                     bindingIndicator(title: "狮山有你后端连接", isBound: userinfo.isShishanyouniBound, message: backendStatusMessage)
+                    bindingIndicator(title: "CAS 连接", isBound: userinfo.isCASBound, message: casStatusMessage)
                 }
                 .padding(.horizontal, 20)
 
@@ -374,9 +378,7 @@ struct LoginView: View
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
                 fromShishanyouni: mfaFromShishanyouni,
-                onSendCode: {
-                    await sendShishanyouniMFACode()
-                },
+                onSendCode: $mfaSendCodeAction,
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
@@ -385,6 +387,50 @@ struct LoginView: View
 }
 
 extension LoginView {
+    @ViewBuilder
+    private func loginInputField(
+        placeholder: String,
+        text: Binding<String>,
+        isSecure: Bool,
+        keyboardType: UIKeyboardType
+    ) -> some View
+    {
+        if isRunningInPreview
+        {
+            CanvasLoginTextField(
+                text: text,
+                placeholder: placeholder,
+                isSecure: isSecure,
+                keyboardType: keyboardType == .numberPad ? .default : keyboardType
+            )
+            .padding(.horizontal, 16)
+            .frame(height: 44)
+            .background(Color(.systemGray6))
+            .clipShape(Capsule())
+        }
+        else if isSecure
+        {
+            SecureField(placeholder, text: text)
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .background(Color(.systemGray6))
+                .clipShape(Capsule())
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+        }
+        else
+        {
+            TextField(placeholder, text: text)
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .background(Color(.systemGray6))
+                .clipShape(Capsule())
+                .keyboardType(keyboardType)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+        }
+    }
+
     @MainActor
     private func completeTestAccountBinding()
     {
@@ -440,12 +486,14 @@ extension LoginView {
         do
         {
             let binder = ShishanyouniBinder()
-            let result = try await binder.bind(username: username, password: encryptedPassword)
-            switch result
+            try await binder.bind(username: username, password: encryptedPassword)
+            return (true, nil)
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, let message)
+        {
+            do
             {
-            case .success:
-                return (true, nil)
-            case let .needMFA(phone, sessionId, message):
+                let binder = ShishanyouniBinder()
                 guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
                       !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 else
@@ -460,6 +508,10 @@ extension LoginView {
                     shishanyouniMFASessionId = nil
                 }
                 return (true, message)
+            }
+            catch
+            {
+                return (false, error.localizedDescription)
             }
         }
         catch
@@ -531,6 +583,8 @@ extension LoginView {
         mfaCode = ""
         mfaFromShishanyouni = false
         shishanyouniMFASessionId = nil
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation { continuation in
             mfaContinuation = continuation
@@ -543,6 +597,8 @@ extension LoginView {
         mfaCode = ""
         mfaFromShishanyouni = true
         shishanyouniMFASessionId = sessionId
+        mfaSendCodeAction = { await sendShishanyouniMFACode() }
+        await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation { continuation in
             mfaContinuation = continuation
@@ -571,9 +627,69 @@ extension LoginView {
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
+        mfaSendCodeAction = nil
         if code == nil
         {
             shishanyouniMFASessionId = nil
+        }
+    }
+}
+
+private struct CanvasLoginTextField: UIViewRepresentable
+{
+    @Binding var text: String
+    let placeholder: String
+    let isSecure: Bool
+    let keyboardType: UIKeyboardType
+
+    func makeUIView(context: Context) -> UITextField
+    {
+        let textField = UITextField(frame: .zero)
+        textField.placeholder = placeholder
+        textField.borderStyle = .none
+        textField.backgroundColor = .clear
+        textField.keyboardType = keyboardType
+        textField.isSecureTextEntry = isSecure
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.textContentType = isSecure ? .password : .username
+        textField.delegate = context.coordinator
+        textField.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.textDidChange(_:)),
+            for: .editingChanged
+        )
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context)
+    {
+        if uiView.text != text
+        {
+            uiView.text = text
+        }
+        uiView.placeholder = placeholder
+        uiView.keyboardType = keyboardType
+        uiView.isSecureTextEntry = isSecure
+    }
+
+    func makeCoordinator() -> Coordinator
+    {
+        Coordinator(text: $text)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate
+    {
+        private var text: Binding<String>
+
+        init(text: Binding<String>)
+        {
+            self.text = text
+        }
+
+        @objc func textDidChange(_ sender: UITextField)
+        {
+            text.wrappedValue = sender.text ?? ""
         }
     }
 }

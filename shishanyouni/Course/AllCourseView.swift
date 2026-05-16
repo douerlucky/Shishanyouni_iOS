@@ -14,11 +14,11 @@ struct AllCourseView: View
     @State private var courses: [CourseInfo] = []
     @State private var isLoading = false
     @State private var querySource: CourseQuerySource = .shishanyouni
-    @State private var showSourcePicker = false
     @State private var showMFASheet = false
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaSendCodeAction: (() async -> String?)?
     @FocusState private var isSearchFocused: Bool
 
     // MARK: - Filter States
@@ -37,12 +37,10 @@ struct AllCourseView: View
         NavigationStack
         {
             // 遮罩
-            ZStack()
+            ZStack
             {
                 Color(uiColor: .systemGroupedBackground)
                     .ignoresSafeArea()
-
-               
 
                 Group
                 {
@@ -102,23 +100,15 @@ struct AllCourseView: View
 
                     HStack
                     {
-                        Button(action: { showSourcePicker = true })
-                        {
-                            HStack(spacing: 6)
-                            {
-                                Text(querySource.title)
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 10, weight: .bold))
-                            }
-                            .font(.system(size: 13, weight: .bold))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Color.blue.opacity(0.15))
-                            .foregroundColor(.blue)
-                            .clipShape(Capsule())
-                            .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
-                        }
-                        .optionalLiquidGlass()
+                        QuerySourcePickerButton(
+                            selection: $querySource,
+                            fontSize: 13,
+                            horizontalPadding: 14,
+                            verticalPadding: 8,
+                            background: Color.blue.opacity(0.15),
+                            foreground: .blue,
+                            onSelect: { source in switchSource(to: source) }
+                        )
 
                         if querySource == .cas
                         {
@@ -177,8 +167,6 @@ struct AllCourseView: View
                         .cornerRadius(12)
                         .offset(y: -100)
                 }
-
-               
             }
             .navigationTitle("课程搜索")
             .navigationBarTitleDisplayMode(.automatic)
@@ -236,72 +224,12 @@ struct AllCourseView: View
                 }
                 .presentationDetents([.height(350)])
             }
-            .sheet(isPresented: $showSourcePicker)
-            {
-                VStack(spacing: 18)
-                {
-                    VStack(spacing: 6)
-                    {
-                        Text("选择数据源")
-                            .font(.headline)
-                    }
-                    .padding(.horizontal, 28)
-
-                    VStack(spacing: 12)
-                    {
-                        ForEach(CourseQuerySource.allCases)
-                        { source in
-                            Button(action: {
-                                switchSource(to: source)
-                                showSourcePicker = false
-                            })
-                            {
-                                HStack
-                                {
-                                    Text(source.title)
-                                        .font(.system(size: 17, weight: .bold))
-                                    Spacer()
-                                    if querySource == source
-                                    {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 18, weight: .bold))
-                                            .foregroundColor(.blue)
-                                    }
-                                }
-                                .foregroundColor(querySource == source ? .blue : .primary)
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 15)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(querySource == source ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
-                                )
-                                .optionalLiquidGlass()
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                    }
-                    .padding(.horizontal, 24)
-                    
-                    Button("取消")
-                    {
-                        showSourcePicker = false
-                    }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.secondary)
-                    .padding(.top,24)
-                    .buttonStyle(.plain)
-
-
-                }
-                .presentationDetents([.height(300)])
-                .presentationDragIndicator(.hidden)
-            }
             .sheet(isPresented: $showMFASheet)
             {
                 MFACodeInputSheet(
                     maskedPhone: mfaMaskedPhone,
                     code: $mfaCode,
+                    onSendCode: $mfaSendCodeAction,
                     onCancel: { resolveMFACode(nil) },
                     onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
                 )
@@ -416,6 +344,8 @@ extension AllCourseView
     {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation
         { continuation in
@@ -429,6 +359,7 @@ extension AllCourseView
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
+        mfaSendCodeAction = nil
     }
 }
 
