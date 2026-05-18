@@ -20,12 +20,16 @@ struct ProfileView: View
 
         switch hour
         {
-        case 0 ..< 5: return "凌晨好, 还在卷吗"
+        case 0 ..< 2: return "凌晨好，还在卷吗"
+        case 2 ..< 5: return "这么晚了，还不睡吗"
         case 5 ..< 9: return "早上好"
         case 9 ..< 11: return "上午好"
         case 11 ..< 13: return "中午好"
-        case 13 ..< 18: return "下午好"
-        case 18 ..< 24: return "晚上好"
+        case 13 ..< 14: return "中午好，午睡了吗"
+        case 14 ..< 17: return "下午好"
+        case 17 ..< 19: return "下午好，吃饭了吗"
+        case 19 ..< 21: return "晚上好"
+        case 21 ..< 24: return "晚上好，今天辛苦了"
         default: return "你好"
         }
     }

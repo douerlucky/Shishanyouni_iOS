@@ -385,6 +385,8 @@ class AllCourseQuery
             throw AllCourseQueryError.invalidResponse
         }
 
+        try ShishanyouniAPIError.throwIfMFAResponse(data)
+
         let decoded = try JSONDecoder().decode(LionRubKeywordResponse.self, from: data)
         guard decoded.isSuccess else
         {
@@ -433,6 +435,8 @@ class AllCourseQuery
         {
             throw AllCourseQueryError.invalidResponse
         }
+
+        try ShishanyouniAPIError.throwIfMFAResponse(data)
 
         let decoded = try JSONDecoder().decode(LionRubDetailResponse.self, from: data)
         guard decoded.isSuccess, let payload = decoded.data else

@@ -22,6 +22,9 @@ struct ExamView: View
     @State var selectedTerm = "2"
     @AppStorage("examQuerySource") private var querySourceRaw = ExamQuerySource.cas.rawValue
 
+    // 上一次更新查询的时间
+    @State private var daysSinceLastOpen: Int?
+
     private var querySource: ExamQuerySource
     {
         get { ExamQuerySource(rawValue: querySourceRaw) ?? .cas }
@@ -61,16 +64,48 @@ struct ExamView: View
                 }
                 else
                 {
-                    List(exams)
-                    { item in
-                        ExamCard(exam: item)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    VStack(spacing: 8)
+                    {
+                        HStack
+                        {
+                            Spacer()
+                            if let daysSinceLastOpen
+                            {
+                                if(daysSinceLastOpen==0)
+                                {
+                                    Text("今天查询了考试信息")
+                                }
+                                else
+                                {
+                                    Text("距离上次查询已经过去 \(daysSinceLastOpen) 天")
+                                        .font(.footnote)
+                                }
+                                
+                            }
+                            else
+                            {
+                                Text("未记录上次查询日期")
+                                    .font(.footnote)
+                            }
+                            Spacer()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                        List(exams)
+                        { item in
+                            ExamCard(exam: item)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                        }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                        .background(Color.clear)
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
                     .blur(radius: isLoading ? 3 : 0)
                     .safeAreaInset(edge: .bottom)
                     {
@@ -111,8 +146,14 @@ struct ExamView: View
                 requestMFACode: { phone in
                     await requestMFACode(maskedPhone: phone)
                 },
+                requestShishanyouniMFACode: { phone, sessionId in
+                    await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId)
+                },
                 scheduleQuery: scheduleQuery,
-                examQuery: examQuery
+                examQuery: examQuery,
+                onQuerySuccess: {
+                    checkLastOpenDate()
+                }
             )
         }
         .navigationTitle("我的考试")
@@ -136,6 +177,7 @@ struct ExamView: View
         .onAppear
         {
             loadCachedExams()
+            checkLastOpenDate() //检查上一个点击查询的日期
         }
         .onChange(of: selectedYear)
         { _ in
@@ -170,6 +212,47 @@ extension ExamView
         ) ?? []
     }
 
+    private func fetchShishanyouniExamsWithMFA() async throws -> [Exam]
+    {
+        do
+        {
+            return try await examQuery.fetchExamsFromShishanyouni(
+                username: userinfo.username,
+                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken,
+                xnm: selectedYear,
+                xqm: selectedTerm
+            )
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
+        {
+            try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
+            return try await examQuery.fetchExamsFromShishanyouni(
+                username: userinfo.username,
+                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken,
+                xnm: selectedYear,
+                xqm: selectedTerm
+            )
+        }
+    }
+
+    private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
+    {
+        guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+              !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else
+        {
+            throw ShishanyouniAPIError.apiError(code: 22, message: "已取消短信验证码验证。")
+        }
+
+        let token = try await ShishanyouniMFAFlow.submitCode(sessionId: sessionId, smsCode: smsCode)
+        await MainActor.run
+        {
+            userinfo.updateShishanyouniToken(token)
+        }
+    }
+
     @MainActor
     private func requestMFACode(maskedPhone: String?) async -> String?
     {
@@ -185,12 +268,40 @@ extension ExamView
     }
 
     @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
     private func resolveMFACode(_ code: String?)
     {
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
         mfaSendCodeAction = nil
+    }
+
+    private func checkLastOpenDate()
+    {
+        let now = Date()
+        if let lastDate = UserDefaults.standard.object(forKey: "lastExamQueryDate") as? Date
+        {
+            let days = Calendar.current.dateComponents([.day], from: lastDate, to: now).day ?? 0
+            daysSinceLastOpen = days
+        }
+        else
+        {
+            daysSinceLastOpen = nil
+        }
     }
 }
 
@@ -311,7 +422,8 @@ struct ExamCard: View
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         )
-        .onReceive(timer) { _ in
+        .onReceive(timer)
+        { _ in
             now = Date()
         }
         .alert(calendarAlertTitle, isPresented: $showCalendarAlert)
@@ -333,8 +445,10 @@ struct ExamCard: View
     private func addExamToCalendar() async
     {
         await MainActor.run { isAddingToCalendar = true }
-        defer {
-            Task { @MainActor in
+        defer
+        {
+            Task
+            { @MainActor in
                 isAddingToCalendar = false
             }
         }
@@ -343,7 +457,8 @@ struct ExamCard: View
         {
             let store = EKEventStore()
             let granted = try await requestCalendarAccess(store)
-            guard granted else
+            guard granted
+            else
             {
                 await setCalendarAlert(title: "无法添加", message: "需要允许访问系统日历，才可以帮你把考试安排塞进去哦。")
                 return
@@ -357,7 +472,8 @@ struct ExamCard: View
                 return
             }
 
-            guard let calendar = store.defaultCalendarForNewEvents else
+            guard let calendar = store.defaultCalendarForNewEvents
+            else
             {
                 await setCalendarAlert(title: "添加失败", message: "没有找到可以写入的默认日历。")
                 return
@@ -426,7 +542,8 @@ struct ExamCard: View
 
     private func parseExamDateRange() throws -> (Date, Date)
     {
-        guard let dateText = exam.examDate.firstMatch(of: #"\d{4}-\d{1,2}-\d{1,2}"#) else
+        guard let dateText = exam.examDate.firstMatch(of: #"\d{4}-\d{1,2}-\d{1,2}"#)
+        else
         {
             throw CalendarAddError.invalidExamDate
         }
@@ -440,7 +557,8 @@ struct ExamCard: View
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
-        guard parts.count >= 2 else
+        guard parts.count >= 2
+        else
         {
             throw CalendarAddError.invalidExamTime
         }
@@ -492,21 +610,27 @@ private struct CountdownView: View
 
     private var displayText: String
     {
-        guard let d = components.day, let h = components.hour, let m = components.minute, let s = components.second else {
+        guard let d = components.day, let h = components.hour, let m = components.minute, let s = components.second
+        else
+        {
             return ""
         }
         if isPast { return "考试已结束" }
         let totalHours = d * 24 + h
-        if totalHours <= 0 {
-            if m <= 0 {
+        if totalHours <= 0
+        {
+            if m <= 0
+            {
                 return "\(s)秒后"
             }
             return "\(m)分\(s)秒后"
         }
-        if totalHours < 24 {
+        if totalHours < 24
+        {
             return "\(totalHours)时\(m)分后"
         }
-        if d < 3 {
+        if d < 3
+        {
             return "\(d)天\(h)时后"
         }
         return "还有\(d)天"
@@ -515,7 +639,9 @@ private struct CountdownView: View
     private var accentColor: Color
     {
         if isPast { return .secondary }
-        guard let d = components.day, let h = components.hour, let m = components.minute else {
+        guard let d = components.day, let h = components.hour, let m = components.minute
+        else
+        {
             return .secondary
         }
         let totalHours = d * 24 + h
@@ -602,8 +728,10 @@ struct ExamBottomControlBar: View
     @EnvironmentObject var userinfo: userInfo
 
     let requestMFACode: MFACodeProvider
+    let requestShishanyouniMFACode: @MainActor (_ maskedPhone: String, _ sessionId: String) async -> String?
     let scheduleQuery: ScheduleQuery
     let examQuery: ExamQuery
+    let onQuerySuccess: () -> Void
 
     let years = ["2023", "2024", "2025", "2026"]
     let terms = [("第一学期", "1"), ("第二学期", "2")]
@@ -612,7 +740,8 @@ struct ExamBottomControlBar: View
     {
         HStack(spacing: 15)
         {
-            QuerySourcePickerButton(selection: $querySource) { source in
+            QuerySourcePickerButton(selection: $querySource)
+            { source in
                 switchSource(to: source)
             }
 
@@ -718,9 +847,49 @@ struct ExamBottomControlBar: View
         exams = []
     }
 
+    private func fetchShishanyouniExamsWithMFA() async throws -> [Exam]
+    {
+        do
+        {
+            return try await examQuery.fetchExamsFromShishanyouni(
+                username: userinfo.username,
+                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken,
+                xnm: selectedYear,
+                xqm: selectedTerm
+            )
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
+        {
+            try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
+            return try await examQuery.fetchExamsFromShishanyouni(
+                username: userinfo.username,
+                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken,
+                xnm: selectedYear,
+                xqm: selectedTerm
+            )
+        }
+    }
+
+    private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
+    {
+        guard let smsCode = await requestShishanyouniMFACode(phone, sessionId),
+              !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else
+        {
+            throw ShishanyouniAPIError.apiError(code: 22, message: "已取消短信验证码验证。")
+        }
+
+        let token = try await ShishanyouniMFAFlow.submitCode(sessionId: sessionId, smsCode: smsCode)
+        await MainActor.run
+        {
+            userinfo.updateShishanyouniToken(token)
+        }
+    }
+
     private func formatYearAbbreviation(_ year: String) -> String
     {
-
         if let yearInt = Int(year)
         {
             let start = yearInt % 100
@@ -743,7 +912,8 @@ struct ExamBottomControlBar: View
 
     private func fetchExamData()
     {
-        guard !userinfo.username.isEmpty else
+        guard !userinfo.username.isEmpty
+        else
         {
             alertTitle = "查询失败"
             alertMessage = "好像忘记了登录，请先去登录吧！"
@@ -759,7 +929,7 @@ struct ExamBottomControlBar: View
                 let result: [Exam]
                 switch querySource
                 {
-                    //数据源是cas
+                // 数据源是cas
                 case .cas:
                     let cookie = try await scheduleQuery.loginAndGetCookie(
                         username: userinfo.username,
@@ -771,15 +941,9 @@ struct ExamBottomControlBar: View
                         xnm: selectedYear,
                         xqm: selectedTerm == "1" ? "3" : "12"
                     )
-                    //数据源是狮山有你
+                // 数据源是狮山有你
                 case .shishanyouni:
-                    result = try await examQuery.fetchExamsFromShishanyouni(
-                        username: userinfo.username,
-                        encryptedPassword: userinfo.encryptedPasswordShishanyouni,
-                        token: userinfo.shishanyouniToken,
-                        xnm: selectedYear,
-                        xqm: selectedTerm
-                    )
+                    result = try await fetchShishanyouniExamsWithMFA()
                 }
 
                 await MainActor.run
@@ -792,6 +956,8 @@ struct ExamBottomControlBar: View
                     )
                     self.exams = result
                     self.isLoading = false
+                    UserDefaults.standard.set(Date(), forKey: "lastExamQueryDate")
+                    self.onQuerySuccess()
                     if result.isEmpty
                     {
                         self.alertTitle = "提示"
@@ -807,7 +973,7 @@ struct ExamBottomControlBar: View
                 {
                     self.isLoading = false
                     self.alertTitle = "查询失败"
-                    if(userinfo.username.isEmpty && userinfo.plainPassword.isEmpty)
+                    if userinfo.username.isEmpty && userinfo.plainPassword.isEmpty
                     {
                         self.alertMessage = "好像忘记了登录，请先去登录吧！"
                     }
@@ -816,7 +982,7 @@ struct ExamBottomControlBar: View
                         self.alertMessage = error.localizedDescription
                     }
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
-                    
+
                     self.showAlert = true
                 }
             }

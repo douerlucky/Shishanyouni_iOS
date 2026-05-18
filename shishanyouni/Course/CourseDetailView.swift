@@ -171,7 +171,7 @@ struct CourseDetailView: View
                     {
                         throw AllCourseQueryError.apiError("缺少 classCode，无法查询狮山有你课程详情。")
                     }
-                    results = try await AllCourseQuery.shared.fetchLionCourseClasses(classCode: classCode)
+                    results = try await fetchLionCourseClassesWithMFA(classCode: classCode)
                 }
 
                 await MainActor.run
@@ -351,12 +351,55 @@ struct CourseDetailView: View
 
 extension CourseDetailView
 {
+    private func fetchLionCourseClassesWithMFA(classCode: String) async throws -> [CourseClassInfo]
+    {
+        do
+        {
+            return try await AllCourseQuery.shared.fetchLionCourseClasses(classCode: classCode)
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
+        {
+            try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
+            return try await AllCourseQuery.shared.fetchLionCourseClasses(classCode: classCode)
+        }
+    }
+
+    private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
+    {
+        guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+              !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else
+        {
+            throw ShishanyouniAPIError.apiError(code: 22, message: "已取消短信验证码验证。")
+        }
+
+        let token = try await ShishanyouniMFAFlow.submitCode(sessionId: sessionId, smsCode: smsCode)
+        await MainActor.run
+        {
+            userinfo.updateShishanyouniToken(token)
+        }
+    }
+
     @MainActor
     private func requestMFACode(maskedPhone: String?) async -> String?
     {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
         mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
         await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation

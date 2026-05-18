@@ -35,6 +35,11 @@ struct ScheduleSettingView: View {
     @State private var isImporting           = false
     @State private var importedCount         = 0
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaSendCodeAction: (() async -> String?)?
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
 
     // 导入时询问是否同时清除手动课程
     @State private var pendingImportResult: (courses: [Course], startDate: Date?)? = nil
@@ -135,6 +140,17 @@ struct ScheduleSettingView: View {
         }
         // 把弹窗绑在对应的 Section 上，分解编译器的压力！
         .sheet(isPresented: $showImportPicker) { importPickerView }
+        .sheet(isPresented: $showMFASheet)
+        {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                fromShishanyouni: true,
+                onSendCode: $mfaSendCodeAction,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
         .alert(importAlertMessage, isPresented: $showImportAlert) {
             Button("确定", role: .cancel) {}
         }
@@ -391,13 +407,7 @@ struct ScheduleSettingView: View {
         }
 
         do {
-            let result = try await ScheduleService.fetchCourses(
-                username: userinfo.username,
-                password: userinfo.encryptedPasswordShishanyouni,
-                token:    userinfo.shishanyouniToken,
-                year:     selectedYear,
-                term:     selectedTerm
-            )
+            let result = try await fetchCoursesWithMFA()
 
             importedCount = result.courses.count
 
@@ -418,6 +428,70 @@ struct ScheduleSettingView: View {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             isImporting = false
         }
+    }
+
+    private func fetchCoursesWithMFA() async throws -> (courses: [Course], startDate: Date?)
+    {
+        do
+        {
+            return try await ScheduleService.fetchCourses(
+                username: userinfo.username,
+                password: userinfo.encryptedPasswordShishanyouni,
+                token:    userinfo.shishanyouniToken,
+                year:     selectedYear,
+                term:     selectedTerm
+            )
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
+        {
+            try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
+            return try await ScheduleService.fetchCourses(
+                username: userinfo.username,
+                password: userinfo.encryptedPasswordShishanyouni,
+                token:    userinfo.shishanyouniToken,
+                year:     selectedYear,
+                term:     selectedTerm
+            )
+        }
+    }
+
+    private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
+    {
+        guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+              !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else
+        {
+            throw ShishanyouniAPIError.apiError(code: 22, message: "已取消短信验证码验证。")
+        }
+
+        let token = try await ShishanyouniMFAFlow.submitCode(sessionId: sessionId, smsCode: smsCode)
+        await MainActor.run
+        {
+            userinfo.updateShishanyouniToken(token)
+        }
+    }
+
+    @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?)
+    {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
+        mfaSendCodeAction = nil
     }
 
     // MARK: - 持久化

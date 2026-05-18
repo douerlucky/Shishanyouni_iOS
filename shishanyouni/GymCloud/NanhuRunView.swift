@@ -151,11 +151,7 @@ struct NanhuRunView: View
                     {
                         throw NanhuRunQueryError.apiError("未找到狮山有你绑定信息，请重新登录后再试。")
                     }
-                    scores = try await runQuery.fetchRunScoresFromShishanyouni(
-                        username: userinfo.username,
-                        encryptedPassword: userinfo.encryptedPasswordShishanyouni,
-                        token: userinfo.shishanyouniToken
-                    )
+                    scores = try await fetchShishanyouniRunScoresWithMFA()
                 }
 
                 await MainActor.run
@@ -189,11 +185,60 @@ struct NanhuRunView: View
 }
 
 extension NanhuRunView {
+    private func fetchShishanyouniRunScoresWithMFA() async throws -> [RunScore]
+    {
+        do
+        {
+            return try await runQuery.fetchRunScoresFromShishanyouni(
+                username: userinfo.username,
+                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken
+            )
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
+        {
+            try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
+            return try await runQuery.fetchRunScoresFromShishanyouni(
+                username: userinfo.username,
+                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken
+            )
+        }
+    }
+
+    private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
+    {
+        guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+              !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else
+        {
+            throw ShishanyouniAPIError.apiError(code: 22, message: "已取消短信验证码验证。")
+        }
+
+        let token = try await ShishanyouniMFAFlow.submitCode(sessionId: sessionId, smsCode: smsCode)
+        await MainActor.run
+        {
+            userinfo.updateShishanyouniToken(token)
+        }
+    }
+
     @MainActor
     private func requestMFACode(maskedPhone: String?) async -> String? {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
         mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String? {
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
         await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation { continuation in

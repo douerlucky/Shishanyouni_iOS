@@ -546,6 +546,11 @@ struct BottomButtonView: View
     @Binding var selectedYear: String
     @Binding var selectedTerm: String
     @State private var showPicker = false
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaSendCodeAction: (() async -> String?)?
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @EnvironmentObject var userinfo: userInfo
     let gradeService: GradeService
     /// 新数据加载完毕后调用（用于重置勾选状态）
@@ -583,13 +588,7 @@ struct BottomButtonView: View
                     defer { isLoading = false }
                     do
                     {
-                        Grades = try await gradeService.fetchGrades(
-                            username: userinfo.username,
-                            password: userinfo.encryptedPasswordShishanyouni,
-                            token: userinfo.shishanyouniToken,
-                            xnm: selectedYear,
-                            xqm: selectedTerm
-                        )
+                        Grades = try await fetchGradesWithMFA()
                         await MainActor.run
                         {
                             AcademicQueryCache.save(
@@ -680,6 +679,81 @@ struct BottomButtonView: View
             }
             .presentationDetents([.height(300)])
         }
+        .sheet(isPresented: $showMFASheet)
+        {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                fromShishanyouni: true,
+                onSendCode: $mfaSendCodeAction,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
+    }
+
+    private func fetchGradesWithMFA() async throws -> [Grade]
+    {
+        do
+        {
+            return try await gradeService.fetchGrades(
+                username: userinfo.username,
+                password: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken,
+                xnm: selectedYear,
+                xqm: selectedTerm
+            )
+        }
+        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
+        {
+            try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
+            return try await gradeService.fetchGrades(
+                username: userinfo.username,
+                password: userinfo.encryptedPasswordShishanyouni,
+                token: userinfo.shishanyouniToken,
+                xnm: selectedYear,
+                xqm: selectedTerm
+            )
+        }
+    }
+
+    private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
+    {
+        guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+              !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else
+        {
+            throw ShishanyouniAPIError.apiError(code: 22, message: "已取消短信验证码验证。")
+        }
+
+        let token = try await ShishanyouniMFAFlow.submitCode(sessionId: sessionId, smsCode: smsCode)
+        await MainActor.run
+        {
+            userinfo.updateShishanyouniToken(token)
+        }
+    }
+
+    @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?)
+    {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
+        mfaSendCodeAction = nil
     }
 
     private func formatYearAbbreviation(_ year: String) -> String
