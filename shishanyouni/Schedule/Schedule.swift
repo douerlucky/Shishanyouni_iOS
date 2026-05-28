@@ -88,9 +88,7 @@ struct TimetableModel: Decodable
         room = try container.decodeIfPresent(String.self, forKey: .room)
         teacher = try container.decodeIfPresent(String.self, forKey: .teacher)
         let decodedWeekList = try container.decodeIfPresent([Int].self, forKey: .weekList) ?? []
-        let decodedWeeks = try container.decodeIfPresent([Int].self, forKey: .weeks) ?? []
-        // 新接口会同时返回 weekList: [] 和真正有效的 weeks: [...]，空 weekList 不能优先覆盖。
-        weekList = decodedWeekList.isEmpty ? decodedWeeks : decodedWeekList
+        weekList = decodedWeekList
         start = try container.decodeIfPresent(Int.self, forKey: .start)
             ?? container.decodeIfPresent(Int.self, forKey: .period)
             ?? 1
@@ -201,7 +199,7 @@ extension Course
 
 struct ScheduleService
 {
-    private static let apiURL = "https://lion.hzau.edu.cn/app/ios/v2/timetable"
+    private static let apiURL = "https://lion.hzau.edu.cn/app/ios/timetable"
 
     struct FetchRequest: Encodable
     {

@@ -204,11 +204,11 @@ private extension String
 class ExamQuery
 {
     static let shared = ExamQuery()
-    private let lionURL = "https://lion.hzau.edu.cn/app/ios/v2/exam"
+    private let lionURL = "https://lion.hzau.edu.cn/app/ios/exam"
 
     func fetchExams(cookie: String, xnm: String, xqm: String) async throws -> [Exam]
     {
-        let urlString = "https://byjxyt.hzau.edu.cn/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"
+        let urlString = "http://byjxyt.hzau.edu.cn/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -216,7 +216,7 @@ class ExamQuery
         request.setValue("application/x-www-form-urlencoded;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue("https://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
+        request.setValue("http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")

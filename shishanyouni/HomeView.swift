@@ -206,11 +206,11 @@ struct HomeView: View
                         }
                     }
                     
-                    MenuGridItem(title: "校园地图", icon: "map.fill", color: HomeMenuColor.green2)
-                    {
-                        navigateToGIS = true
-                    }
-                    
+//                    MenuGridItem(title: "校园地图", icon: "map.fill", color: HomeMenuColor.green2)
+//                    {
+//                        navigateToGIS = true
+//                    }
+//                    
                     if #available(iOS 26.0, *)
                     {
                         MenuGridItem(title: "校历查询", icon: date + ".calendar", color: HomeMenuColor.purple2)

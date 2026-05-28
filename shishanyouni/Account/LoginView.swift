@@ -46,9 +46,6 @@ struct LoginView: View
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
-    @State private var mfaFromShishanyouni = false
-    @State private var shishanyouniMFASessionId: String?
-    @State private var mfaSendCodeAction: (() async -> String?)?
     @AppStorage("login_binding_source") private var bindingSourceRawValue = LoginBindingSource.shishanyouni.rawValue
 
     private var bindingSource: LoginBindingSource
@@ -377,8 +374,7 @@ struct LoginView: View
             MFACodeInputSheet(
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
-                fromShishanyouni: mfaFromShishanyouni,
-                onSendCode: $mfaSendCodeAction,
+                onSendCode: .constant(nil),
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
@@ -485,34 +481,8 @@ extension LoginView {
     private func performShishanyouniBinding(username: String, encryptedPassword: String) async -> (Bool, String?) {
         do
         {
-            let binder = ShishanyouniBinder()
-            try await binder.bind(username: username, password: encryptedPassword)
+            try await ShishanyouniBinder().bind(username: username, password: encryptedPassword)
             return (true, nil)
-        }
-        catch ShishanyouniAPIError.needMFA(let phone, let sessionId, let message)
-        {
-            do
-            {
-                let binder = ShishanyouniBinder()
-                guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
-                      !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                else
-                {
-                    return (false, "已取消短信验证码验证。")
-                }
-
-                let token = try await binder.submitCode(sessionId: sessionId, smsCode: smsCode)
-                await MainActor.run
-                {
-                    userinfo.updateShishanyouniToken(token)
-                    shishanyouniMFASessionId = nil
-                }
-                return (true, message)
-            }
-            catch
-            {
-                return (false, error.localizedDescription)
-            }
         }
         catch
         {
@@ -581,44 +551,10 @@ extension LoginView {
     private func requestMFACode(maskedPhone: String?) async -> String? {
         mfaMaskedPhone = maskedPhone ?? ""
         mfaCode = ""
-        mfaFromShishanyouni = false
-        shishanyouniMFASessionId = nil
-        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
         await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation { continuation in
             mfaContinuation = continuation
-        }
-    }
-
-    @MainActor
-    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String? {
-        mfaMaskedPhone = maskedPhone
-        mfaCode = ""
-        mfaFromShishanyouni = true
-        shishanyouniMFASessionId = sessionId
-        mfaSendCodeAction = { await sendShishanyouniMFACode() }
-        await Task.yield()
-        showMFASheet = true
-        return await withCheckedContinuation { continuation in
-            mfaContinuation = continuation
-        }
-    }
-
-    private func sendShishanyouniMFACode() async -> String? {
-        guard let sessionId = await MainActor.run(body: { shishanyouniMFASessionId }) else
-        {
-            return "短信验证会话已失效，请重新绑定。"
-        }
-
-        do
-        {
-            try await ShishanyouniBinder().sendCode(sessionId: sessionId)
-            return nil
-        }
-        catch
-        {
-            return error.localizedDescription
         }
     }
 
@@ -627,11 +563,6 @@ extension LoginView {
         showMFASheet = false
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
-        mfaSendCodeAction = nil
-        if code == nil
-        {
-            shishanyouniMFASessionId = nil
-        }
     }
 }
 

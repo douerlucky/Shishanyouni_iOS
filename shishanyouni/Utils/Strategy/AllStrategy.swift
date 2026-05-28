@@ -36,7 +36,7 @@ class AllStrategyViewModel: ObservableObject
 
     func fetchGuides()
     {
-        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/v2/guide/getinfo") else { return }
+        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/guide/getinfo") else { return }
 
         isLoading = true
         errorMessage = nil

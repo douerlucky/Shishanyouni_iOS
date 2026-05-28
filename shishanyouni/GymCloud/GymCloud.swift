@@ -113,7 +113,6 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
     private let physicalURL = "https://tygl.hzau.edu.cn/main.php?module=stu&title=stu_ht_score"
     private let rootURL = "https://tygl.hzau.edu.cn/"
     private let lionSouthlakeURL = "https://lion.hzau.edu.cn/app/ios/southlake"
-    private let cacheNamespace = "gym"
 
     // 手动存储 cookies (用于登录过程中的状态追踪)
     private var cookieJar: [String: String] = [:]
@@ -151,23 +150,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         return cookieJar.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
     }
 
-    private func loadCachedCookies(username: String)
-    {
-        guard let cachedCookies = CASCookieCache.load(namespace: cacheNamespace, username: username)
-        else
-        {
-            return
-        }
-        cookieJar.merge(cachedCookies) { current, _ in current }
-        print("🍪 已加载体育 CAS Cookie 缓存")
-    }
-
-    private func saveCachedCookies(username: String)
-    {
-        CASCookieCache.save(cookieJar, namespace: cacheNamespace, username: username)
-    }
-
-    private func finishGymLoginWithTicketLocation(_ location: String, username: String) async throws -> String
+    private func finishGymLoginWithTicketLocation(_ location: String) async throws -> String
     {
         print("Step 3: GET Ticket 链接")
         var request3 = URLRequest(url: URL(string: location)!)
@@ -194,7 +177,6 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
 
         if let phpSessId = cookieJar["PHPSESSID"], let userKey = cookieJar["userKey"]
         {
-            saveCachedCookies(username: username)
             return "PHPSESSID=\(phpSessId); userKey=\(userKey)"
         }
 
@@ -336,43 +318,11 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
     /// 核心逻辑：登录并获取南湖跑系统的 PHPSESSID 和 userKey
     func loginAndGetRunCookie(username: String, rsaPassword: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> String
     {
-        loadCachedCookies(username: username)
-
-        // ===== Step 0: 探测是否已经登录 =====
-        print("Step 0: 探测当前会话状态...")
-        var probeRequest = URLRequest(url: URL(string: rootURL)!)
-        probeRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        probeRequest.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-
-        do
-        {
-            let (_, probeResponse) = try await session.data(for: probeRequest)
-            if let httpProbeResponse = probeResponse as? HTTPURLResponse
-            {
-                extractCookies(from: httpProbeResponse)
-                if let phpSessId = cookieJar["PHPSESSID"], let userKey = cookieJar["userKey"]
-                {
-                    print("✨ 探测成功：当前已处于登录状态")
-                    saveCachedCookies(username: username)
-                    return "PHPSESSID=\(phpSessId); userKey=\(userKey)"
-                }
-            }
-        }
-        catch
-        {
-            print("⚠️ 体育 Cookie 探测失败，继续走 CAS 登录: \(error.localizedDescription)")
-        }
-
         // ===== Step 1: GET 获取 CAS 登录页面的 execution 参数 =====
         print("Step 1: 获取 CAS Execution")
         var request1 = URLRequest(url: URL(string: casLoginURL)!)
         request1.httpMethod = "GET"
         request1.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-        let cachedHeader = getCookieHeader()
-        if !cachedHeader.isEmpty
-        {
-            request1.setValue(cachedHeader, forHTTPHeaderField: "Cookie")
-        }
 
         let (data1, response1) = try await session.data(for: request1)
         guard let httpResponse1 = response1 as? HTTPURLResponse else { throw NSError(domain: "Network", code: 0) }
@@ -381,7 +331,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         if let ticketLocation = httpResponse1.allHeaderFields["Location"] as? String
         {
             print("✨ 复用 CAS 登录态换取体育系统 Cookie")
-            return try await finishGymLoginWithTicketLocation(ticketLocation, username: username)
+            return try await finishGymLoginWithTicketLocation(ticketLocation)
         }
 
         let html = String(data: data1, encoding: .utf8) ?? ""
@@ -433,7 +383,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             throw NSError(domain: "LoginFailed", code: httpResponse2.statusCode)
         }
 
-        return try await finishGymLoginWithTicketLocation(ticketLocation, username: username)
+        return try await finishGymLoginWithTicketLocation(ticketLocation)
     }
 
     /// 获取并解析环湖跑分数

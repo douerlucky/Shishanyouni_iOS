@@ -38,7 +38,7 @@ class AllClubViewModel: ObservableObject
 
     func fetchClubs() async
     {
-        guard let url = URL(string: "https://lion.hzau.edu.cn//app/ios/v2/club/getall") else { return }
+        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/club/getall") else { return }
         do
         {
             let (data, _) = try await URLSession.shared.data(from: url)

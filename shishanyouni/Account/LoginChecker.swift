@@ -12,11 +12,13 @@ struct ShishanyouniBindResponse {
     let msg: String? //返回处理消息(失败时返回对应错误信息)
     let code: Int? //响应编码(200是成功，其它都是失败)
     let data: ShishanyouniBindData? //需要短信验证码时包含手机号和 sessionId
+    let success: Bool? // v1 绑定的成功标志
 
     init(json: [String: Any])
     {
         msg = json["msg"] as? String
         code = Self.intValue(from: json["code"])
+        success = json["success"] as? Bool
 
         if let dataJSON = json["data"] as? [String: Any]
         {
@@ -85,9 +87,9 @@ enum ShishanyouniBindError: LocalizedError {
 
 /// 只负责调用狮山有你服务器的账号绑定接口。
 class ShishanyouniBinder {
-    private let bindURL = "https://lion.hzau.edu.cn/app/ios/v2/bind"
-    private let sendCodeURL = "https://lion.hzau.edu.cn/app/ios/v2/sendCode"
-    private let submitCodeURL = "https://lion.hzau.edu.cn/app/ios/v2/submitCode"
+    private let bindURL = "https://lion.hzau.edu.cn/app/ios/bind"
+    private let sendCodeURL = "https://lion.hzau.edu.cn/app/ios/sendCode"
+    private let submitCodeURL = "https://lion.hzau.edu.cn/app/ios/submitCode"
 
     func bind(username: String, password: String, type: Int = 0) async throws {
         guard let url = URL(string: bindURL) else {
@@ -125,7 +127,7 @@ class ShishanyouniBinder {
             }
             let result = ShishanyouniBindResponse(json: json)
 
-            if result.code == 200 || result.code == 2 {
+            if result.success == true || result.code == 200 || result.code == 2 {
                 print("[ShishanyouniBinder] 绑定成功: \(result.msg ?? "成功")")
                 return
             } else if result.code == 22 {

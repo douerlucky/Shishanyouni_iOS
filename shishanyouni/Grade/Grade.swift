@@ -43,7 +43,7 @@ struct Grade: Identifiable, Codable
 
 class GradeService
 {
-    private let baseURL = "https://lion.hzau.edu.cn//app/ios/v2/score"
+    private let baseURL = "https://lion.hzau.edu.cn/app/ios/score"
 
     /// xnm: 学年开始年份（如 "2025" 代表 2025-2026 学年）
     /// xqm: 学期（"1" 第一学期，"2" 第二学期）
@@ -87,7 +87,7 @@ class GradeService
 
         let decoded = try JSONDecoder().decode(LionGradeResponse.self, from: data)
 
-        guard decoded.code == 2 else
+        guard decoded.success == true || decoded.code == 2 || decoded.code == 200 else
         {
             let msg = decoded.msg ?? "服务器返回未知错误"
             throw ShishanyouniAPIError.apiError(code: decoded.code, message: msg)

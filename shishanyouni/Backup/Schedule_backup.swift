@@ -233,8 +233,7 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
     private let step1And2URL = "https://cas-paas.hzau.edu.cn/cas/login?service=http%3A%2F%2Fbyjxyt.hzau.edu.cn%2Fswlogin"
     private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
     private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
-    private let courseQueryURL = "https://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151"
-    private let cacheNamespace = "academic"
+    private let courseQueryURL = "http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151"
     
     // 手动存储 cookies
     private var cookieJar: [String: String] = [:]
@@ -279,134 +278,32 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         return cookieJar.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
     }
 
-    private func loadCachedCookies(username: String)
+    private func finishLoginWithTicketLocation(_ location: String) async throws -> String
     {
-        guard let cachedCookies = CASCookieCache.load(namespace: cacheNamespace, username: username)
-        else
-        {
-            return
-        }
-        cookieJar.merge(cachedCookies) { current, _ in current }
-        print("🍪 已加载教务 CAS Cookie 缓存")
-    }
-
-    private func saveCachedCookies(username: String)
-    {
-        CASCookieCache.save(cookieJar, namespace: cacheNamespace, username: username)
-    }
-
-    private func saveCASCookiesIfAvailable(username: String)
-    {
-        guard cookieJar["TGC"] != nil || cookieJar["SESSION"] != nil
-        else
-        {
-            return
-        }
-        saveCachedCookies(username: username)
-        print("🍪 已缓存 CAS 登录态 Cookie")
-    }
-
-    private func clearCachedCookies(username: String)
-    {
-        cookieJar.removeAll()
-        CASCookieCache.clear(namespace: cacheNamespace, username: username)
-    }
-
-    private func cachedAcademicCookieIfValid(username: String) async -> String?
-    {
-        guard let jsessionId = cookieJar["JSESSIONID"] else
-        {
-            return nil
-        }
-
-        guard let url = URL(string: "https://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default")
-        else
-        {
-            return nil
-        }
+        print("🔐 获取教务 Ticket")
+        guard let url = URL(string: location) else { throw NSError(domain: "InvalidURL", code: 400) }
+        print("🔐 尝试教务 Ticket: \(location)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
 
-        do
+        let (_, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else
         {
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse else { return nil }
-            extractCookies(from: http)
-
-            let html = String(data: data, encoding: .utf8) ?? ""
-            let looksLoggedIn = http.statusCode == 200
-                && !html.contains("cas/login")
-                && !html.contains("统一身份认证")
-                && !html.contains("name=\"execution\"")
-
-            if looksLoggedIn
-            {
-                saveCachedCookies(username: username)
-                print("✅ 复用教务 Cookie 成功")
-                return "JSESSIONID=\(cookieJar["JSESSIONID"] ?? jsessionId)"
-            }
+            throw NSError(domain: "TicketLoginFailed", code: 500)
         }
-        catch
+
+        extractCookies(from: httpResponse)
+
+        if let jsessionId = cookieJar["JSESSIONID"]
         {
-            print("⚠️ 教务 Cookie 探测失败: \(error.localizedDescription)")
+            print("✅ 登录成功，获得教务 Cookie")
+            return "JSESSIONID=\(jsessionId)"
         }
 
-        return nil
-    }
-
-    private func finishLoginWithTicketLocation(_ location: String, username: String) async throws -> String
-    {
-        print("🔐 获取教务 Ticket")
-        let httpsLocation = location.replacingOccurrences(
-            of: "http://byjxyt.hzau.edu.cn",
-            with: "https://byjxyt.hzau.edu.cn"
-        )
-
-        let candidates = Array(Set([location, httpsLocation])).sorted { lhs, rhs in
-            lhs.hasPrefix("https://") && rhs.hasPrefix("http://")
-        }
-
-        var lastError: Error?
-        for candidate in candidates
-        {
-            guard let url = URL(string: candidate) else { continue }
-            print("🔐 尝试教务 Ticket: \(candidate)")
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-
-            do
-            {
-                let (_, response) = try await session.data(for: request)
-                guard let httpResponse = response as? HTTPURLResponse
-                else
-                {
-                    throw NSError(domain: "TicketLoginFailed", code: 500)
-                }
-
-                extractCookies(from: httpResponse)
-
-                if let jsessionId = cookieJar["JSESSIONID"]
-                {
-                    saveCachedCookies(username: username)
-                    print("✅ 登录成功，获得并缓存教务 Cookie")
-                    return "JSESSIONID=\(jsessionId)"
-                }
-
-                lastError = NSError(domain: "CookieNotFound", code: 404)
-            }
-            catch
-            {
-                lastError = error
-                print("⚠️ 教务 Ticket 失败: \(error.localizedDescription)")
-            }
-        }
-
-        throw lastError ?? NSError(domain: "CookieNotFound", code: 404)
+        throw NSError(domain: "CookieNotFound", code: 404)
     }
 
     private func formEncode(_ str: String) -> String
@@ -560,12 +457,6 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
     
     func loginAndGetCookie(username: String, rsaPassword: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> String
     {
-        loadCachedCookies(username: username)
-        if let cachedCookie = await cachedAcademicCookieIfValid(username: username)
-        {
-            return cachedCookie
-        }
-
         // Step 1: GET 获取 Execution
         print("🔐 Step 1: 获取登录页面")
         var request1 = URLRequest(url: URL(string: step1And2URL)!)
@@ -573,11 +464,6 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         request1.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
         request1.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
         request1.setValue("zh-CN,zh;q=0.9", forHTTPHeaderField: "Accept-Language")
-        let cachedHeader = getCookieHeader()
-        if !cachedHeader.isEmpty
-        {
-            request1.setValue(cachedHeader, forHTTPHeaderField: "Cookie")
-        }
         
         let (data1, response1) = try await session.data(for: request1)
         guard let httpResponse1 = response1 as? HTTPURLResponse
@@ -587,12 +473,11 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         }
         
         extractCookies(from: httpResponse1)
-        saveCASCookiesIfAvailable(username: username)
 
         if let location = httpResponse1.allHeaderFields["Location"] as? String
         {
             print("✨ 复用 CAS 登录态换取教务 Cookie")
-            return try await finishLoginWithTicketLocation(location, username: username)
+            return try await finishLoginWithTicketLocation(location)
         }
 
         let html = String(data: data1, encoding: .utf8) ?? ""
@@ -601,13 +486,6 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         guard let range = html.range(of: #"name="execution"\s+value="([^"]+)""#, options: .regularExpression)
         else
         {
-            if !cachedHeader.isEmpty
-            {
-                print("⚠️ CAS 页面未找到 execution，清除旧 Cookie 后重试")
-                clearCachedCookies(username: username)
-                return try await loginAndGetCookie(username: username, rsaPassword: rsaPassword, mfaCodeProvider: mfaCodeProvider)
-            }
-
             print("❌ CAS 页面未找到 execution，状态码: \(httpResponse1.statusCode)，片段: \(html.prefix(200))")
             throw NSError(domain: "ExecutionNotFound", code: 404)
         }
@@ -676,9 +554,8 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         }
         
         extractCookies(from: httpResponse2)
-        saveCASCookiesIfAvailable(username: username)
-        
-        return try await finishLoginWithTicketLocation(location3, username: username)
+
+        return try await finishLoginWithTicketLocation(location3)
     }
     
     // MARK: - 查询课表

@@ -22,9 +22,6 @@ struct ExamView: View
     @State var selectedTerm = "2"
     @AppStorage("examQuerySource") private var querySourceRaw = ExamQuerySource.cas.rawValue
 
-    // 上一次更新查询的时间
-    @State private var daysSinceLastOpen: Int?
-
     private var querySource: ExamQuerySource
     {
         get { ExamQuerySource(rawValue: querySourceRaw) ?? .cas }
@@ -64,38 +61,7 @@ struct ExamView: View
                 }
                 else
                 {
-                    VStack(spacing: 8)
-                    {
-                        HStack
-                        {
-                            Spacer()
-                            if let daysSinceLastOpen
-                            {
-                                if(daysSinceLastOpen==0)
-                                {
-                                    Text("今天查询了考试信息")
-                                }
-                                else
-                                {
-                                    Text("距离上次查询已经过去 \(daysSinceLastOpen) 天")
-                                        .font(.footnote)
-                                }
-                                
-                            }
-                            else
-                            {
-                                Text("未记录上次查询日期")
-                                    .font(.footnote)
-                            }
-                            Spacer()
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                        List(exams)
+                    List(exams)
                         { item in
                             ExamCard(exam: item)
                                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -105,12 +71,11 @@ struct ExamView: View
                         .listStyle(.plain)
                         .scrollContentBackground(.hidden)
                         .background(Color.clear)
-                    }
-                    .blur(radius: isLoading ? 3 : 0)
-                    .safeAreaInset(edge: .bottom)
-                    {
-                        Color.clear.frame(height: 100)
-                    }
+                        .blur(radius: isLoading ? 3 : 0)
+                        .safeAreaInset(edge: .bottom)
+                        {
+                            Color.clear.frame(height: 100)
+                        }
                 }
 
                 if isLoading
@@ -151,9 +116,7 @@ struct ExamView: View
                 },
                 scheduleQuery: scheduleQuery,
                 examQuery: examQuery,
-                onQuerySuccess: {
-                    checkLastOpenDate()
-                }
+                onQuerySuccess: { }
             )
         }
         .navigationTitle("我的考试")
@@ -174,44 +137,11 @@ struct ExamView: View
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
         }
-        .onAppear
-        {
-            loadCachedExams()
-            checkLastOpenDate() //检查上一个点击查询的日期
-        }
-        .onChange(of: selectedYear)
-        { _ in
-            loadCachedExams()
-        }
-        .onChange(of: selectedTerm)
-        { _ in
-            loadCachedExams()
-        }
-        .onChange(of: querySourceRaw)
-        { _ in
-            loadCachedExams()
-        }
     }
 }
 
 extension ExamView
 {
-    private var examCacheParts: [String]
-    {
-        [querySource.rawValue, selectedYear, selectedTerm]
-    }
-
-    private func loadCachedExams()
-    {
-        guard !userinfo.username.isEmpty else { return }
-        exams = AcademicQueryCache.load(
-            [Exam].self,
-            namespace: "exam",
-            username: userinfo.username,
-            parts: examCacheParts
-        ) ?? []
-    }
-
     private func fetchShishanyouniExamsWithMFA() async throws -> [Exam]
     {
         do
@@ -288,20 +218,6 @@ extension ExamView
         mfaContinuation?.resume(returning: code)
         mfaContinuation = nil
         mfaSendCodeAction = nil
-    }
-
-    private func checkLastOpenDate()
-    {
-        let now = Date()
-        if let lastDate = UserDefaults.standard.object(forKey: "lastExamQueryDate") as? Date
-        {
-            let days = Calendar.current.dateComponents([.day], from: lastDate, to: now).day ?? 0
-            daysSinceLastOpen = days
-        }
-        else
-        {
-            daysSinceLastOpen = nil
-        }
     }
 }
 
@@ -948,15 +864,8 @@ struct ExamBottomControlBar: View
 
                 await MainActor.run
                 {
-                    AcademicQueryCache.save(
-                        result,
-                        namespace: "exam",
-                        username: userinfo.username,
-                        parts: [querySource.rawValue, selectedYear, selectedTerm]
-                    )
                     self.exams = result
                     self.isLoading = false
-                    UserDefaults.standard.set(Date(), forKey: "lastExamQueryDate")
                     self.onQuerySuccess()
                     if result.isEmpty
                     {
