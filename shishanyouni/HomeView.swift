@@ -39,6 +39,7 @@ struct HomeView: View
     @State private var navigateToClub = false
     @State private var navigateToGIS = false
     @State private var navigateToLibrary = false
+    @State private var navigateToITC = false
 
     @State private var currentTime = Date() // 储存当前时间
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect() // 创建一个定时器
@@ -196,13 +197,18 @@ struct HomeView: View
                     
                     if !isGuestMode
                     {
-                        MenuGridItem(title: "宿舍电费", icon: "gauge.with.needle.fill", color: HomeMenuColor.purple1)
+
+                        MenuGridItem(title: "信息学院ITC平台 \n(beta)", icon: "chevron.left.forwardslash.chevron.right", color: HomeMenuColor.green2)
                         {
-                            navigateElectricity = true
+                            navigateToITC = true
                         }
                         MenuGridItem(title: "图书馆预约（beta）", icon: "building.columns.fill", color: HomeMenuColor.cyan2)
                         {
                             navigateToLibrary = true
+                        }
+                        MenuGridItem(title: "宿舍电费", icon: "gauge.with.needle.fill", color: HomeMenuColor.purple1)
+                        {
+                            navigateElectricity = true
                         }
                     }
                     
@@ -239,6 +245,7 @@ struct HomeView: View
                     }
 
 
+
 //                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
 //                    {
 //                        navigateToEvents = true
@@ -271,6 +278,8 @@ struct HomeView: View
             { SchoolGISView() }
             .navigationDestination(isPresented: $navigateToLibrary)
             { LibraryOverviewView() }
+            .navigationDestination(isPresented: $navigateToITC)
+            { ITCView() }
         }
     }
 }
