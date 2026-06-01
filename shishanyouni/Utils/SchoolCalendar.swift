@@ -80,6 +80,11 @@ struct SchoolCalendarView: View {
                     if !iapStore.hasActiveSubscription {
                         iapTeaserSection
                     }
+                    
+                    Divider()
+                        .padding(.vertical, 12)
+                    
+                    webViewSection
                 }
             }
             
@@ -291,6 +296,30 @@ struct SchoolCalendarView: View {
     }
     
     // MARK: - 辅助
+    
+    // MARK: - 原文网页
+    
+    private var webViewSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Text("校历原文（网页版）")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            
+            SchoolCalendarWeb(urlString: schoolCalendarURL)
+                .frame(height: 600)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 12)
+        }
+    }
+    
+    private let schoolCalendarURL = "https://open.work.weixin.qq.com/wwopen/mpnews?mixuin=lu0DCgAABwCtk1udAAAUAA&mfid=WW0313-r02y_AAABwD-jQWRBOWZ_Q52-zt98&idx=0&sn=d9818177ae6ac23d94424b331809cfd4"
     
     private var formattedSelectedDate: String {
         let fmt = DateFormatter()
