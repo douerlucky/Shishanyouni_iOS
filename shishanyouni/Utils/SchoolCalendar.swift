@@ -35,6 +35,7 @@ struct SchoolCalendarWeb: UIViewRepresentable
 struct SchoolCalendarView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var iapStore: IAPStore
+    @EnvironmentObject var userinfo: userInfo
     
     @State private var currentMonth: Date
     @State private var selectedDate: Date
@@ -42,8 +43,23 @@ struct SchoolCalendarView: View {
     @State private var personalEvents: [Event] = []
     @State private var showingEventDetail = false
     @State private var showingAddEvent = false
+    @State private var isSyncing = false
+    @State private var showAlert = false
+    @State private var alertMessage = ""
+    
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+    @State private var mfaSendCodeAction: (() async -> String?)?
     
     private let calendar = Calendar.current
+    private let scheduleQuery = ScheduleQuery()
+    private let calendarFetcher = SchoolCalendarFetcher.shared
+    
+    private var isGuestMode: Bool {
+        userinfo.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
     
     init() {
         let now = Date()
@@ -96,6 +112,21 @@ struct SchoolCalendarView: View {
         .navigationTitle("校历")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    syncSchoolCalendar()
+                } label: {
+                    if isSyncing {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                    }
+                }
+                .disabled(isSyncing)
+            }
+        }
         .onAppear {
             schoolEvents = SchoolCalendarStore.shared.loadEvents()
             personalEvents = EventStore.shared.loadEvents()
@@ -108,6 +139,20 @@ struct SchoolCalendarView: View {
         }
         .sheet(isPresented: $showingAddEvent) {
             EventEditView(events: $personalEvents, mode: .add)
+        }
+        .sheet(isPresented: $showMFASheet) {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                onSendCode: $mfaSendCodeAction,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
+        .alert("提示", isPresented: $showAlert) {
+            Button("确定") {}
+        } message: {
+            Text(alertMessage)
         }
         .onChange(of: showingAddEvent) { newValue in
             if !newValue {
@@ -320,6 +365,143 @@ struct SchoolCalendarView: View {
     }
     
     private let schoolCalendarURL = "https://open.work.weixin.qq.com/wwopen/mpnews?mixuin=lu0DCgAABwCtk1udAAAUAA&mfid=WW0313-r02y_AAABwD-jQWRBOWZ_Q52-zt98&idx=0&sn=d9818177ae6ac23d94424b331809cfd4"
+    
+    // MARK: - 同步校历
+    
+    private func syncSchoolCalendar() {
+        guard !isGuestMode else {
+            alertMessage = "请先登录账号后再同步校历"
+            showAlert = true
+            return
+        }
+        
+        isSyncing = true
+        Task {
+            do {
+                let cookie = try await scheduleQuery.loginAndGetCookie(
+                    username: userinfo.username,
+                    rsaPassword: userinfo.encryptedPasswordSchool,
+                    mfaCodeProvider: requestMFACode
+                )
+                
+                let currentYear = calendar.component(.year, from: Date())
+                let currentMonth = calendar.component(.month, from: Date())
+                
+                // 正方教务 xqm：秋=3，春=12
+                let currentXnm = String(currentMonth <= 7 ? currentYear - 1 : currentYear)
+                let currentXqm = currentMonth <= 7 ? "12" : "3"
+                
+                var allEvents: [SchoolCalendarEvent] = []
+                
+                // 尝试当前学期
+                let fetched = try await calendarFetcher.fetchSchoolCalendar(
+                    cookie: cookie, xnm: currentXnm, xqm: currentXqm
+                )
+                allEvents.append(contentsOf: fetched)
+                
+                // 如果当前学期没有数据，尝试上一学期
+                if allEvents.isEmpty {
+                    let prevXnm = currentMonth <= 7 ? String(currentYear - 2) : String(currentYear - 1)
+                    let prevXqm = currentMonth <= 7 ? "3" : "12"
+                    let prevFetched = try await calendarFetcher.fetchSchoolCalendar(
+                        cookie: cookie, xnm: prevXnm, xqm: prevXqm
+                    )
+                    allEvents.append(contentsOf: prevFetched)
+                }
+                
+                var merged = SchoolCalendarStore.shared.loadEvents()
+                
+                // 将抓取到的事件按 (标题, 类型) 分组，只合并时间相邻的（间隔≤30天）
+                var combinedEvents: [SchoolCalendarEvent] = []
+                let sorted = allEvents.sorted { $0.startDate < $1.startDate }
+                
+                var i = 0
+                while i < sorted.count {
+                    let current = sorted[i]
+                    var earliestStart = current.startDate
+                    var latestEnd = current.endDate ?? current.startDate
+                    var j = i
+                    
+                    while j + 1 < sorted.count {
+                        let next = sorted[j + 1]
+                        let nextStart = next.startDate
+                        let gap = calendar.dateComponents([.day], from: latestEnd, to: nextStart).day ?? 999
+                        if current.title == next.title && current.type == next.type && gap <= 30 {
+                            j += 1
+                            if next.startDate < earliestStart { earliestStart = next.startDate }
+                            if let end = next.endDate, end > latestEnd { latestEnd = end }
+                            else if next.startDate > latestEnd { latestEnd = next.startDate }
+                        } else {
+                            break
+                        }
+                    }
+                    
+                    let mergedEvent = SchoolCalendarEvent(
+                        title: current.title,
+                        startDate: earliestStart,
+                        endDate: earliestStart == latestEnd ? nil : latestEnd,
+                        type: current.type,
+                        description: current.description
+                    )
+                    combinedEvents.append(mergedEvent)
+                    i = j + 1
+                }
+                
+                // 删除旧事件中与抓取事件标题+类型匹配的
+                let fetchedTitles: [String: Set<SchoolEventType>] = {
+                    var dict: [String: Set<SchoolEventType>] = [:]
+                    for e in combinedEvents {
+                        dict[e.title, default: []].insert(e.type)
+                    }
+                    return dict
+                }()
+                merged.removeAll {
+                    if let types = fetchedTitles[$0.title], types.contains($0.type) { return true }
+                    return false
+                }
+                
+                merged.append(contentsOf: combinedEvents)
+                
+                SchoolCalendarStore.shared.saveEvents(merged)
+                
+                await MainActor.run {
+                    schoolEvents = merged
+                    isSyncing = false
+                    alertMessage = allEvents.isEmpty
+                        ? "未从学校系统获取到校历数据，请确认学期设置"
+                        : "成功同步 \(allEvents.count) 条校历信息"
+                    showAlert = true
+                }
+            } catch {
+                await MainActor.run {
+                    isSyncing = false
+                    alertMessage = "同步失败：\(error.localizedDescription)"
+                    showAlert = true
+                }
+            }
+        }
+    }
+    
+    private func requestMFACode(maskedPhone: String?) async -> String? {
+        await MainActor.run {
+            mfaMaskedPhone = maskedPhone ?? ""
+            mfaCode = ""
+            mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        }
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation { continuation in
+            mfaContinuation = continuation
+        }
+    }
+    
+    @MainActor
+    private func resolveMFACode(_ code: String?) {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
+        mfaSendCodeAction = nil
+    }
     
     private var formattedSelectedDate: String {
         let fmt = DateFormatter()

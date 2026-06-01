@@ -185,7 +185,7 @@ struct SchoolCalendarStore {
             events.append(SchoolCalendarEvent(
                 title: "期末考试周",
                 startDate: examStart,
-                endDate: cal.date(byAdding: .day, value: 6, to: examStart),
+                endDate: cal.date(byAdding: .day, value: 11, to: examStart),
                 type: .exam
             ))
             
