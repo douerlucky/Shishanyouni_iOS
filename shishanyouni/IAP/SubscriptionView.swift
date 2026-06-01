@@ -20,23 +20,26 @@ struct SubscriptionView: View
             {
                 headerSection
                 productSection
-                testingGuideSection
+                comparisonSection
+                supportNoticeSection
             }
             .padding(20)
         }
         .background(
             LinearGradient(
                 colors: [
-                    Color.orange.opacity(0.12),
-                    Color.blue.opacity(0.08),
-                    Color(.systemBackground),
+                    themePrimary.opacity(0.18),
+                    themePrimary.opacity(0.08),
+                    Color.white,
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .ignoresSafeArea()
         )
         .navigationTitle("校园通行证服务")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .task
         {
             if store.products.isEmpty
@@ -50,49 +53,43 @@ struct SubscriptionView: View
     {
         VStack(alignment: .leading, spacing: 14)
         {
-            Text("💳 购买狮山有你通行证")
+            Text("购买狮山有你iOS通行证")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
 
-            Text("先把本地 StoreKit 跑通，后面接真实 App Store Connect 时就不会一脸懵。")
+            Text("开发iOS版不易，感谢使用，我们保证所有小程序的功能iOS版全部免费。开通后即可解锁狮山有你iOS校园通行证权益，享受更完整的iOS版专属功能体验。")
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
 
             HStack(spacing: 12)
             {
                 statusPill(
-                    title: store.hasActiveSubscription ? "订阅已激活" : "尚未订阅",
+                    title: store.hasActiveSubscription ? "已是狮山有你iOS校园通行证用户" : "尚未开通",
                     color: store.hasActiveSubscription ? .green : .red
                 )
-
-                statusPill(
-                    title: store.isLoadingProducts ? "读取商品中" : "商品已加载",
-                    color: store.isLoadingProducts ? .orange : .blue
-                )
             }
-
-            Text(store.statusMessage)
-                .font(.footnote)
-                .foregroundColor(.secondary)
-                .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 28)
+                .fill(.ultraThinMaterial)
+        )
     }
 
     private var productSection: some View
     {
         VStack(alignment: .leading, spacing: 14)
         {
-            Text("订阅选项")
+            Text("通行证选项")
                 .font(.title3.bold())
 
             if store.products.isEmpty
             {
                 VStack(alignment: .leading, spacing: 10)
                 {
-                    Text("还没读到订阅商品")
+                    Text("商品信息准备中")
                         .font(.headline)
-                    Text("大概率是当前 Scheme 没绑 `StoreKitConfig.storekit`，下面我把完整流程也写给你了。")
+                    Text("当前暂时未读取到可购买的校园通行证商品，请稍后重试。")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -119,27 +116,71 @@ struct SubscriptionView: View
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(themePrimary.opacity(0.18), lineWidth: 1)
+                    )
             }
             .buttonStyle(.plain)
         }
     }
 
-    private var testingGuideSection: some View
+    private var comparisonSection: some View
+    {
+        VStack(alignment: .leading, spacing: 14)
+        {
+            Text("功能对比")
+                .font(.title3.bold())
+
+            VStack(spacing: 0)
+            {
+                comparisonHeaderRow
+
+                ForEach(comparisonRows, id: \.title)
+                { row in
+                    comparisonRow(row)
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+            )
+        }
+    }
+
+    private var supportNoticeSection: some View
     {
         VStack(alignment: .leading, spacing: 12)
         {
-            Text("本地测试流程")
+            Text("说明")
                 .font(.title3.bold())
 
-            guideRow(index: 1, text: "在 Xcode 顶部选中 `shishanyouni` scheme，然后点 `Edit Scheme...`。")
-            guideRow(index: 2, text: "切到 `Run -> Options`，把 `StoreKit Configuration` 设成 `shishanyouni/IAP/StoreKitConfig.storekit`。")
-            guideRow(index: 3, text: "重新运行 App，进入这个页面后应该能看到两个商品。")
-            guideRow(index: 4, text: "点击购买，系统会弹本地测试购买面板；确认后状态会变成已订阅。")
-            guideRow(index: 5, text: "想重测就用 Xcode 菜单 `Debug -> StoreKit -> Manage Transactions` 删除交易，或者点 `Sync` 恢复。")
+            VStack(alignment: .leading, spacing: 10)
+            {
+                Text("狮山有你iOS校园通行证仅可在狮山有你iOS App内使用。")
+                Text("当前校园通行证为自动续期订阅，可在 Apple 订阅管理中随时取消续费。")
+                Text("狮山有你iOS版与狮山有你微信小程序、狮山有你Android App并非同一开发团队。")
+                Text("狮山有你iOS版遇到的问题，请联系沸点工作室移动App开发组。")
+                Text("狮山有你iOS版相关功能由iOS开发团队负责解释与后续更新。")
+            }
+            .font(.system(size: 14))
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+            )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
     }
 
     private func subscriptionCard(for product: Product) -> some View
@@ -164,7 +205,7 @@ struct SubscriptionView: View
 
                 if purchased
                 {
-                    Label("已订阅", systemImage: "checkmark.seal.fill")
+                    Label("当前生效", systemImage: "checkmark.seal.fill")
                         .font(.footnote.weight(.semibold))
                         .foregroundColor(.green)
                 }
@@ -186,37 +227,81 @@ struct SubscriptionView: View
                     await store.purchase(product)
                 }
             } label: {
-                Text(purchased ? "当前方案已生效" : "购买并测试")
+                Text(purchased ? "当前方案生效中" : "立即开通")
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(
-                        purchaseBackgroundStyle(purchased: purchased, accent: copy.accent),
+                        purchaseBackgroundStyle(purchased: purchased),
                         in: RoundedRectangle(cornerRadius: 18)
                     )
-                    .foregroundColor(purchased ? .green : .white)
+                    .foregroundColor(purchased ? themePrimary : .white)
             }
             .buttonStyle(.plain)
             .disabled(store.isPurchasing || purchased)
         }
         .padding(18)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24))
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+        )
     }
 
-    private func guideRow(index: Int, text: String) -> some View
+    private var comparisonHeaderRow: some View
     {
-        HStack(alignment: .top, spacing: 12)
+        HStack(spacing: 0)
         {
-            Text("\(index)")
-                .font(.footnote.bold())
-                .foregroundColor(.white)
-                .frame(width: 22, height: 22)
-                .background(Color.orange, in: Circle())
-
-            Text(text)
-                .font(.system(size: 14))
-                .foregroundColor(.primary)
+            comparisonCell("功能", alignment: .leading, isHeader: true)
+            comparisonCell("普通用户", alignment: .center, isHeader: true, width: 76)
+            comparisonCell("通行证用户", alignment: .center, isHeader: true, width: 92)
         }
+        .padding(.top, 6)
+    }
+
+    private func comparisonRow(_ row: ComparisonRow) -> some View
+    {
+        HStack(spacing: 0)
+        {
+            comparisonCell(row.title, alignment: .leading)
+            comparisonMarkCell(row.normalUserAvailable, width: 76)
+            comparisonMarkCell(row.passUserAvailable, width: 92)
+        }
+        .overlay(alignment: .top)
+        {
+            Divider()
+                .overlay(themePrimary.opacity(0.08))
+        }
+    }
+
+    private func comparisonCell(
+        _ text: String,
+        alignment: Alignment,
+        isHeader: Bool = false,
+        width: CGFloat? = nil
+    ) -> some View
+    {
+        Text(text)
+            .font(.system(size: isHeader ? 14 : 13, weight: isHeader ? .semibold : .regular))
+            .foregroundColor(.primary)
+            .multilineTextAlignment(alignment == .leading ? .leading : .center)
+            .frame(width: width, alignment: alignment)
+            .frame(maxWidth: width == nil ? .infinity : nil, alignment: alignment)
+            .frame(minHeight: 54, alignment: alignment)
+            .padding(.horizontal, width == nil ? 14 : 8)
+            .padding(.vertical, 6)
+    }
+
+    private func comparisonMarkCell(_ available: Bool, width: CGFloat = 88) -> some View
+    {
+        Image(systemName: available ? "checkmark" : "xmark")
+            .font(.system(size: 15, weight: .bold))
+            .foregroundColor(available ? themePrimary : .secondary.opacity(0.65))
+            .frame(width: width)
+            .frame(minHeight: 54)
     }
 
     private func statusPill(title: String, color: Color) -> some View
@@ -233,48 +318,50 @@ struct SubscriptionView: View
     {
         switch productID
         {
-        case IAPStore.semesterProductID:
-            return "/ 每学期"
-        case IAPStore.yearProductID:
-            return "/ 每年"
+        case IAPStore.monthProductID:
+            return "/ 每月"
+        case IAPStore.halfYearProductID:
+            return "/ 每6个月"
         default:
             return ""
         }
     }
 
-    private func purchaseGradient(for accent: String) -> LinearGradient
+    private var themePrimary: Color
     {
-        switch accent
-        {
-        case "semester":
-            return LinearGradient(
-                colors: [Color.orange, Color.red],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        case "year":
-            return LinearGradient(
-                colors: [Color.blue, Color.cyan],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        default:
-            return LinearGradient(
-                colors: [Color.gray, Color.gray.opacity(0.7)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        }
+        Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255)
     }
 
-    private func purchaseBackgroundStyle(purchased: Bool, accent: String) -> AnyShapeStyle
+    private func purchaseBackgroundStyle(purchased: Bool) -> AnyShapeStyle
     {
         if purchased
         {
-            return AnyShapeStyle(Color.green.opacity(0.18))
+            return AnyShapeStyle(themePrimary.opacity(0.12))
         }
 
-        return AnyShapeStyle(purchaseGradient(for: accent))
+        return AnyShapeStyle(themePrimary)
+    }
+}
+
+private extension SubscriptionView
+{
+    struct ComparisonRow
+    {
+        let title: String
+        let normalUserAvailable: Bool
+        let passUserAvailable: Bool
+    }
+
+    var comparisonRows: [ComparisonRow]
+    {
+        [
+            ComparisonRow(title: "所有狮山有你小程序功能", normalUserAvailable: true, passUserAvailable: true),
+            ComparisonRow(title: "体测查询", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "ITC平台查询", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "桌面小组件（即将推出）", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "日程功能（即将推出）", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "后续iOS版专属功能更新", normalUserAvailable: false, passUserAvailable: true),
+        ]
     }
 }
 
@@ -285,7 +372,7 @@ struct SubscriptionView_Previews: PreviewProvider
         NavigationStack
         {
             SubscriptionView()
-                .environmentObject(IAPStore(autoload: false))
+                .environmentObject(IAPStore())
         }
     }
 }

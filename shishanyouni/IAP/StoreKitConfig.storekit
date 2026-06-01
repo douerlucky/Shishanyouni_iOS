@@ -42,10 +42,19 @@
           "adHocOffers" : [
 
           ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "39.00",
+              "displayPrice" : "39.00",
+              "internalID" : "92C76ABC",
+              "isEnabled" : true
+            }
+          ],
           "codeOffers" : [
 
           ],
-          "displayPrice" : "1.99",
+          "displayPrice" : "38.00",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "5057E870",
@@ -67,14 +76,14 @@
           ],
           "localizations" : [
             {
-              "description" : "解锁校园通行证学期会员权益",
-              "displayName" : "校园通行证（一学期）",
+              "description" : "解锁校园通行证 6 个月会员权益",
+              "displayName" : "校园通行证（6个月）",
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.shishanyouni.vip.semester",
+          "productID" : "com.shishanyouni.vip.six_month_vip",
           "recurringSubscriptionPeriod" : "P6M",
-          "referenceName" : "semester_pass_6m",
+          "referenceName" : "six_month_vip",
           "subscriptionGroupID" : "F818D42C",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
@@ -85,10 +94,19 @@
           "adHocOffers" : [
 
           ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "8.00",
+              "displayPrice" : "8.00",
+              "internalID" : "80F2BFA5",
+              "isEnabled" : true
+            }
+          ],
           "codeOffers" : [
 
           ],
-          "displayPrice" : "3.49",
+          "displayPrice" : "8.00",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "3FCCC09C",
@@ -97,14 +115,14 @@
           ],
           "localizations" : [
             {
-              "description" : "解锁校园通行证年度会员权益",
-              "displayName" : "校园通行证（一年）",
+              "description" : "解锁校园通行证 1 个月会员权益",
+              "displayName" : "校园通行证（1个月）",
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.shishanyouni.vip.year",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "year_pass_1y",
+          "productID" : "com.shishanyouni.vip.month_vip",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "month_vip",
           "subscriptionGroupID" : "F818D42C",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

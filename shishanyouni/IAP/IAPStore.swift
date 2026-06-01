@@ -11,6 +11,8 @@ import StoreKit
 @MainActor
 final class IAPStore: ObservableObject
 {
+    static let shared = IAPStore()
+
     struct ProductCopy
     {
         let title: String
@@ -18,18 +20,20 @@ final class IAPStore: ObservableObject
         let accent: String
     }
 
-    static let semesterProductID = "com.shishanyouni.vip.semester"
-    static let yearProductID = "com.shishanyouni.vip.year"
+    static let monthProductID = "com.shishanyouni.vip.month_vip"
+    static let halfYearProductID = "com.shishanyouni.vip.six_month_vip"
 
     @Published private(set) var products: [Product] = []
     @Published private(set) var purchasedProductIDs: Set<String> = []
+    @Published private(set) var activeProductID: String?
+    @Published private(set) var activeExpirationDate: Date?
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var isPurchasing = false
-    @Published var statusMessage = "正在连接 App Store..."
+    @Published var statusMessage = "正在加载校园通行证商品..."
 
     private let productIDs = [
-        IAPStore.semesterProductID,
-        IAPStore.yearProductID,
+        IAPStore.monthProductID,
+        IAPStore.halfYearProductID,
     ]
     private var updatesTask: Task<Void, Never>?
     init(autoload: Bool = true)
@@ -70,11 +74,11 @@ final class IAPStore: ObservableObject
 
             if products.isEmpty
             {
-                statusMessage = "没有读取到订阅商品，请检查 Scheme 是否绑定了 StoreKitConfig.storekit"
+                statusMessage = "暂时没有读取到校园通行证商品，请检查 ASC 商品是否已配置完成。"
             }
             else
             {
-                statusMessage = hasActiveSubscription ? "已读取订阅并检测到有效会员" : "已读取订阅商品，可以开始本地测试"
+                statusMessage = hasActiveSubscription ? "已读取商品，并检测到当前有效的校园通行证权益。" : "已读取校园通行证商品。"
             }
         }
         catch
@@ -86,7 +90,7 @@ final class IAPStore: ObservableObject
     func purchase(_ product: Product) async
     {
         isPurchasing = true
-        statusMessage = "正在发起购买：\(copy(for: product.id).title)"
+        statusMessage = "正在开通：\(copy(for: product.id).title)"
         defer { isPurchasing = false }
 
         do
@@ -97,16 +101,15 @@ final class IAPStore: ObservableObject
             {
             case let .success(verificationResult):
                 let transaction = try verify(verificationResult)
-                purchasedProductIDs.insert(transaction.productID)
-                statusMessage = "购买成功：\(copy(for: transaction.productID).title)"
+                statusMessage = "开通成功：\(copy(for: transaction.productID).title)"
                 await transaction.finish()
                 await refreshEntitlements()
             case .pending:
-                statusMessage = "订单待处理，等系统确认后会自动刷新"
+                statusMessage = "订单正在等待系统确认，稍后会自动刷新。"
             case .userCancelled:
-                statusMessage = "你取消了购买，哼"
+                statusMessage = "你取消了这次开通。"
             @unknown default:
-                statusMessage = "出现了未知购买状态"
+                statusMessage = "出现了未知购买状态。"
             }
         }
         catch
@@ -121,60 +124,71 @@ final class IAPStore: ObservableObject
         {
             try await AppStore.sync()
             await refreshEntitlements()
-            statusMessage = hasActiveSubscription ? "已恢复购买记录" : "当前没有可恢复的有效订阅"
+            statusMessage = hasActiveSubscription ? "已同步购买记录" : "当前没有可同步的有效校园通行证权益。"
         }
         catch
         {
-            statusMessage = "恢复购买失败：\(error.localizedDescription)"
+            statusMessage = "同步购买记录失败：\(error.localizedDescription)"
         }
     }
 
-    // 刷新状态
     func refreshEntitlements() async
     {
-        var activeProductIDs: Set<String> = []
+        var activeEntitlements: [(productID: String, expirationDate: Date)] = []
+        let now = Date()
 
         for await result in Transaction.currentEntitlements
         {
             guard case let .verified(transaction) = result else { continue }
-            activeProductIDs.insert(transaction.productID)
+            let expirationDate = transaction.expirationDate ?? .distantFuture
+
+            if expirationDate > now
+            {
+                activeEntitlements.append((transaction.productID, expirationDate))
+            }
         }
 
-        purchasedProductIDs = activeProductIDs
+        let currentAccess = activeEntitlements.max
+        { lhs, rhs in
+            lhs.expirationDate < rhs.expirationDate
+        }
 
-        //写入小组件的共享组
+        activeProductID = currentAccess?.productID
+        activeExpirationDate = currentAccess?.expirationDate
+        purchasedProductIDs = currentAccess.map { [$0.productID] } ?? []
+
         WidgetSharedStore.saveSubscriptionStatus(
-            isActive: !activeProductIDs.isEmpty,
-            productID: activeProductIDs.first,
-            expiration: nil
+            isActive: currentAccess != nil,
+            productID: currentAccess?.productID,
+            expiration: currentAccess?.expirationDate == .distantFuture ? nil : currentAccess?.expirationDate.timeIntervalSince1970
         )
     }
 
     var hasActiveSubscription: Bool
     {
-        !purchasedProductIDs.isEmpty
+        activeProductID != nil
     }
 
     func isPurchased(_ productID: String) -> Bool
     {
-        purchasedProductIDs.contains(productID)
+        activeProductID == productID
     }
 
     func copy(for productID: String) -> ProductCopy
     {
         switch productID
         {
-        case IAPStore.semesterProductID:
+        case IAPStore.monthProductID:
             return ProductCopy(
-                title: "校园通行证（一学期）",
-                subtitle: "适合先试用一学期，把小组件和会员能力都跑通",
-                accent: "semester"
+                title: "校园通行证（1个月）",
+                subtitle: "一个月畅享狮山有你所有Pro功能",
+                accent: "month"
             )
-        case IAPStore.yearProductID:
+        case IAPStore.halfYearProductID:
             return ProductCopy(
-                title: "校园通行证（一年）",
-                subtitle: "更省心的一年订阅，后面做正式上架时也更像完整版套餐",
-                accent: "year"
+                title: "校园通行证一学期（6个月）",
+                subtitle: "一学期畅享狮山有你所有Pro功能",
+                accent: "halfyear"
             )
         default:
             return ProductCopy(
@@ -213,6 +227,7 @@ final class IAPStore: ObservableObject
     {
         productIDs.firstIndex(of: productID) ?? .max
     }
+
 }
 
 extension IAPStore

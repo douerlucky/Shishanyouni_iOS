@@ -40,9 +40,12 @@ struct HomeView: View
     @State private var navigateToGIS = false
     @State private var navigateToLibrary = false
     @State private var navigateToITC = false
+    @State private var navigateToSubscription = false
 
     @State private var currentTime = Date() // 储存当前时间
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect() // 创建一个定时器
+
+    @EnvironmentObject var iapStore: IAPStore
 
     var timeString: String
     {
@@ -167,15 +170,12 @@ struct HomeView: View
                         {
                             navigateToAllCoueseSearch = true
                         }
-
                     }
-
 
                     MenuGridItem(title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1)
                     {
                         navigateToClassroom = true
                     }
-                    
 
                     if !isGuestMode
                     {
@@ -186,37 +186,56 @@ struct HomeView: View
 
                         MenuGridItem(title: "体测查询", icon: "figure.run.square.stack.fill", color: HomeMenuColor.blue1)
                         {
-                            navigateToPhysicalTest = true
+                            if iapStore.hasActiveSubscription
+                            {
+                                navigateToPhysicalTest = true
+                            }
+                            else
+                            {
+                                navigateToSubscription = true
+                            }
                         }
                     }
                     MenuGridItem(title: "体测计算器", icon: "plus.forwardslash.minus", color: HomeMenuColor.blue2)
                     {
                         navigateToPhysicalTestCalculator = true
                     }
-                    
-                    
+
                     if !isGuestMode
                     {
-
                         MenuGridItem(title: "信息学院ITC平台 \n(beta)", icon: "chevron.left.forwardslash.chevron.right", color: HomeMenuColor.green2)
                         {
-                            navigateToITC = true
+                            if iapStore.hasActiveSubscription
+                            {
+                                navigateToITC = true
+                            }
+                            else
+                            {
+                                navigateToSubscription = true
+                            }
                         }
                         MenuGridItem(title: "图书馆预约（beta）", icon: "building.columns.fill", color: HomeMenuColor.cyan2)
                         {
-                            navigateToLibrary = true
+                            if iapStore.hasActiveSubscription
+                            {
+                                navigateToLibrary = true
+                            }
+                            else
+                            {
+                                navigateToSubscription = true
+                            }
                         }
                         MenuGridItem(title: "宿舍电费", icon: "gauge.with.needle.fill", color: HomeMenuColor.purple1)
                         {
                             navigateElectricity = true
                         }
                     }
-                    
+
 //                    MenuGridItem(title: "校园地图", icon: "map.fill", color: HomeMenuColor.green2)
 //                    {
 //                        navigateToGIS = true
 //                    }
-//                    
+//
                     if #available(iOS 26.0, *)
                     {
                         MenuGridItem(title: "校历查询", icon: date + ".calendar", color: HomeMenuColor.purple2)
@@ -244,8 +263,6 @@ struct HomeView: View
                         navigateToClub = true
                     }
 
-
-
 //                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
 //                    {
 //                        navigateToEvents = true
@@ -259,6 +276,7 @@ struct HomeView: View
             .navigationDestination(isPresented: $navigateToExams) { ExamView() }
             .navigationDestination(isPresented: $navigateToNanhuRun) { NanhuRunView() }
             .navigationDestination(isPresented: $navigateToPhysicalTest) { PhysicalTestView() }
+            .navigationDestination(isPresented: $navigateToSubscription) { SubscriptionView() }
             .navigationDestination(isPresented: $navigateToPhysicalTestCalculator) { PhysicalTestCalculatorView() }
             .navigationDestination(isPresented: $navigateToAllCoueseSearch) { AllCourseView() }
             .navigationDestination(isPresented: $navigateToSchoolCalender) { SchoolCalendarView() }
@@ -323,4 +341,5 @@ struct MenuGridItem: View
 {
     HomeView()
         .environmentObject(userInfo())
+        .environmentObject(IAPStore(autoload: false))
 }
