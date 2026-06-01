@@ -263,10 +263,17 @@ struct HomeView: View
                         navigateToClub = true
                     }
 
-//                    MenuGridItem(title: "每日日程", icon: "calendar.day.timeline.left", color: .purple)
-//                    {
-//                        navigateToEvents = true
-//                    }
+                    MenuGridItem(title: "私人行程与日程", icon: "calendar.day.timeline.left", color: HomeMenuColor.purple1)
+                    {
+                        if iapStore.hasActiveSubscription
+                        {
+                            navigateToEvents = true
+                        }
+                        else
+                        {
+                            navigateToSubscription = true
+                        }
+                    }
                 }
                 .padding()
             }

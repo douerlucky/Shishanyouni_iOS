@@ -359,7 +359,7 @@ private extension SubscriptionView
             ComparisonRow(title: "体测查询", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "ITC平台查询", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "桌面小组件（即将推出）", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "日程功能（即将推出）", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "私人行程与日程", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "后续iOS版专属功能更新", normalUserAvailable: false, passUserAvailable: true),
         ]
     }

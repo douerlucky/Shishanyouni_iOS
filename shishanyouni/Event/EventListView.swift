@@ -50,7 +50,7 @@ struct EventListView: View {
                     }
                 }
             }
-            .navigationTitle("每日日程")
+            .navigationTitle("私人行程与日程")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -135,6 +135,10 @@ struct EventRow: View {
     
     var body: some View {
         HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(event.displayColor)
+                .frame(width: 4, height: 48)
+            
             Button {
                 print("EventRow 按钮点击: \(event.title)")
                 completed.toggle()
@@ -154,30 +158,55 @@ struct EventRow: View {
                     .strikethrough(completed, color: .gray)
                     .foregroundColor(completed ? .gray : .primary)
                 
-                if let timeText = event.formattedTime() {
-                    Text(timeText)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                HStack(spacing: 6) {
+                    if let timeText = event.formattedTime() {
+                        Text(timeText)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if event.isAllDay {
+                        Text("全天")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(3)
+                    }
+                    
+                    HStack(spacing: 2) {
+                        Image(systemName: event.category.systemImage)
+                            .font(.system(size: 9))
+                        Text(event.category.rawValue)
+                    }
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(event.category.defaultColor.opacity(0.1))
+                    .foregroundColor(event.category.defaultColor)
+                    .cornerRadius(3)
+                }
+                
+                if let location = event.location, !location.isEmpty {
+                    HStack(spacing: 2) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.system(size: 10))
+                        Text(location)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
                 }
                 
                 if let note = event.note, !note.isEmpty {
                     Text(note)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
                 }
             }
             
             Spacer()
-            
-            if event.isAllDay {
-                Text("全天")
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
-            }
         }
         .padding(.vertical, 4)
         .onChange(of: completed) { newValue in

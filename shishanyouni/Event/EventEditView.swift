@@ -38,6 +38,11 @@ struct EventEditView: View {
     @State private var endTime: Date = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var note: String = ""
     
+    // 行程属性
+    @State private var location: String = ""
+    @State private var category: EventCategory = .todo
+    @State private var colorIndex: Int = 0
+    
     // 重复设置
     @State private var isRepeating: Bool = false
     @State private var repeatFrequency: RepeatFrequency = .daily
@@ -61,6 +66,9 @@ struct EventEditView: View {
             _startTime = State(initialValue: event.startTime ?? Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date())
             _endTime = State(initialValue: event.endTime ?? Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date()) ?? Date())
             _note = State(initialValue: event.note ?? "")
+            _location = State(initialValue: event.location ?? "")
+            _category = State(initialValue: event.category)
+            _colorIndex = State(initialValue: event.colorIndex ?? 0)
             
             if let rule = event.repeatRule {
                 _isRepeating = State(initialValue: true)
@@ -97,6 +105,63 @@ struct EventEditView: View {
                         .frame(minHeight: 80)
                 }
                 
+                Section("行程属性") {
+                    HStack {
+                        Image(systemName: "mappin.and.ellipse")
+                            .foregroundColor(.secondary)
+                        TextField("地点（选填）", text: $location)
+                    }
+                    
+                    Picker(selection: $category) {
+                        ForEach(EventCategory.allCases, id: \.self) { cat in
+                            HStack {
+                                Image(systemName: cat.systemImage)
+                                Text(cat.rawValue)
+                            }
+                            .tag(cat)
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "tag")
+                            Text("分类")
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "paintpalette")
+                            Text("颜色")
+                            Spacer()
+                            Circle()
+                                .fill(EventColorPalette.color(for: colorIndex))
+                                .frame(width: 24, height: 24)
+                        }
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
+                            ForEach(0..<EventColorPalette.colors.count, id: \.self) { idx in
+                                Button {
+                                    colorIndex = idx
+                                } label: {
+                                    Circle()
+                                        .fill(EventColorPalette.color(for: idx))
+                                        .frame(width: 36, height: 36)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.primary, lineWidth: colorIndex == idx ? 3 : 0)
+                                        )
+                                        .overlay(
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 12, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .opacity(colorIndex == idx ? 1 : 0)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                
                 Section("重复设置") {
                     Toggle("重复", isOn: $isRepeating)
                     
@@ -121,24 +186,55 @@ struct EventEditView: View {
                 
                 Section("预览") {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(title.isEmpty ? "未命名日程" : title)
-                            .font(.headline)
+                        HStack(spacing: 8) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(EventColorPalette.color(for: colorIndex))
+                                .frame(width: 4, height: 40)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(title.isEmpty ? "未命名日程" : title)
+                                    .font(.headline)
+                                
+                                Text(formatDate(date))
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
                         
-                        Text(formatDate(date))
-                            .font(.subheadline)
+                        HStack(spacing: 8) {
+                            if isAllDay {
+                                Text("全天")
+                                    .font(.caption)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(4)
+                            } else {
+                                Text("\(timeFormatter.string(from: startTime)) - \(timeFormatter.string(from: endTime))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            HStack(spacing: 4) {
+                                Image(systemName: category.systemImage)
+                                    .font(.caption)
+                                Text(category.rawValue)
+                            }
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(category.defaultColor.opacity(0.1))
+                            .cornerRadius(4)
+                        }
+                        
+                        if !location.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "mappin.and.ellipse")
+                                    .font(.caption)
+                                Text(location)
+                            }
+                            .font(.caption)
                             .foregroundColor(.secondary)
-                        
-                        if isAllDay {
-                            Text("全天")
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(4)
-                        } else {
-                            Text("\(timeFormatter.string(from: startTime)) - \(timeFormatter.string(from: endTime))")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
                         }
                         
                         if !note.isEmpty {
@@ -187,6 +283,8 @@ struct EventEditView: View {
     private func saveEvent() {
         let repeatRule: RepeatRule? = isRepeating ? RepeatRule(frequency: repeatFrequency, interval: repeatInterval, endCondition: .never) : nil
         
+        let trimmedLocation = location.trimmingCharacters(in: .whitespaces)
+        
         let newEvent: Event
         switch mode {
         case .add:
@@ -197,6 +295,9 @@ struct EventEditView: View {
                 startTime: isAllDay ? nil : startTime,
                 endTime: isAllDay ? nil : endTime,
                 note: note.trimmingCharacters(in: .whitespaces).isEmpty ? nil : note.trimmingCharacters(in: .whitespaces),
+                location: trimmedLocation.isEmpty ? nil : trimmedLocation,
+                category: category,
+                colorIndex: colorIndex,
                 isCompleted: false,
                 repeatRule: repeatRule
             )
@@ -211,6 +312,9 @@ struct EventEditView: View {
                 startTime: isAllDay ? nil : startTime,
                 endTime: isAllDay ? nil : endTime,
                 note: note.trimmingCharacters(in: .whitespaces).isEmpty ? nil : note.trimmingCharacters(in: .whitespaces),
+                location: trimmedLocation.isEmpty ? nil : trimmedLocation,
+                category: category,
+                colorIndex: colorIndex,
                 isCompleted: oldEvent.isCompleted,
                 repeatRule: repeatRule
             )
