@@ -30,6 +30,7 @@ struct shishanyouniApp: App
 
     private func requestNotificationPermission()
     {
+        UNUserNotificationCenter.current().delegate = ScheduleNotificationManager.shared
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
         { granted, _ in
             print(granted ? "✅ 通知权限已授权" : "⚠️ 通知权限被拒绝")

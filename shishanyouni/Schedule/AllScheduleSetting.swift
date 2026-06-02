@@ -146,13 +146,31 @@ struct AllScheduleSetting: View
     @ViewBuilder
     private func courseCard(_ course: Course) -> some View
     {
+        let reminderOn = ScheduleNotificationManager.shared.isReminderEnabled(for: course.id)
+
         VStack(alignment: .leading, spacing: 6)
         {
-            Text(course.name)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .lineLimit(2)
-                .padding(.vertical,4)
+            HStack {
+                Text(course.name)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+
+                Spacer()
+
+                Button {
+                    let toggled = !ScheduleNotificationManager.shared.isReminderEnabled(for: course.id)
+                    ScheduleNotificationManager.shared.toggleReminder(for: course.id, enabled: toggled)
+                } label: {
+                    Image(systemName: reminderOn ? "bell.fill" : "bell.slash")
+                        .font(.system(size: 16))
+                        .foregroundColor(reminderOn ? .yellow : .gray)
+                        .frame(width: 36, height: 36)
+                        .background(reminderOn ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.15))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
 
             Label("周\(toWeekday(course.day)) 第\(course.start)-\(course.endPeriod)节",
                   systemImage: "clock")
@@ -178,7 +196,7 @@ struct AllScheduleSetting: View
         )
         .opacity(0.8)
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:24)
-        
+
     }
 
     private func toWeekday(_ day: Int) -> String
@@ -258,6 +276,7 @@ struct AllScheduleSetting: View
     private func saveCourses()
     {
         WidgetSharedStore.saveCourses(courses)
+        ScheduleNotificationManager.shared.scheduleAllCourseReminders()
     }
 
     private func sortCoursesByNameAndTime()

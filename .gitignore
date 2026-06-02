@@ -34,3 +34,6 @@ Icon
 
 # CocoaPods
 Pods/
+
+# 本地开发账号配置（不提交）
+DevConfig.json

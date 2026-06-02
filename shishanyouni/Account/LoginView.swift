@@ -566,6 +566,16 @@ extension LoginView {
     }
 }
 
+private final class PreviewTextField: UITextField {
+    var _intrinsicContentSize: CGSize = CGSize(width: UIView.noIntrinsicMetric, height: 44)
+
+    override var intrinsicContentSize: CGSize { _intrinsicContentSize }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        return bounds.contains(point) ? self : super.hitTest(point, with: event)
+    }
+}
+
 private struct CanvasLoginTextField: UIViewRepresentable
 {
     @Binding var text: String
@@ -575,7 +585,7 @@ private struct CanvasLoginTextField: UIViewRepresentable
 
     func makeUIView(context: Context) -> UITextField
     {
-        let textField = UITextField(frame: .zero)
+        let textField = PreviewTextField()
         textField.placeholder = placeholder
         textField.borderStyle = .none
         textField.backgroundColor = .clear
@@ -602,6 +612,8 @@ private struct CanvasLoginTextField: UIViewRepresentable
         uiView.placeholder = placeholder
         uiView.keyboardType = keyboardType
         uiView.isSecureTextEntry = isSecure
+        (uiView as? PreviewTextField)?._intrinsicContentSize.height = uiView.bounds.height > 0 ? uiView.bounds.height : 44
+        uiView.invalidateIntrinsicContentSize()
     }
 
     func makeCoordinator() -> Coordinator

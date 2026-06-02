@@ -88,6 +88,19 @@ class userInfo: ObservableObject
     // 加载保存的学号和密码
     func loadUserInfo()
     {
+        #if DEBUG
+        if let (devUser, devPass) = loadDevConfig(), !devUser.isEmpty {
+            username = devUser
+            plainPassword = devPass
+            performSchoolEncryption()
+            performShishanyouniEncryption()
+            isCASBound = true
+            isShishanyouniBound = true
+            print("✅ 已从 DevConfig.json 自动登录: \(username)")
+            return
+        }
+        #endif
+
         // 从 UserDefaults 读取学号
         if let savedUsername = UserDefaults.standard.string(forKey: StorageKey.savedUsername),
            !savedUsername.isEmpty
@@ -253,4 +266,19 @@ class userInfo: ObservableObject
         UserDefaults.standard.set(isCASBound, forKey: StorageKey.savedCASBound)
         UserDefaults.standard.set(isShishanyouniBound, forKey: StorageKey.savedBackendBound)
     }
+
+    #if DEBUG
+    private func loadDevConfig() -> (String, String)? {
+        let configURL = URL(fileURLWithPath: #file)
+            .deletingLastPathComponent()  // Data/
+            .deletingLastPathComponent()  // shishanyouni/
+            .deletingLastPathComponent()  // project root
+            .appendingPathComponent("DevConfig.json")
+        guard let data = try? Data(contentsOf: configURL),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+              let user = json["username"], let pass = json["password"],
+              !user.isEmpty, !pass.isEmpty else { return nil }
+        return (user, pass)
+    }
+    #endif
 }

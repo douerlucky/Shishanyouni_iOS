@@ -61,6 +61,9 @@ struct ScheduleSettingView: View {
     
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
 
+    @AppStorage("scheduleNotificationMinutes") private var notificationMinutes: Int = 10
+    @State private var pendingNotificationCount: Int = 0
+
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
 
     /// 学年显示列表
@@ -73,6 +76,7 @@ struct ScheduleSettingView: View {
                 dateSection
                 importSection
                 clearSection
+                notificationSection
                 backgroundSection
                 saveSection
             }
@@ -236,6 +240,46 @@ struct ScheduleSettingView: View {
             Button("清除", role: .destructive) { clearAllCourses() }
         } message: {
             Text("此操作将删除全部课程，包括导入和手动添加的，无法恢复。")
+        }
+    }
+
+    private var notificationSection: some View {
+        Section {
+            Picker("提前提醒", selection: $notificationMinutes) {
+                Text("5分钟").tag(5)
+                Text("10分钟").tag(10)
+                Text("15分钟").tag(15)
+            }
+            .onChange(of: notificationMinutes) { newValue in
+                ScheduleNotificationManager.shared.reminderMinutesBefore = newValue
+                ScheduleNotificationManager.shared.rescheduleAllNotifications()
+            }
+
+            Button {
+                ScheduleNotificationManager.shared.cancelAllClassReminders()
+                pendingNotificationCount = 0
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("清除所有上课提醒")
+                        .fontWeight(.semibold)
+                        .foregroundColor(.red)
+                    Spacer()
+                }
+            }
+            .listRowSeparator(.hidden)
+        } header: {
+            Text("上课提醒")
+        } footer: {
+            Text(pendingNotificationCount > 0
+                 ? "当前已设置 \(pendingNotificationCount) 个上课提醒"
+                 : "尚未设置上课提醒，请在「全部课程」中为课程开启提醒")
+                .font(.caption)
+        }
+        .onAppear {
+            ScheduleNotificationManager.shared.pendingNotificationCount { count in
+                pendingNotificationCount = count
+            }
         }
     }
 

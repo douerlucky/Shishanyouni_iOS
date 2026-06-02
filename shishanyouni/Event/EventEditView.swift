@@ -42,7 +42,12 @@ struct EventEditView: View {
     @State private var location: String = ""
     @State private var category: EventCategory = .todo
     @State private var colorIndex: Int = 0
-    
+
+    // 优先级 & 截止时间
+    @State private var priority: EventPriority = .medium
+    @State private var hasDueDate: Bool = false
+    @State private var dueDate: Date = Date()
+
     // 重复设置
     @State private var isRepeating: Bool = false
     @State private var repeatFrequency: RepeatFrequency = .daily
@@ -69,7 +74,10 @@ struct EventEditView: View {
             _location = State(initialValue: event.location ?? "")
             _category = State(initialValue: event.category)
             _colorIndex = State(initialValue: event.colorIndex ?? 0)
-            
+            _priority = State(initialValue: event.priority)
+            _hasDueDate = State(initialValue: event.dueDate != nil)
+            _dueDate = State(initialValue: event.dueDate ?? Date())
+
             if let rule = event.repeatRule {
                 _isRepeating = State(initialValue: true)
                 _repeatFrequency = State(initialValue: rule.frequency)
@@ -162,6 +170,37 @@ struct EventEditView: View {
                     }
                 }
                 
+                Section("优先级与截止") {
+                    Picker(selection: $priority) {
+                        ForEach(EventPriority.allCases, id: \.self) { p in
+                            HStack(spacing: 4) {
+                                Image(systemName: p.systemImage)
+                                    .foregroundColor(p.tintColor)
+                                    .font(.system(size: 12))
+                                Text(p.rawValue)
+                            }
+                            .tag(p)
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "flag")
+                            Text("优先级")
+                        }
+                    }
+
+                    Toggle(isOn: $hasDueDate) {
+                        HStack {
+                            Image(systemName: "calendar.badge.exclamationmark")
+                            Text("截止时间")
+                        }
+                    }
+
+                    if hasDueDate {
+                        DatePicker("截止", selection: $dueDate, displayedComponents: .date)
+                            .environment(\.locale, Locale(identifier: "zh_CN"))
+                    }
+                }
+
                 Section("重复设置") {
                     Toggle("重复", isOn: $isRepeating)
                     
@@ -237,6 +276,28 @@ struct EventEditView: View {
                             .foregroundColor(.secondary)
                         }
                         
+                        HStack(spacing: 4) {
+                            Image(systemName: priority.systemImage)
+                                .font(.caption)
+                            Text(priority.rawValue)
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(priority.tintColor.opacity(0.1))
+                        .foregroundColor(priority.tintColor)
+                        .cornerRadius(4)
+
+                        if hasDueDate {
+                            HStack(spacing: 4) {
+                                Image(systemName: "calendar.badge.exclamationmark")
+                                    .font(.caption)
+                                Text("截止: \(formatDate(dueDate))")
+                            }
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        }
+
                         if !note.isEmpty {
                             Text(note)
                                 .font(.caption)
@@ -282,9 +343,10 @@ struct EventEditView: View {
     
     private func saveEvent() {
         let repeatRule: RepeatRule? = isRepeating ? RepeatRule(frequency: repeatFrequency, interval: repeatInterval, endCondition: .never) : nil
-        
+
         let trimmedLocation = location.trimmingCharacters(in: .whitespaces)
-        
+        let finalDueDate: Date? = hasDueDate ? dueDate : nil
+
         let newEvent: Event
         switch mode {
         case .add:
@@ -299,10 +361,12 @@ struct EventEditView: View {
                 category: category,
                 colorIndex: colorIndex,
                 isCompleted: false,
-                repeatRule: repeatRule
+                repeatRule: repeatRule,
+                priority: priority,
+                dueDate: finalDueDate
             )
             events.append(newEvent)
-            
+
         case let .edit(oldEvent):
             newEvent = Event(
                 id: oldEvent.id,
@@ -316,7 +380,9 @@ struct EventEditView: View {
                 category: category,
                 colorIndex: colorIndex,
                 isCompleted: oldEvent.isCompleted,
-                repeatRule: repeatRule
+                repeatRule: repeatRule,
+                priority: priority,
+                dueDate: finalDueDate
             )
             if let index = events.firstIndex(where: { $0.id == oldEvent.id }) {
                 events[index] = newEvent

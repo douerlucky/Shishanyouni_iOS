@@ -6,6 +6,37 @@
 import Foundation
 import SwiftUI
 
+// MARK: - 优先级
+enum EventPriority: String, Codable, CaseIterable {
+    case high = "⚠️ 高"
+    case medium = "中"
+    case low = "低"
+
+    var sortOrder: Int {
+        switch self {
+        case .high: return 0
+        case .medium: return 1
+        case .low: return 2
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .high: return "exclamationmark.3"
+        case .medium: return "exclamationmark.2"
+        case .low: return "exclamationmark"
+        }
+    }
+
+    var tintColor: Color {
+        switch self {
+        case .high: return .red
+        case .medium: return .orange
+        case .low: return .gray
+        }
+    }
+}
+
 // MARK: - 事项分类
 enum EventCategory: String, Codable, CaseIterable {
     case trip = "行程"
@@ -102,8 +133,10 @@ struct Event: Identifiable, Codable {
     var colorIndex: Int?
     var isCompleted: Bool
     var repeatRule: RepeatRule?
-    
-    init(id: UUID = UUID(), title: String, date: Date, isAllDay: Bool = false, startTime: Date? = nil, endTime: Date? = nil, note: String? = nil, location: String? = nil, category: EventCategory = .todo, colorIndex: Int? = nil, isCompleted: Bool = false, repeatRule: RepeatRule? = nil) {
+    var priority: EventPriority
+    var dueDate: Date?
+
+    init(id: UUID = UUID(), title: String, date: Date, isAllDay: Bool = false, startTime: Date? = nil, endTime: Date? = nil, note: String? = nil, location: String? = nil, category: EventCategory = .todo, colorIndex: Int? = nil, isCompleted: Bool = false, repeatRule: RepeatRule? = nil, priority: EventPriority = .medium, dueDate: Date? = nil) {
         self.id = id
         self.title = title
         self.date = date
@@ -116,8 +149,15 @@ struct Event: Identifiable, Codable {
         self.colorIndex = colorIndex
         self.isCompleted = isCompleted
         self.repeatRule = repeatRule
+        self.priority = priority
+        self.dueDate = dueDate
     }
-    
+
+    var isOverdue: Bool {
+        guard !isCompleted, let due = dueDate else { return false }
+        return Calendar.current.startOfDay(for: Date()) > Calendar.current.startOfDay(for: due)
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -132,8 +172,10 @@ struct Event: Identifiable, Codable {
         colorIndex = try container.decodeIfPresent(Int.self, forKey: .colorIndex)
         isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
         repeatRule = try container.decodeIfPresent(RepeatRule.self, forKey: .repeatRule)
+        priority = try container.decodeIfPresent(EventPriority.self, forKey: .priority) ?? .medium
+        dueDate = try container.decodeIfPresent(Date.self, forKey: .dueDate)
     }
-    
+
     var displayColor: Color {
         if let idx = colorIndex {
             return EventColorPalette.color(for: idx)
