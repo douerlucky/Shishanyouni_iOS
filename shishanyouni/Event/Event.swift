@@ -7,7 +7,7 @@ import Foundation
 import SwiftUI
 
 // MARK: - 优先级
-enum EventPriority: String, Codable, CaseIterable {
+enum EventPriority: String, Codable, CaseIterable, Equatable {
     case high = "⚠️ 高"
     case medium = "中"
     case low = "低"
@@ -38,7 +38,7 @@ enum EventPriority: String, Codable, CaseIterable {
 }
 
 // MARK: - 事项分类
-enum EventCategory: String, Codable, CaseIterable {
+enum EventCategory: String, Codable, CaseIterable, Equatable {
     case trip = "行程"
     case todo = "待办"
     case memo = "备忘"
@@ -94,7 +94,7 @@ struct EventColorPalette {
 }
 
 // MARK: - 重复规则
-enum RepeatFrequency: String, Codable, CaseIterable {
+enum RepeatFrequency: String, Codable, CaseIterable, Equatable {
     case daily = "每天"
     case weekly = "每周"
     case biweekly = "隔周"
@@ -102,13 +102,13 @@ enum RepeatFrequency: String, Codable, CaseIterable {
     case custom = "自定义间隔"
 }
 
-enum RepeatEndCondition: Codable {
+enum RepeatEndCondition: Codable, Equatable {
     case never
     case untilDate(Date)
     case count(Int)
 }
 
-struct RepeatRule: Codable {
+struct RepeatRule: Codable, Equatable {
     let frequency: RepeatFrequency
     let interval: Int  // 间隔，例如 2 表示每2天/周
     let endCondition: RepeatEndCondition
@@ -121,7 +121,7 @@ struct RepeatRule: Codable {
 }
 
 // MARK: - 子任务
-struct SubTask: Identifiable, Codable {
+struct SubTask: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
     var isCompleted: Bool
@@ -133,7 +133,7 @@ struct SubTask: Identifiable, Codable {
     }
 }
 
-struct Event: Identifiable, Codable {
+struct Event: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
     var date: Date

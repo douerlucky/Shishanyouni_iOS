@@ -34,7 +34,6 @@ struct HomeView: View
     @State private var navigateToBus = false
     @State private var navigateElectricity = false
     @State private var navigateToClassroom = false
-    @State private var navigateToEvents = false
     @State private var navigateToStrategy = false
     @State private var navigateToClub = false
     @State private var navigateToGIS = false
@@ -238,14 +237,14 @@ struct HomeView: View
 //
                     if #available(iOS 26.0, *)
                     {
-                        MenuGridItem(title: "校历查询", icon: date + ".calendar", color: HomeMenuColor.purple2)
+                        MenuGridItem(title: "日程与校历", icon: date + ".calendar", color: HomeMenuColor.purple2)
                         {
                             navigateToSchoolCalender = true
                         }
                     }
                     else
                     {
-                        MenuGridItem(title: "校历查询", icon: "calendar", color: HomeMenuColor.purple2)
+                        MenuGridItem(title: "日程与校历", icon: "calendar", color: HomeMenuColor.purple2)
                         {
                             navigateToSchoolCalender = true
                         }
@@ -261,18 +260,6 @@ struct HomeView: View
                     MenuGridItem(title: "社团", icon: "person.2.fill", color: HomeMenuColor.yellow2)
                     {
                         navigateToClub = true
-                    }
-
-                    MenuGridItem(title: "私人行程与日程", icon: "calendar.day.timeline.left", color: HomeMenuColor.purple1)
-                    {
-                        if iapStore.hasActiveSubscription
-                        {
-                            navigateToEvents = true
-                        }
-                        else
-                        {
-                            navigateToSubscription = true
-                        }
                     }
                 }
                 .padding()
@@ -293,8 +280,6 @@ struct HomeView: View
             { ElectricityView() }
             .navigationDestination(isPresented: $navigateToClassroom)
             { ClassroomView() }
-            .navigationDestination(isPresented: $navigateToEvents)
-            { EventListView() }
             .navigationDestination(isPresented: $navigateToStrategy)
             { AllStrategy() }
             .navigationDestination(isPresented: $navigateToClub)
