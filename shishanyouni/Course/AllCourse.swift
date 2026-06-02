@@ -362,7 +362,7 @@ class AllCourseQuery
         ]
 
         request.httpBody = buildBody(params)
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await NetworkService.perform(request: request)
         let response = try JSONDecoder().decode(AllCourseResponse.self, from: data)
         return response.items
     }
@@ -379,7 +379,7 @@ class AllCourseQuery
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else
         {
             throw AllCourseQueryError.invalidResponse
@@ -413,7 +413,7 @@ class AllCourseQuery
         ]
 
         request.httpBody = buildBody(params)
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await NetworkService.perform(request: request)
         let response = try JSONDecoder().decode(CourseClassResponse.self, from: data)
         return response.kbList
     }
@@ -430,7 +430,7 @@ class AllCourseQuery
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else
         {
             throw AllCourseQueryError.invalidResponse

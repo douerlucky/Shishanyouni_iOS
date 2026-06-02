@@ -67,7 +67,7 @@ class SchoolCalendarFetcher {
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
         
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw NSError(domain: "HTTPError", code: (response as? HTTPURLResponse)?.statusCode ?? 500)
@@ -112,7 +112,7 @@ class SchoolCalendarFetcher {
             .joined(separator: "&")
             .data(using: .utf8)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
         
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw NSError(domain: "HTTPError", code: (response as? HTTPURLResponse)?.statusCode ?? 500)

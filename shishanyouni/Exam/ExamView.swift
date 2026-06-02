@@ -12,6 +12,7 @@ struct ExamView: View
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
+    @State private var errorRetryAction: (() -> Void)?
     @State private var showMFASheet = false
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
@@ -102,6 +103,7 @@ struct ExamView: View
                 showAlert: $showAlert,
                 alertTitle: $alertTitle,
                 alertMessage: $alertMessage,
+                errorRetryAction: $errorRetryAction,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
                 querySource: Binding(
@@ -123,6 +125,9 @@ struct ExamView: View
         .toolbar(.hidden, for: .tabBar)
         .alert(alertTitle, isPresented: $showAlert)
         {
+            if let retry = errorRetryAction {
+                Button("重试", action: retry)
+            }
             Button("好的", role: .cancel) { }
         } message: {
             Text(alertMessage)
@@ -636,6 +641,7 @@ struct ExamBottomControlBar: View
     @Binding var showAlert: Bool
     @Binding var alertTitle: String
     @Binding var alertMessage: String
+    @Binding var errorRetryAction: (() -> Void)?
     @Binding var selectedYear: String
     @Binding var selectedTerm: String
     @Binding var querySource: ExamQuerySource
@@ -833,11 +839,13 @@ struct ExamBottomControlBar: View
         {
             alertTitle = "查询失败"
             alertMessage = "好像忘记了登录，请先去登录吧！"
+            errorRetryAction = { self.fetchExamData() }
             showAlert = true
             return
         }
 
         isLoading = true
+        errorRetryAction = nil
         Task
         {
             do
@@ -891,7 +899,7 @@ struct ExamBottomControlBar: View
                         self.alertMessage = error.localizedDescription
                     }
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
-
+                    self.errorRetryAction = { self.fetchExamData() }
                     self.showAlert = true
                 }
             }

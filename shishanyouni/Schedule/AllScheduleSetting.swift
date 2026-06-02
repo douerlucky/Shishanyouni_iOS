@@ -16,6 +16,7 @@ struct AllScheduleSetting: View
     @State private var editingCourse: Course?
     @State private var pendingDeleteCourse: Course?
     @State private var showDeleteConfirm = false
+    @State private var semesterStartDate: Date = Date()
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
@@ -37,6 +38,30 @@ struct AllScheduleSetting: View
 
             List
             {
+                Section {
+                    NavigationLink(destination: AdvancedStatsView(
+                        courses: courses,
+                        semesterStartDate: semesterStartDate,
+                        currentWeek: calculateCurrentWeek()
+                    )) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "chart.bar.xaxis.ascending")
+                                .font(.title3)
+                                .foregroundColor(.blue)
+                                .frame(width: 36, height: 36)
+                                .background(Color.blue.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("学期统计")
+                                    .font(.body).fontWeight(.medium)
+                                Text("学时分析 · 科目占比 · 空档热力图")
+                                    .font(.caption).foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
                 if courses.isEmpty
                 {
                     Text("暂无已导入课程")
@@ -107,6 +132,7 @@ struct AllScheduleSetting: View
         {
             loadSavedCourses()
             loadBackgroundImage()
+            loadSemesterStartDate()
         }
         .onChange(of: backgroundImageFilename)
         { _ in
@@ -276,7 +302,6 @@ struct AllScheduleSetting: View
     private func saveCourses()
     {
         WidgetSharedStore.saveCourses(courses)
-        ScheduleNotificationManager.shared.scheduleAllCourseReminders()
     }
 
     private func sortCoursesByNameAndTime()
@@ -333,6 +358,28 @@ struct AllScheduleSetting: View
         {
             backgroundImage = nil
         }
+    }
+
+    private func loadSemesterStartDate() {
+        if let ts = WidgetSharedStore.loadSemesterStartTimestamp(), ts > 0 {
+            semesterStartDate = Date(timeIntervalSince1970: ts)
+        } else {
+            let ts = UserDefaults.standard.double(forKey: "semesterStartDateTimestamp")
+            if ts > 0 {
+                semesterStartDate = Date(timeIntervalSince1970: ts)
+            }
+        }
+    }
+
+    private func calculateCurrentWeek() -> Int {
+        var cal = Calendar.current
+        cal.firstWeekday = 2
+        let startComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStartDate)
+        guard let startMonday = cal.date(from: startComps) else { return 1 }
+        let nowComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        guard let currentMonday = cal.date(from: nowComps) else { return 1 }
+        let diff = cal.dateComponents([.weekOfYear], from: startMonday, to: currentMonday)
+        return (diff.weekOfYear ?? 0) + 1
     }
 }
 

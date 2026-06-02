@@ -54,29 +54,26 @@ class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     func requestPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("❌ 通知权限请求失败: \(error)")
-            }
+            if let error = error { print("❌ 通知权限请求失败: \(error)") }
             print(granted ? "✅ 通知权限已授权" : "⚠️ 通知权限被拒绝")
         }
     }
 
     func rescheduleAllNotifications() {
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        scheduleAllCourseReminders()
-    }
-
-    func scheduleAllCourseReminders() {
-        let courses = WidgetSharedStore.loadCourses()
         let enabledIDs = enabledCourseIDs
-        guard !enabledIDs.isEmpty else { return }
-
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        if enabledIDs.isEmpty {
+            print("📭 无已开启提醒的课程，已清除所有提醒")
+            return
+        }
+        let courses = WidgetSharedStore.loadCourses()
         let semesterStart = semesterStartDate()
-
+        var scheduledCount = 0
         for course in courses {
             guard enabledIDs.contains(course.id) else { continue }
-            scheduleReminders(for: course, semesterStart: semesterStart)
+            scheduledCount += scheduleReminders(for: course, semesterStart: semesterStart)
         }
+        print("🔔 提醒调度完成：为 \(enabledIDs.count) 门课程安排了 \(scheduledCount) 条提醒")
     }
 
     private func semesterStartDate() -> Date {
@@ -92,13 +89,12 @@ class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
         return Calendar.current.date(from: components) ?? Date()
     }
 
-    private func scheduleReminders(for course: Course, semesterStart: Date) {
-        let calendar = Calendar.current
-        var cal = calendar
+    private func scheduleReminders(for course: Course, semesterStart: Date) -> Int {
+        var cal = Calendar.current
         cal.firstWeekday = 2
 
         let startComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStart)
-        guard let firstMonday = cal.date(from: startComps) else { return }
+        guard let firstMonday = cal.date(from: startComps) else { return 0 }
 
         let classPeriods: [(start: String, end: String)] = [
             ("8:00", "8:45"), ("9:00", "9:40"), ("10:00", "10:45"), ("10:55", "11:40"),
@@ -106,8 +102,9 @@ class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
             ("19:00", "19:45"), ("19:50", "20:35"), ("20:40", "21:25"), ("21:30", "22:15"),
         ]
 
-        guard course.start > 0 && course.start <= classPeriods.count else { return }
+        guard course.start > 0 && course.start <= classPeriods.count else { return 0 }
         let period = classPeriods[course.start - 1]
+        var count = 0
 
         for week in course.weekList {
             guard week >= 1 else { continue }
@@ -137,7 +134,9 @@ class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
                     print("❌ 添加通知失败 [\(course.name) 第\(week)周]: \(error)")
                 }
             }
+            count += 1
         }
+        return count
     }
 
     private func notificationDate(for date: Date, timeString: String) -> Date? {
@@ -154,9 +153,11 @@ class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func pendingNotificationCount(completion: @escaping (Int) -> Void) {
-        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
-            let count = requests.filter { $0.identifier.hasPrefix("class_") }.count
-            completion(count)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+                let count = requests.filter { $0.identifier.hasPrefix("class_") }.count
+                completion(count)
+            }
         }
     }
 
@@ -166,8 +167,6 @@ class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
         }
     }
-
-    // MARK: - UNUserNotificationCenterDelegate
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,

@@ -345,6 +345,7 @@ struct GradeInquiry: View
     @State private var showAlert   = false
     @State private var alertMessage = ""
     @State private var alertTitle   = ""
+    @State private var errorRetryAction: (() -> Void)?
 
     @State var selectedYear = "2025"
     @State var selectedTerm = "2"
@@ -464,6 +465,7 @@ struct GradeInquiry: View
                 showAlert: $showAlert,
                 alertTitle: $alertTitle,
                 alertMessage: $alertMessage,
+                errorRetryAction: $errorRetryAction,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
                 gradeService: gradeService,
@@ -498,6 +500,9 @@ struct GradeInquiry: View
         }
         .alert(alertTitle, isPresented: $showAlert)
         {
+            if let retry = errorRetryAction {
+                Button("重试", action: retry)
+            }
             Button("好的", role: .cancel) { }
         } message: {
             Text(alertMessage)
@@ -543,6 +548,7 @@ struct BottomButtonView: View
     @Binding var showAlert: Bool
     @Binding var alertTitle: String
     @Binding var alertMessage: String
+    @Binding var errorRetryAction: (() -> Void)?
     @Binding var selectedYear: String
     @Binding var selectedTerm: String
     @State private var showPicker = false
@@ -581,48 +587,7 @@ struct BottomButtonView: View
             .optionalLiquidGlass()
 
             // 查询按钮
-            Button(action: {
-                isLoading = true
-                Task
-                {
-                    defer { isLoading = false }
-                    do
-                    {
-                        Grades = try await fetchGradesWithMFA()
-                        await MainActor.run
-                        {
-                            AcademicQueryCache.save(
-                                Grades,
-                                namespace: "grade",
-                                username: userinfo.username,
-                                parts: [selectedYear, selectedTerm]
-                            )
-                            onGradesLoaded?()
-                            alertTitle   = "查询成功"
-                            alertMessage = "一共找到了 \(Grades.count) 门课的成绩"
-                            showAlert    = true
-                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        }
-                    }
-                    catch
-                    {
-                        await MainActor.run
-                        {
-                            alertTitle = "哎呀，出错了"
-                            if userinfo.username.isEmpty && userinfo.plainPassword.isEmpty
-                            {
-                                alertMessage = "好像忘记了登录，请先去登录吧！"
-                            }
-                            else
-                            {
-                                alertMessage = error.localizedDescription
-                            }
-                            UINotificationFeedbackGenerator().notificationOccurred(.error)
-                            showAlert = true
-                        }
-                    }
-                }
-            })
+            Button(action: { performGradeQuery() })
             {
                 Text("查询")
                     .font(.system(size: 15, weight: .bold))
@@ -714,6 +679,54 @@ struct BottomButtonView: View
                 xnm: selectedYear,
                 xqm: selectedTerm
             )
+        }
+    }
+
+    private func performGradeQuery()
+    {
+        isLoading = true
+        errorRetryAction = nil
+        Task
+        {
+            do
+            {
+                let result = try await fetchGradesWithMFA()
+                await MainActor.run
+                {
+                    isLoading = false
+                    Grades = result
+                    AcademicQueryCache.save(
+                        Grades,
+                        namespace: "grade",
+                        username: userinfo.username,
+                        parts: [selectedYear, selectedTerm]
+                    )
+                    onGradesLoaded?()
+                    alertTitle   = "查询成功"
+                    alertMessage = "一共找到了 \(Grades.count) 门课的成绩"
+                    showAlert    = true
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                }
+            }
+            catch
+            {
+                await MainActor.run
+                {
+                    isLoading = false
+                    alertTitle = "哎呀，出错了"
+                    if userinfo.username.isEmpty && userinfo.plainPassword.isEmpty
+                    {
+                        alertMessage = "好像忘记了登录，请先去登录吧！"
+                    }
+                    else
+                    {
+                        alertMessage = error.localizedDescription
+                    }
+                    errorRetryAction = { self.performGradeQuery() }
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    showAlert = true
+                }
+            }
         }
     }
 

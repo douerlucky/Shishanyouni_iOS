@@ -44,6 +44,7 @@ struct PhysicalTestView: View
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaSendCodeAction: (() async -> String?)?
+    @State private var errorRetryAction: (() -> Void)?
 
     private let gymQuery = GymCloudQuery()
 
@@ -284,7 +285,12 @@ struct PhysicalTestView: View
             }
             .alert(isPresented: $showAlert)
             {
-                Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("确定")))
+                Alert(
+                    title: Text(alertTitle),
+                    message: Text(alertMessage),
+                    primaryButton: .default(Text("重试"), action: { errorRetryAction?() }),
+                    secondaryButton: .cancel(Text("确定"))
+                )
             }
             .sheet(isPresented: $showMFASheet) {
                 MFACodeInputSheet(
@@ -361,6 +367,7 @@ struct PhysicalTestView: View
     private func fetchPhysicalData()
     {
         isLoading = true
+        errorRetryAction = nil
         Task
         {
             do
@@ -403,6 +410,7 @@ struct PhysicalTestView: View
                     {
                         self.alertMessage = error.localizedDescription
                     }
+                    self.errorRetryAction = { [self] in fetchPhysicalData() }
                     self.showAlert = true
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }

@@ -24,6 +24,7 @@ struct NanhuRunView: View
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaSendCodeAction: (() async -> String?)?
+    @State private var errorRetryAction: (() -> Void)?
 
     private let runQuery = GymCloudQuery()
 
@@ -105,7 +106,12 @@ struct NanhuRunView: View
         }
         .alert(isPresented: $showAlert)
         {
-            Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("确定")))
+            Alert(
+                title: Text(alertTitle),
+                message: Text(alertMessage),
+                primaryButton: .default(Text("重试"), action: { errorRetryAction?() }),
+                secondaryButton: .cancel(Text("确定"))
+            )
         }
         .sheet(isPresented: $showMFASheet) {
             MFACodeInputSheet(
@@ -124,11 +130,13 @@ struct NanhuRunView: View
         {
             alertTitle = "获取失败"
             alertMessage = "好像忘记了登录，请先去登录吧！"
+            errorRetryAction = { self.fetchData() }
             showAlert = true
             return
         }
 
         isLoading = true
+        errorRetryAction = nil
         Task
         {
             do
@@ -176,6 +184,7 @@ struct NanhuRunView: View
                     {
                         self.alertMessage = error.localizedDescription
                     }
+                    self.errorRetryAction = { [self] in fetchData() }
                     self.showAlert = true
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }

@@ -194,7 +194,7 @@ class ClassroomService
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
 
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else
         {

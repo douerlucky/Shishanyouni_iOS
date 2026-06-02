@@ -112,7 +112,7 @@ class ShishanyouniBinder {
         request.httpBody = bodyData
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await NetworkService.perform(request: request)
 
             guard let http = response as? HTTPURLResponse else {
                 throw ShishanyouniBindError.invalidResponse
@@ -196,10 +196,10 @@ class ShishanyouniBinder {
     }
 
     private func postQuery(url: URL, label: String) async throws -> [String: Any] {
-        var request = URLRequest(url: url, timeoutInterval: .infinity)
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request, timeout: 120)
         guard let http = response as? HTTPURLResponse else {
             throw ShishanyouniBindError.invalidResponse
         }

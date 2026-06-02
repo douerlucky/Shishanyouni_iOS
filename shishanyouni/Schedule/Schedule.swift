@@ -239,7 +239,7 @@ struct ScheduleService
 
         print("开始拉取课表… 学年:\(year) 学期:\(term)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
 
         guard let http = response as? HTTPURLResponse
         else

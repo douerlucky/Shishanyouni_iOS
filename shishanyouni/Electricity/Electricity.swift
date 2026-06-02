@@ -608,7 +608,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         )
         print("[Electricity][API] getBuildList auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
-        let (data, _) = try await session.data(for: request)
+        let (data, _) = try await NetworkService.perform(with: session, request: request)
         let response = try JSONDecoder().decode(BuildingLevelRoomResponse.self, from: data)
 
         guard response.code == 200 else
@@ -635,7 +635,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         )
         print("[Electricity][API] getFloorList auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
-        let (data, _) = try await session.data(for: request)
+        let (data, _) = try await NetworkService.perform(with: session, request: request)
         let response = try JSONDecoder().decode(BuildingLevelRoomResponse.self, from: data)
 
         guard response.code == 200 else
@@ -662,7 +662,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         )
         print("[Electricity][API] getRoomList auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
-        let (data, _) = try await session.data(for: request)
+        let (data, _) = try await NetworkService.perform(with: session, request: request)
         let response = try JSONDecoder().decode(BuildingLevelRoomResponse.self, from: data)
 
         guard response.code == 200 else
@@ -697,7 +697,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         )
         print("[Electricity][API] queryRoomList roomId: \(roomId), auth prefix: \(token.prefix(24))..., cookie attached: \(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
-        let (data, _) = try await session.data(for: request)
+        let (data, _) = try await NetworkService.perform(with: session, request: request)
         let response = try JSONDecoder().decode(ElectricityResponse.self, from: data)
         print("[Electricity][API] queryRoomList response code: \(response.code), msg: \(response.msg)")
 

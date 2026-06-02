@@ -17,6 +17,7 @@ struct ClassroomView: View
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
+    @State private var errorRetryAction: (() -> Void)?
 
     // 默认查询参数：今天、三教、A栋、1楼
     @State private var selectedDate = Date()
@@ -87,6 +88,7 @@ struct ClassroomView: View
                 showAlert: $showAlert,
                 alertTitle: $alertTitle,
                 alertMessage: $alertMessage,
+                errorRetryAction: $errorRetryAction,
                 selectedDate: $selectedDate,
                 selectedBuilding: $selectedBuilding,
                 selectedWing: $selectedWing,
@@ -99,6 +101,7 @@ struct ClassroomView: View
         .navigationBarTitleDisplayMode(.large)
         .alert(alertTitle, isPresented: $showAlert)
         {
+            Button("重试") { errorRetryAction?() }
             Button("好哒", role: .cancel) { }
         } message: {
             Text(alertMessage)
@@ -525,6 +528,7 @@ struct BottomClassroomButtonView: View
     @Binding var showAlert: Bool
     @Binding var alertTitle: String
     @Binding var alertMessage: String
+    @Binding var errorRetryAction: (() -> Void)?
 
     @Binding var selectedDate: Date
     @Binding var selectedBuilding: String
@@ -677,6 +681,7 @@ struct BottomClassroomButtonView: View
                 {
                     alertTitle = "哎呀，出错了"
                     alertMessage = error.localizedDescription
+                    errorRetryAction = { [self] in performSearch() }
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                     showAlert = true
                 }

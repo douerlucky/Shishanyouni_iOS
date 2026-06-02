@@ -30,6 +30,7 @@ struct ElectricityView: View
     @State private var mfaSendCodeAction: (() async -> String?)?
     @State private var sessionToken: String = ""
     @State private var loginTask: Task<String, Error>?
+    @State private var errorRetryAction: (() -> Void)?
 
     private let query = ElectricityQuery()
 
@@ -83,7 +84,12 @@ struct ElectricityView: View
         }
         .alert(isPresented: $showAlert)
         {
-            Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("好")))
+            Alert(
+                title: Text(alertTitle),
+                message: Text(alertMessage),
+                primaryButton: .default(Text("重试"), action: { errorRetryAction?() }),
+                secondaryButton: .cancel(Text("好"))
+            )
         }
         .sheet(isPresented: $showMFASheet) {
             MFACodeInputSheet(
@@ -487,6 +493,7 @@ struct ElectricityView: View
                 }
             }
             UINotificationFeedbackGenerator().notificationOccurred(.error)
+            errorRetryAction = { [self] in fetchElectricity() }
             showAlert = true
         }
     }

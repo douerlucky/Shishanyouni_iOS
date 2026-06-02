@@ -120,6 +120,19 @@ struct RepeatRule: Codable {
     }
 }
 
+// MARK: - 子任务
+struct SubTask: Identifiable, Codable {
+    let id: UUID
+    var title: String
+    var isCompleted: Bool
+
+    init(id: UUID = UUID(), title: String = "", isCompleted: Bool = false) {
+        self.id = id
+        self.title = title
+        self.isCompleted = isCompleted
+    }
+}
+
 struct Event: Identifiable, Codable {
     let id: UUID
     var title: String
@@ -135,8 +148,15 @@ struct Event: Identifiable, Codable {
     var repeatRule: RepeatRule?
     var priority: EventPriority
     var dueDate: Date?
+    var subtasks: [SubTask]
 
-    init(id: UUID = UUID(), title: String, date: Date, isAllDay: Bool = false, startTime: Date? = nil, endTime: Date? = nil, note: String? = nil, location: String? = nil, category: EventCategory = .todo, colorIndex: Int? = nil, isCompleted: Bool = false, repeatRule: RepeatRule? = nil, priority: EventPriority = .medium, dueDate: Date? = nil) {
+    var subtaskProgress: (done: Int, total: Int) {
+        guard !subtasks.isEmpty else { return (0, 0) }
+        let done = subtasks.filter(\.isCompleted).count
+        return (done, subtasks.count)
+    }
+
+    init(id: UUID = UUID(), title: String, date: Date, isAllDay: Bool = false, startTime: Date? = nil, endTime: Date? = nil, note: String? = nil, location: String? = nil, category: EventCategory = .todo, colorIndex: Int? = nil, isCompleted: Bool = false, repeatRule: RepeatRule? = nil, priority: EventPriority = .medium, dueDate: Date? = nil, subtasks: [SubTask] = []) {
         self.id = id
         self.title = title
         self.date = date
@@ -151,6 +171,7 @@ struct Event: Identifiable, Codable {
         self.repeatRule = repeatRule
         self.priority = priority
         self.dueDate = dueDate
+        self.subtasks = subtasks
     }
 
     var isOverdue: Bool {
@@ -174,6 +195,7 @@ struct Event: Identifiable, Codable {
         repeatRule = try container.decodeIfPresent(RepeatRule.self, forKey: .repeatRule)
         priority = try container.decodeIfPresent(EventPriority.self, forKey: .priority) ?? .medium
         dueDate = try container.decodeIfPresent(Date.self, forKey: .dueDate)
+        subtasks = try container.decodeIfPresent([SubTask].self, forKey: .subtasks) ?? []
     }
 
     var displayColor: Color {

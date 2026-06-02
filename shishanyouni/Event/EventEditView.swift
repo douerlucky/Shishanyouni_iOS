@@ -52,6 +52,10 @@ struct EventEditView: View {
     @State private var isRepeating: Bool = false
     @State private var repeatFrequency: RepeatFrequency = .daily
     @State private var repeatInterval: Int = 1
+
+    // 子任务
+    @State private var subtasks: [SubTask] = []
+    @State private var newSubtaskTitle: String = ""
     
     private let timeFormatter: DateFormatter = {
         let fmt = DateFormatter()
@@ -83,6 +87,7 @@ struct EventEditView: View {
                 _repeatFrequency = State(initialValue: rule.frequency)
                 _repeatInterval = State(initialValue: rule.interval)
             }
+            _subtasks = State(initialValue: event.subtasks)
         }
     }
     
@@ -223,6 +228,45 @@ struct EventEditView: View {
                     }
                 }
                 
+                Section("子任务") {
+                    ForEach($subtasks) { $subtask in
+                        HStack {
+                            Button {
+                                subtask.isCompleted.toggle()
+                            } label: {
+                                Image(systemName: subtask.isCompleted ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(subtask.isCompleted ? .green : .gray)
+                            }
+                            .buttonStyle(.plain)
+
+                            TextField("子任务", text: $subtask.title)
+                        }
+                    }
+                    .onDelete { subtasks.remove(atOffsets: $0) }
+
+                    HStack {
+                        TextField("添加子任务", text: $newSubtaskTitle)
+                            .onSubmit {
+                                let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
+                                if !trimmed.isEmpty {
+                                    subtasks.append(SubTask(title: trimmed))
+                                    newSubtaskTitle = ""
+                                }
+                            }
+                        Button {
+                            let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
+                            if !trimmed.isEmpty {
+                                subtasks.append(SubTask(title: trimmed))
+                                newSubtaskTitle = ""
+                            }
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(.blue)
+                        }
+                        .disabled(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                }
+
                 Section("预览") {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
@@ -363,7 +407,8 @@ struct EventEditView: View {
                 isCompleted: false,
                 repeatRule: repeatRule,
                 priority: priority,
-                dueDate: finalDueDate
+                dueDate: finalDueDate,
+                subtasks: subtasks
             )
             events.append(newEvent)
 
@@ -382,7 +427,8 @@ struct EventEditView: View {
                 isCompleted: oldEvent.isCompleted,
                 repeatRule: repeatRule,
                 priority: priority,
-                dueDate: finalDueDate
+                dueDate: finalDueDate,
+                subtasks: subtasks
             )
             if let index = events.firstIndex(where: { $0.id == oldEvent.id }) {
                 events[index] = newEvent

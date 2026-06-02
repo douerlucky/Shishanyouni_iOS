@@ -34,6 +34,7 @@ struct ScheduleSettingView: View {
     @State private var importAlertMessage    = ""
     @State private var isImporting           = false
     @State private var importedCount         = 0
+    @State private var importErrorRetryAction: (() -> Void)?
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showMFASheet = false
     @State private var mfaMaskedPhone = ""
@@ -156,6 +157,9 @@ struct ScheduleSettingView: View {
             )
         }
         .alert(importAlertMessage, isPresented: $showImportAlert) {
+            if let retry = importErrorRetryAction {
+                Button("重试", action: retry)
+            }
             Button("确定", role: .cancel) {}
         }
         .alert("是否同时清除手动添加的课程？", isPresented: $showClearManualOnImportAlert) {
@@ -433,9 +437,11 @@ struct ScheduleSettingView: View {
     // MARK: 导入课表
     private func importCourses() async {
         isImporting = true
+        importErrorRetryAction = nil
 
         guard !userinfo.username.isEmpty else {
             importAlertMessage = "课表导入失败\n请先登录"
+            importErrorRetryAction = { Task { await self.importCourses() } }
             showImportAlert = true
             isImporting = false
             return
@@ -445,6 +451,7 @@ struct ScheduleSettingView: View {
 
         guard !plainPassword.isEmpty else {
             importAlertMessage = "课表导入失败\n未找到密码，请重新登录"
+            importErrorRetryAction = { Task { await self.importCourses() } }
             showImportAlert = true
             isImporting = false
             return
@@ -468,6 +475,7 @@ struct ScheduleSettingView: View {
         } catch {
             print("❌ 导入失败: \(error)")
             importAlertMessage = "课表导入失败\n\(error.localizedDescription)"
+            importErrorRetryAction = { Task { await self.importCourses() } }
             showImportAlert    = true
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             isImporting = false

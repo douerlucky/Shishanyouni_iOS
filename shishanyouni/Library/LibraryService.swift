@@ -18,7 +18,7 @@ class LibraryService
         request.httpMethod = "GET"
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await NetworkService.perform(request: request)
         let html = String(data: data, encoding: .utf8) ?? ""
 
         let stats = parseStats(from: html)

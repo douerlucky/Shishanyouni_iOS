@@ -233,7 +233,7 @@ class ExamQuery
             .joined(separator: "&")
             .data(using: .utf8)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await NetworkService.perform(request: request)
         let response = try JSONDecoder().decode(ExamResponse.self, from: data)
         return response.items
     }
@@ -260,7 +260,7 @@ class ExamQuery
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await NetworkService.perform(request: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             throw ExamQueryError.invalidResponse
         }

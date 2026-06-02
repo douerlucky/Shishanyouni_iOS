@@ -45,7 +45,6 @@ struct ScheduleView: View
     @State private var editCourseContext: Course?
     
     @AppStorage("enableLiquidGlassEffect") public var enableLiquidGlassEffect: Bool = false
-    @AppStorage("showScheduleStats") private var showScheduleStats: Bool = true
 
     @State var semesterStartDate: Date = {
         var components = DateComponents()
@@ -60,9 +59,6 @@ struct ScheduleView: View
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
-
-    @State private var countdownItems: [CountdownItem] = []
-    @State private var statsData: (stats: [SubjectStat], totalPeriods: Int, freeSlots: Int)?
 
     let calendar = Calendar.current
     let minWeek = -9
@@ -82,14 +78,7 @@ struct ScheduleView: View
     {
         WidgetSharedStore.saveCourses(courses)
         print("✅ 课程保存成功，共 \(courses.count) 门")
-        ScheduleNotificationManager.shared.scheduleAllCourseReminders()
-    }
-
-    private func refreshOverlayData()
-    {
-        countdownItems = ScheduleCountdownView.buildCountdownItems()
-        let computed = ScheduleStatsView.compute(from: courses, week: nowDisplayWeek)
-        statsData = computed.stats.isEmpty ? nil : computed
+        ScheduleNotificationManager.shared.rescheduleAllNotifications()
     }
 
     var body: some View
@@ -116,21 +105,9 @@ struct ScheduleView: View
             .padding(.horizontal, 10)
             .padding(.top, 10)
 
-            // 倒计时条
-            ScheduleCountdownView(items: countdownItems)
-                .padding(.top, 8)
-
-            // 课表统计卡片
-            if showScheduleStats, let s = statsData {
-                ScheduleStatsView(stats: s.stats, totalPeriods: s.totalPeriods, freeSlots: s.freeSlots)
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-
             // 课表主体 + 底部控制条
             pageBodyView
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showScheduleStats)
         .background
         {
             if let backgroundImage = backgroundImage
@@ -157,11 +134,6 @@ struct ScheduleView: View
             {
                 Button(action: { showSettings = true })
                 { Image(systemName: "gearshape").fontWeight(.medium) }
-            }
-            ToolbarItem(placement: .navigationBarTrailing)
-            {
-                Button(action: { showScheduleStats.toggle() })
-                { Image(systemName: showScheduleStats ? "chart.pie.fill" : "chart.pie").fontWeight(.medium) }
             }
             ToolbarItem(placement: .navigationBarTrailing)
             {
@@ -209,14 +181,7 @@ struct ScheduleView: View
             loadSavedData()
             self.nowDisplayWeek = calculateCurrentWeek()
             updateDatesForDisplayWeek()
-            refreshOverlayData()
             ScheduleNotificationManager.shared.requestPermission()
-        }
-        .onChange(of: nowDisplayWeek) { _ in
-            refreshOverlayData()
-        }
-        .onChange(of: courses.count) { _ in
-            refreshOverlayData()
         }
         .alert("保存成功", isPresented: $showSaveSuccess)
         {
@@ -514,7 +479,6 @@ struct ScheduleView: View
         courses = WidgetSharedStore.loadCourses()
         print("✅ 已加载 \(courses.count) 门课程")
         loadBackgroundImage()
-        refreshOverlayData()
     }
 
     func updateDatesForDisplayWeek()

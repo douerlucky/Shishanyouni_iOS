@@ -20,18 +20,26 @@ struct ScheduleStatsView: View {
     let totalPeriods: Int
     let freeSlots: Int
 
+    @State private var showDonutChart = true
+
     var body: some View {
         if stats.isEmpty {
             emptyStateView
         } else {
-            HStack(spacing: 16) {
-                donutChart
-                infoPanel
+            VStack(spacing: 0) {
+                HStack(spacing: 16) {
+                    if showDonutChart {
+                        donutChart
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                    infoPanel
+                }
             }
             .padding(12)
             .background(Color(.secondarySystemBackground).opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, 16)
+            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: showDonutChart)
         }
     }
 
@@ -85,9 +93,19 @@ struct ScheduleStatsView: View {
 
     private var infoPanel: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("本周课时统计")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.primary)
+            HStack {
+                Text("本周课时统计")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.primary)
+
+                Spacer()
+
+                Button(action: { showDonutChart.toggle() }) {
+                    Image(systemName: showDonutChart ? "chart.pie.fill" : "chart.pie")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+            }
 
             ForEach(stats.prefix(5)) { stat in
                 HStack(spacing: 6) {
@@ -170,7 +188,13 @@ struct ScheduleStatsView: View {
 struct DonutSliceShape: Shape {
     let startAngle: Angle
     let endAngle: Angle
-    let innerRadiusRatio: CGFloat = 0.55
+    let innerRadiusRatio: CGFloat
+
+    init(startAngle: Angle, endAngle: Angle, innerRadiusRatio: CGFloat = 0.55) {
+        self.startAngle = startAngle
+        self.endAngle = endAngle
+        self.innerRadiusRatio = innerRadiusRatio
+    }
 
     func path(in rect: CGRect) -> Path {
         let center = CGPoint(x: rect.midX, y: rect.midY)
