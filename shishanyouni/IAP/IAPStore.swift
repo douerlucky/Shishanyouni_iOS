@@ -166,7 +166,11 @@ final class IAPStore: ObservableObject
 
     var hasActiveSubscription: Bool
     {
+#if DEBUG
+        true
+#else
         activeProductID != nil
+#endif
     }
 
     func isPurchased(_ productID: String) -> Bool
