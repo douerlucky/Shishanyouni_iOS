@@ -7,10 +7,12 @@
 
 import StoreKit
 import SwiftUI
+import WebKit
 
 struct SubscriptionView: View
 {
     @EnvironmentObject var store: IAPStore
+    @Environment(\.openURL) private var openURL
 
     var body: some View
     {
@@ -22,6 +24,7 @@ struct SubscriptionView: View
                 productSection
                 comparisonSection
                 supportNoticeSection
+                legalLinksSection
             }
             .padding(20)
         }
@@ -183,6 +186,48 @@ struct SubscriptionView: View
         }
     }
 
+    private var legalLinksSection: some View
+    {
+        VStack(alignment: .leading, spacing: 12)
+        {
+            Text("法律与订阅说明")
+                .font(.title3.bold())
+
+            VStack(spacing: 0)
+            {
+                NavigationLink
+                {
+                    LocalHTMLDocumentView(
+                        title: "隐私政策",
+                        resourceName: "shishanyouni-ios-privacy-policy"
+                    )
+                } label: {
+                    legalLinkRow(title: "隐私政策", subtitle: "查看狮山有你iOS版隐私说明")
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .overlay(themePrimary.opacity(0.08))
+
+                Button
+                {
+                    openURL(appleStandardEULAURL)
+                } label: {
+                    legalLinkRow(title: "服务条款（EULA）", subtitle: "查看 Apple 标准许可协议")
+                }
+                .buttonStyle(.plain)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+            )
+        }
+    }
+
     private func subscriptionCard(for product: Product) -> some View
     {
         let copy = store.copy(for: product.id)
@@ -314,6 +359,36 @@ struct SubscriptionView: View
             .background(color.opacity(0.12), in: Capsule())
     }
 
+    private func legalLinkRow(title: String, subtitle: String) -> some View
+    {
+        HStack(spacing: 12)
+        {
+            Image(systemName: "doc.text")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(themePrimary)
+                .frame(width: 34, height: 34)
+                .background(themePrimary.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 3)
+            {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.primary)
+
+                Text(subtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.secondary.opacity(0.65))
+        }
+        .padding(16)
+    }
+
     private func periodText(for productID: String) -> String
     {
         switch productID
@@ -332,6 +407,11 @@ struct SubscriptionView: View
         Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255)
     }
 
+    private var appleStandardEULAURL: URL
+    {
+        URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    }
+
     private func purchaseBackgroundStyle(purchased: Bool) -> AnyShapeStyle
     {
         if purchased
@@ -341,6 +421,57 @@ struct SubscriptionView: View
 
         return AnyShapeStyle(themePrimary)
     }
+}
+
+private struct LocalHTMLDocumentView: View
+{
+    let title: String
+    let resourceName: String
+
+    var body: some View
+    {
+        Group
+        {
+            if let fileURL = Bundle.main.url(forResource: resourceName, withExtension: "html")
+            {
+                LocalHTMLWebView(fileURL: fileURL)
+            }
+            else
+            {
+                VStack(spacing: 12)
+                {
+                    Image(systemName: "doc.questionmark")
+                        .font(.system(size: 42, weight: .semibold))
+                        .foregroundColor(.secondary)
+
+                    Text("页面暂时不可用")
+                        .font(.headline)
+
+                    Text("未能找到对应的本地说明文件。")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct LocalHTMLWebView: UIViewRepresentable
+{
+    let fileURL: URL
+
+    func makeUIView(context: Context) -> WKWebView
+    {
+        let webView = WKWebView(frame: .zero)
+        webView.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
 }
 
 private extension SubscriptionView
@@ -372,7 +503,7 @@ struct SubscriptionView_Previews: PreviewProvider
         NavigationStack
         {
             SubscriptionView()
-                .environmentObject(IAPStore())
+                .environmentObject(IAPStore.preview(hasActiveSubscription: false))
         }
     }
 }

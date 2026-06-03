@@ -1,5 +1,5 @@
 //
-//  Schedule.swift
+//  Curriculum.swift
 //  shishanyouni
 //
 //  Originally by douer_lucky on 2026/2/10.
@@ -122,7 +122,7 @@ struct Course: Identifiable, Codable
     var isManual: Bool // true = 用户手动添加，false = 服务端导入
 
     var endPeriod: Int { start + step - 1 } // 计算结束节次
-    var parsedWeeks: Set<Int> { Set(weekList) } // 本课程上课的周次集合（供 ScheduleView 过滤使用）
+    var parsedWeeks: Set<Int> { Set(weekList) } // 本课程上课的周次集合（供 CurriculumView 过滤使用）
 }
 
 extension Course
@@ -197,7 +197,7 @@ extension Course
     }
 }
 
-struct ScheduleService
+struct CurriculumService
 {
     private static let apiURL = "https://lion.hzau.edu.cn/app/ios/timetable"
 
@@ -225,7 +225,7 @@ struct ScheduleService
         guard let url = URL(string: apiURL)
         else
         {
-            throw ScheduleError.invalidURL
+            throw CurriculumError.invalidURL
         }
 
         let body = FetchRequest(username: username, password: password,
@@ -244,12 +244,12 @@ struct ScheduleService
         guard let http = response as? HTTPURLResponse
         else
         {
-            throw ScheduleError.invalidResponse
+            throw CurriculumError.invalidResponse
         }
         guard http.statusCode == 200
         else
         {
-            throw ScheduleError.httpError(http.statusCode)
+            throw CurriculumError.httpError(http.statusCode)
         }
 
         if let raw = String(data: data, encoding: .utf8)
@@ -266,7 +266,7 @@ struct ScheduleService
         }
         catch
         {
-            throw ScheduleError.jsonDecodingFailed(error)
+            throw CurriculumError.jsonDecodingFailed(error)
         }
 
         guard decoded.isSuccess, let payload = decoded.data
@@ -304,7 +304,7 @@ struct ScheduleService
 
 // MARK: - 错误枚举
 
-enum ScheduleError: LocalizedError
+enum CurriculumError: LocalizedError
 {
     case invalidURL
     case invalidResponse

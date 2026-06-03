@@ -1,5 +1,5 @@
 //
-//  AllScheduleSetting.swift
+//  AllCurriculumSetting.swift
 //  shishanyouni
 //
 //  Created by douer_lucky on 2026/4/23.
@@ -8,7 +8,7 @@
 import SwiftUI
 import UIKit
 
-struct AllScheduleSetting: View
+struct AllCurriculumSetting: View
 {
     @State private var courses: [Course] = []
     @State private var backgroundImage: UIImage?
@@ -39,7 +39,7 @@ struct AllScheduleSetting: View
             List
             {
                 Section {
-                    NavigationLink(destination: AdvancedStatsView(
+                    NavigationLink(destination: CurriculumAdvancedStatsView(
                         courses: courses,
                         semesterStartDate: semesterStartDate,
                         currentWeek: calculateCurrentWeek()
@@ -172,7 +172,7 @@ struct AllScheduleSetting: View
     @ViewBuilder
     private func courseCard(_ course: Course) -> some View
     {
-        let reminderOn = ScheduleNotificationManager.shared.isReminderEnabled(for: course.id)
+        let reminderOn = CurriculumNotificationManager.shared.isReminderEnabled(for: course.id)
 
         VStack(alignment: .leading, spacing: 6)
         {
@@ -185,8 +185,8 @@ struct AllScheduleSetting: View
                 Spacer()
 
                 Button {
-                    let toggled = !ScheduleNotificationManager.shared.isReminderEnabled(for: course.id)
-                    ScheduleNotificationManager.shared.toggleReminder(for: course.id, enabled: toggled)
+                    let toggled = !CurriculumNotificationManager.shared.isReminderEnabled(for: course.id)
+                    CurriculumNotificationManager.shared.toggleReminder(for: course.id, enabled: toggled)
                 } label: {
                     Image(systemName: reminderOn ? "bell.fill" : "bell.slash")
                         .font(.system(size: 16))
@@ -250,13 +250,13 @@ struct AllScheduleSetting: View
 
     private func courseColor(for course: Course) -> Color
     {
-        // 和 ScheduleView 保持一致：优先用户自定义颜色
+        // 和 CurriculumView 保持一致：优先用户自定义颜色
         if let hex = course.customColorHex, let custom = Color(hex: hex)
         {
             return custom
         }
 
-        // 和 ScheduleView 同一套调色板
+        // 和 CurriculumView 同一套调色板
         let colors: [Color] = [
             .blue, .green, .orange, .purple,
             .pink, .red, .yellow, .gray,
@@ -385,5 +385,5 @@ struct AllScheduleSetting: View
 
 #Preview
 {
-    AllScheduleSetting()
+    AllCurriculumSetting()
 }

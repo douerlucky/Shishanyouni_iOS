@@ -1,16 +1,16 @@
 //
-//  ScheduleSettingView.swift
+//  CurriculumSettingView.swift
 //  shishanyouni
 //
 //  Originally by douer_lucky on 2026/2/11.
-//  Refactored: uses new ScheduleService (lion.hzau.edu.cn iOS API).
+//  Refactored: uses new CurriculumService (lion.hzau.edu.cn iOS API).
 //
 
 import SwiftUI
 import PhotosUI
 import UIKit
 
-struct ScheduleSettingView: View {
+struct CurriculumSettingView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var userinfo: userInfo
 
@@ -255,12 +255,12 @@ struct ScheduleSettingView: View {
                 Text("15分钟").tag(15)
             }
             .onChange(of: notificationMinutes) { newValue in
-                ScheduleNotificationManager.shared.reminderMinutesBefore = newValue
-                ScheduleNotificationManager.shared.rescheduleAllNotifications()
+                CurriculumNotificationManager.shared.reminderMinutesBefore = newValue
+                CurriculumNotificationManager.shared.rescheduleAllNotifications()
             }
 
             Button {
-                ScheduleNotificationManager.shared.cancelAllClassReminders()
+                CurriculumNotificationManager.shared.cancelAllClassReminders()
                 pendingNotificationCount = 0
             } label: {
                 HStack {
@@ -281,7 +281,7 @@ struct ScheduleSettingView: View {
                 .font(.caption)
         }
         .onAppear {
-            ScheduleNotificationManager.shared.pendingNotificationCount { count in
+            CurriculumNotificationManager.shared.pendingNotificationCount { count in
                 pendingNotificationCount = count
             }
         }
@@ -486,7 +486,7 @@ struct ScheduleSettingView: View {
     {
         do
         {
-            return try await ScheduleService.fetchCourses(
+            return try await CurriculumService.fetchCourses(
                 username: userinfo.username,
                 password: userinfo.encryptedPasswordShishanyouni,
                 token:    userinfo.shishanyouniToken,
@@ -497,7 +497,7 @@ struct ScheduleSettingView: View {
         catch ShishanyouniAPIError.needMFA(let phone, let sessionId, _)
         {
             try await refreshShishanyouniToken(phone: phone, sessionId: sessionId)
-            return try await ScheduleService.fetchCourses(
+            return try await CurriculumService.fetchCourses(
                 username: userinfo.username,
                 password: userinfo.encryptedPasswordShishanyouni,
                 token:    userinfo.shishanyouniToken,
@@ -663,7 +663,7 @@ struct ScheduleSettingView: View {
 // MARK: - Preview
 
 #Preview {
-    ScheduleSettingView(
+    CurriculumSettingView(
         semesterStartDate: .constant(Date()),
         courses: .constant([])
     )

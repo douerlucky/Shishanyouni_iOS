@@ -110,7 +110,9 @@ struct CalendarMonthView: View {
             comps.day = day
             if let date = calendar.date(from: comps) {
                 let schoolCount = schoolEvents.filter { $0.contains(date: date) }.count
-                let personalCount = personalEvents.flatMap { $0.instances(in: date...date) }.count
+                let dayStart = calendar.startOfDay(for: date)
+                let dayEnd = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: dayStart) ?? dayStart
+                let personalCount = personalEvents.flatMap { $0.instances(in: dayStart...dayEnd) }.count
                 days.append(DayInfo(
                     date: date,
                     day: day,

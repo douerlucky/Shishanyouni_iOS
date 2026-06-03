@@ -18,6 +18,7 @@ enum WidgetSharedStore
     static let currentWeekKey = "schedule_current_week"
     static let backgroundImageFilenameKey = "scheduleBackgroundImageFilename"
     static let backgroundOpacityKey = "scheduleBackgroundOpacity"
+    static let curriculumPluginEnabledKey = "isCurriculumPluginOn"
 
     static let campusPassActiveKey = "iap_campus_pass_active" // 当前校园通行证是否有效
     static let campusPassProductIDKey = "iap_campus_pass_product_id" // 当前生效的是哪个订阅商品
@@ -96,6 +97,29 @@ enum WidgetSharedStore
         UserDefaults.standard.set(week, forKey: currentWeekKey)
         sharedDefaults?.set(week, forKey: currentWeekKey)
         reloadWidget()
+    }
+
+    static func saveCurriculumPluginEnabled(_ enabled: Bool)
+    {
+        UserDefaults.standard.set(enabled, forKey: curriculumPluginEnabledKey)
+        sharedDefaults?.set(enabled, forKey: curriculumPluginEnabledKey)
+        reloadWidget()
+    }
+
+    static func loadCurriculumPluginEnabled() -> Bool
+    {
+        if let sharedValue = sharedDefaults?.object(forKey: curriculumPluginEnabledKey) as? Bool
+        {
+            return sharedValue
+        }
+
+        if let localValue = UserDefaults.standard.object(forKey: curriculumPluginEnabledKey) as? Bool
+        {
+            sharedDefaults?.set(localValue, forKey: curriculumPluginEnabledKey)
+            return localValue
+        }
+
+        return false
     }
 
     static func saveSubscriptionStatus(isActive: Bool, productID: String?, expiration: TimeInterval?)

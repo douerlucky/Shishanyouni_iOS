@@ -304,5 +304,5 @@ struct ProfileView: View
 {
     ProfileView()
         .environmentObject(userInfo())
-        .environmentObject(IAPStore(autoload: false))
+        .environmentObject(IAPStore.preview(hasActiveSubscription: false))
 }

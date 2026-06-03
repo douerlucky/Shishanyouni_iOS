@@ -1,5 +1,5 @@
 //
-//  ScheduleNotificationManager.swift
+//  CurriculumNotificationManager.swift
 //  shishanyouni
 //
 //  上课提醒推送通知管理器
@@ -9,9 +9,9 @@ import Foundation
 import UserNotifications
 import UIKit
 
-class ScheduleNotificationManager: NSObject, UNUserNotificationCenterDelegate {
+class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
-    static let shared = ScheduleNotificationManager()
+    static let shared = CurriculumNotificationManager()
 
     private let reminderEnabledKey = "schedule_reminder_enabled_courses"
 

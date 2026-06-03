@@ -1,5 +1,5 @@
 //
-//  AdvancedStatsView.swift
+//  CurriculumAdvancedStatsView.swift
 //  shishanyouni
 //
 //  高级统计面板：学期总览、周学时趋势、科目占比、时间热力图
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AdvancedStatsView: View {
+struct CurriculumAdvancedStatsView: View {
     let courses: [Course]
     let semesterStartDate: Date
     let currentWeek: Int
@@ -368,7 +368,7 @@ struct AdvancedStatsView: View {
 
 #Preview {
     NavigationStack {
-        AdvancedStatsView(
+        CurriculumAdvancedStatsView(
             courses: [],
             semesterStartDate: Date(),
             currentWeek: 1

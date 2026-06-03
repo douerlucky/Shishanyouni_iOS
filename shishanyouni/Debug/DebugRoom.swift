@@ -140,7 +140,7 @@ struct DebugRoom: View
                         do
                         {
                             print("🚀 开始测试课表接口...")
-                            let (courses, startDate) = try await ScheduleService.fetchCourses(
+                            let (courses, startDate) = try await CurriculumService.fetchCourses(
                                 username: userinfo.username,
                                 password: userinfo.plainPassword,
                                 year:     "2025",

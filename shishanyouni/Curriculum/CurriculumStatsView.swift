@@ -1,5 +1,5 @@
 //
-//  ScheduleStatsView.swift
+//  CurriculumStatsView.swift
 //  shishanyouni
 //
 //  课表统计卡片：本周课时统计 + 科目占比
@@ -15,7 +15,7 @@ struct SubjectStat: Identifiable {
     let ratio: Double
 }
 
-struct ScheduleStatsView: View {
+struct CurriculumStatsView: View {
     let stats: [SubjectStat]
     let totalPeriods: Int
     let freeSlots: Int
@@ -215,5 +215,5 @@ struct DonutSliceShape: Shape {
         SubjectStat(name: "程序设计", periods: 4, color: .orange, ratio: 0.24),
         SubjectStat(name: "体育", periods: 3, color: .purple, ratio: 0.17),
     ]
-    return ScheduleStatsView(stats: dummyStats, totalPeriods: 17, freeSlots: 67)
+    return CurriculumStatsView(stats: dummyStats, totalPeriods: 17, freeSlots: 67)
 }

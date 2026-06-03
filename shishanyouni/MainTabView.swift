@@ -12,6 +12,7 @@ import UIKit
 struct MainTabView: View
 {
     @EnvironmentObject var userinfo: userInfo
+    @State private var selectedTab = 1 // 默认选中「课表」tab
 
     init()
     {
@@ -25,7 +26,7 @@ struct MainTabView: View
 
     var body: some View
     {
-        TabView
+        TabView(selection: $selectedTab)
         {
             NavigationStack
             {
@@ -33,8 +34,20 @@ struct MainTabView: View
             }
             .tabItem
             {
+                Label("日程", systemImage: "calendar.badge.clock")
+            }
+            .tag(0)
+
+            NavigationStack
+            {
+                CurriculumView()
+            }
+            .tabItem
+            {
                 Label("课表", systemImage: "calendar")
             }
+            .tag(1)
+
             // 首页
             NavigationStack
             {
@@ -44,6 +57,7 @@ struct MainTabView: View
             {
                 Label("首页", systemImage: "house.fill")
             }
+            .tag(2)
 
             // 个人中心
             NavigationStack
@@ -54,6 +68,7 @@ struct MainTabView: View
             {
                 Label("我的", systemImage: "person.fill")
             }
+            .tag(3)
         }
         .accentColor(.blue)
         .toolbarBackground(.visible, for: .tabBar)
@@ -65,7 +80,7 @@ struct MainTabView: View
 {
     MainTabView()
         .environmentObject(userInfo())
-        .environmentObject(IAPStore(autoload: false))
+        .environmentObject(IAPStore.preview(hasActiveSubscription: false))
 }
 
 extension View

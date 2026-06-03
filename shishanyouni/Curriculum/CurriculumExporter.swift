@@ -1,5 +1,5 @@
 //
-//  ScheduleExporter.swift
+//  CurriculumExporter.swift
 //  shishanyouni
 //
 //  Created by douer_lucky on 2026/3/16.
@@ -8,14 +8,14 @@
 import SwiftUI
 
 @MainActor
-func exportScheduleAsImage(
+func exportCurriculumAsImage(
     courses: [Course],
     week: Int,
     datesCurWeek: [Int],
     month: Int,
     completion: @escaping () -> Void
 ) {
-    let view = ScheduleExportView(
+    let view = CurriculumExportView(
         courses: courses,
         week: week,
         datesCurWeek: datesCurWeek,
@@ -47,7 +47,7 @@ func exportScheduleAsImage(
 }
 
 // 专门用于导出的静态 View（不含底部按钮等 UI）
-struct ScheduleExportView: View {
+struct CurriculumExportView: View {
     let courses: [Course]
     let week: Int
     let datesCurWeek: [Int]
@@ -90,7 +90,7 @@ struct ScheduleExportView: View {
 
             // 课程网格（复用现有组件）
             HStack(alignment: .top, spacing: 0) {
-                TimeScheduleView().frame(width: 44)
+                TimeCurriculumView().frame(width: 44)
                 CourseGridView(courses: courses, nowdisplayWeek: week)
             }
         }

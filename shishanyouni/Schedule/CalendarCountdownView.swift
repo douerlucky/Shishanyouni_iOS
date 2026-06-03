@@ -1,5 +1,5 @@
 //
-//  ScheduleCountdownView.swift
+//  CalendarCountdownView.swift
 //  shishanyouni
 //
 //  倒计时面板：距考试周 / 距假期 / 距学期结束
@@ -24,7 +24,7 @@ struct CountdownItem: Identifiable {
     var isExpired: Bool { daysRemaining < 0 }
 }
 
-struct ScheduleCountdownView: View {
+struct CalendarCountdownView: View {
     let items: [CountdownItem]
 
     var body: some View {
@@ -143,5 +143,5 @@ struct ScheduleCountdownView: View {
 }
 
 #Preview {
-    ScheduleCountdownView(items: ScheduleCountdownView.buildCountdownItems())
+    CalendarCountdownView(items: CalendarCountdownView.buildCountdownItems())
 }

@@ -31,6 +31,10 @@ final class IAPStore: ObservableObject
     @Published private(set) var isPurchasing = false
     @Published var statusMessage = "正在加载校园通行证商品..."
 
+#if DEBUG
+    private var previewSubscriptionOverride: Bool?
+#endif
+
     private let productIDs = [
         IAPStore.monthProductID,
         IAPStore.halfYearProductID,
@@ -167,7 +171,7 @@ final class IAPStore: ObservableObject
     var hasActiveSubscription: Bool
     {
 #if DEBUG
-        true
+        previewSubscriptionOverride ?? (activeProductID != nil)
 #else
         activeProductID != nil
 #endif
@@ -233,6 +237,18 @@ final class IAPStore: ObservableObject
     }
 
 }
+
+#if DEBUG
+extension IAPStore
+{
+    static func preview(hasActiveSubscription: Bool = false) -> IAPStore
+    {
+        let store = IAPStore(autoload: false)
+        store.previewSubscriptionOverride = hasActiveSubscription
+        return store
+    }
+}
+#endif
 
 extension IAPStore
 {

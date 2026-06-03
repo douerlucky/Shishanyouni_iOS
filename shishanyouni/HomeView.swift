@@ -30,7 +30,6 @@ struct HomeView: View
     @State private var navigateToPhysicalTest = false
     @State private var navigateToPhysicalTestCalculator = false
     @State private var navigateToAllCoueseSearch = false
-    @State private var navigateToSchoolCalender = false
     @State private var navigateToBus = false
     @State private var navigateElectricity = false
     @State private var navigateToClassroom = false
@@ -60,12 +59,6 @@ struct HomeView: View
         formatter.dateFormat = "M月d日 EEEE"
         return formatter.string(from: currentTime)
     }
-
-    @State private var date: String = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d" // 只要日期数字
-        return formatter.string(from: Date())
-    }()
 
     @EnvironmentObject var userinfo: userInfo
 
@@ -235,20 +228,6 @@ struct HomeView: View
 //                        navigateToGIS = true
 //                    }
 //
-                    if #available(iOS 26.0, *)
-                    {
-                        MenuGridItem(title: "日程与校历", icon: date + ".calendar", color: HomeMenuColor.purple2)
-                        {
-                            navigateToSchoolCalender = true
-                        }
-                    }
-                    else
-                    {
-                        MenuGridItem(title: "日程与校历", icon: "calendar", color: HomeMenuColor.purple2)
-                        {
-                            navigateToSchoolCalender = true
-                        }
-                    }
                     MenuGridItem(title: "校车查询", icon: "bus", color: HomeMenuColor.red2)
                     {
                         navigateToBus = true
@@ -273,7 +252,6 @@ struct HomeView: View
             .navigationDestination(isPresented: $navigateToSubscription) { SubscriptionView() }
             .navigationDestination(isPresented: $navigateToPhysicalTestCalculator) { PhysicalTestCalculatorView() }
             .navigationDestination(isPresented: $navigateToAllCoueseSearch) { AllCourseView() }
-            .navigationDestination(isPresented: $navigateToSchoolCalender) { SchoolCalendarView() }
             .navigationDestination(isPresented: $navigateToBus)
             { SchoolBusView() }
             .navigationDestination(isPresented: $navigateElectricity)
@@ -333,5 +311,5 @@ struct MenuGridItem: View
 {
     HomeView()
         .environmentObject(userInfo())
-        .environmentObject(IAPStore(autoload: false))
+        .environmentObject(IAPStore.preview(hasActiveSubscription: false))
 }
