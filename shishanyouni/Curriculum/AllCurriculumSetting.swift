@@ -17,11 +17,16 @@ struct AllCurriculumSetting: View
     @State private var pendingDeleteCourse: Course?
     @State private var showDeleteConfirm = false
     @State private var semesterStartDate: Date = Date()
+    @State private var reminderStates: [String: Bool] = [:]
+    @State private var navigateToSubscription = false
+    @State private var navigateToAdvancedStats = false
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
-    
+
+    @EnvironmentObject var iapStore: IAPStore
+
 
     var body: some View
     {
@@ -38,30 +43,51 @@ struct AllCurriculumSetting: View
 
             List
             {
-                Section {
-                    NavigationLink(destination: CurriculumAdvancedStatsView(
-                        courses: courses,
-                        semesterStartDate: semesterStartDate,
-                        currentWeek: calculateCurrentWeek()
-                    )) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "chart.bar.xaxis.ascending")
-                                .font(.title3)
-                                .foregroundColor(.blue)
-                                .frame(width: 36, height: 36)
-                                .background(Color.blue.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("学期统计")
-                                    .font(.body).fontWeight(.medium)
-                                Text("学时分析 · 科目占比 · 空档热力图")
-                                    .font(.caption).foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 4)
+                // 学期统计卡片（和课程卡片统一风格）
+                Button(action: {
+                    if iapStore.hasActiveSubscription {
+                        navigateToAdvancedStats = true
+                    } else {
+                        navigateToSubscription = true
                     }
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "chart.bar.xaxis.ascending")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Color.blue.opacity(0.25))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("学期统计")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                            Text("学时分析 · 科目占比 · 空档热力图")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.body)
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color.blue.opacity(scheduleContentOpacity))
+                    )
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 24)
                 }
+                .buttonStyle(.plain)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+
                 if courses.isEmpty
                 {
                     Text("暂无已导入课程")
@@ -133,6 +159,7 @@ struct AllCurriculumSetting: View
             loadSavedCourses()
             loadBackgroundImage()
             loadSemesterStartDate()
+            loadReminderStates()
         }
         .onChange(of: backgroundImageFilename)
         { _ in
@@ -167,12 +194,34 @@ struct AllCurriculumSetting: View
         {
             Text("将删除「\(pendingDeleteCourse?.name ?? "该课程")」，此操作不可撤销。")
         }
+        .navigationDestination(isPresented: $navigateToAdvancedStats)
+        {
+            CurriculumAdvancedStatsView(
+                courses: courses,
+                semesterStartDate: semesterStartDate,
+                currentWeek: calculateCurrentWeek()
+            )
+        }
+        .sheet(isPresented: $navigateToSubscription)
+        {
+            SubscriptionView()
+        }
     }
 
     @ViewBuilder
     private func courseCard(_ course: Course) -> some View
     {
-        let reminderOn = CurriculumNotificationManager.shared.isReminderEnabled(for: course.id)
+        let reminderOnBinding = Binding<Bool>(
+            get: { self.reminderStates[course.id] ?? CurriculumNotificationManager.shared.isReminderEnabled(for: course.id) },
+            set: { newValue in
+                if !self.iapStore.hasActiveSubscription {
+                    self.navigateToSubscription = true
+                    return
+                }
+                self.reminderStates[course.id] = newValue
+                CurriculumNotificationManager.shared.toggleReminder(for: course.id, enabled: newValue)
+            }
+        )
 
         VStack(alignment: .leading, spacing: 6)
         {
@@ -181,18 +230,18 @@ struct AllCurriculumSetting: View
                     .font(.title2)
                     .fontWeight(.semibold)
                     .lineLimit(2)
+                    .foregroundColor(.white)
 
                 Spacer()
 
                 Button {
-                    let toggled = !CurriculumNotificationManager.shared.isReminderEnabled(for: course.id)
-                    CurriculumNotificationManager.shared.toggleReminder(for: course.id, enabled: toggled)
+                    reminderOnBinding.wrappedValue.toggle()
                 } label: {
-                    Image(systemName: reminderOn ? "bell.fill" : "bell.slash")
+                    Image(systemName: reminderOnBinding.wrappedValue ? "bell.fill" : "bell.slash")
                         .font(.system(size: 16))
-                        .foregroundColor(reminderOn ? .yellow : .gray)
+                        .foregroundColor(reminderOnBinding.wrappedValue ? .yellow : .gray)
                         .frame(width: 36, height: 36)
-                        .background(reminderOn ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.15))
+                        .background(reminderOnBinding.wrappedValue ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.15))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -201,18 +250,20 @@ struct AllCurriculumSetting: View
             Label("周\(toWeekday(course.day)) 第\(course.start)-\(course.endPeriod)节",
                   systemImage: "clock")
                 .font(.subheadline)
+                .foregroundColor(.white.opacity(0.9))
 
             Label(course.weeks ?? "未知周次", systemImage: "calendar")
                 .font(.subheadline)
+                .foregroundColor(.white.opacity(0.9))
 
             Label(course.room ?? "未知教室",
                   systemImage: "location")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.7))
 
             Label(course.teacher ?? "未知老师", systemImage: "person")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -220,7 +271,6 @@ struct AllCurriculumSetting: View
             RoundedRectangle(cornerRadius: 24)
                 .fill(courseColor(for: course).opacity(scheduleContentOpacity))
         )
-        .opacity(0.8)
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:24)
 
     }
@@ -337,6 +387,14 @@ struct AllCurriculumSetting: View
         return (mutable as String)
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
+    }
+
+    private func loadReminderStates()
+    {
+        for course in courses
+        {
+            reminderStates[course.id] = CurriculumNotificationManager.shared.isReminderEnabled(for: course.id)
+        }
     }
 
     private func loadBackgroundImage()

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7CEB5F0FC57247EF8A5457EF904427BF /* ScheduleWidgetExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = FE406C1E2F9A4C4E007039C2 /* ScheduleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FE406C212F9A4C4F007039C2 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE406C202F9A4C4F007039C2 /* WidgetKit.framework */; };
 		FE406C232F9A4C4F007039C2 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE406C222F9A4C4F007039C2 /* SwiftUI.framework */; };
 /* End PBXBuildFile section */
@@ -27,6 +28,20 @@
 			remoteInfo = shishanyouni;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FCC064AF850640F1AF6BD822BD95ACA5 /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7CEB5F0FC57247EF8A5457EF904427BF /* ScheduleWidgetExtension.appex in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A503295E2F66810900917FD3 /* SwiftyRSA.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = SwiftyRSA.xcodeproj; sourceTree = "<group>"; };
@@ -462,6 +477,7 @@
 			buildPhases = (
 				FE4D98122F330FB40087BCAE /* Sources */,
 				FE4D98132F330FB40087BCAE /* Frameworks */,
+				FCC064AF850640F1AF6BD822BD95ACA5 /* Copy Files */,
 				FE4D98142F330FB40087BCAE /* Resources */,
 			);
 			buildRules = (

@@ -129,69 +129,73 @@ struct ProfileView: View
                 }
             }
 
-            Button
+            Section
             {
-                navigateToSubscription = true
-            } label: {
-                VStack(alignment: .leading, spacing: 14)
+                Button
                 {
-                    HStack(spacing: 14)
+                    navigateToSubscription = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 14)
                     {
-                        ZStack
+                        HStack(spacing: 14)
                         {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.14))
-                                .frame(width: 52, height: 52)
+                            ZStack
+                            {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.14))
+                                    .frame(width: 52, height: 52)
 
-                            Image(systemName: iapStore.hasActiveSubscription ? "checkmark.shield.fill" : "crown.fill")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundColor(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                                Image(systemName: iapStore.hasActiveSubscription ? "checkmark.shield.fill" : "crown.fill")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundColor(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                            }
+
+                            VStack(alignment: .leading, spacing: 8)
+                            {
+                                Text("校园通行证")
+                                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                                    .foregroundColor(.primary)
+
+                                Text(
+                                    iapStore.hasActiveSubscription
+                                    ? "狮山有你iOS校园通行证用户，可使用狮山有你全部功能"
+                                    : "订阅狮山有你iOS校园通行证，畅享所有功能"
+                                )
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                                .lineLimit(2)
+                            }
+
+                            Spacer(minLength: 0)
                         }
 
-                        VStack(alignment: .leading, spacing: 8)
-                        {
-                            Text("校园通行证")
-                                .font(.system(size: 19, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-
-                            Text(
-                                iapStore.hasActiveSubscription
-                                ? "狮山有你iOS校园通行证用户，可使用狮山有你全部功能"
-                                : "订阅狮山有你iOS校园通行证，畅享所有功能"
+                        Text(iapStore.hasActiveSubscription ? "已开通" : "立即开通")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(iapStore.hasActiveSubscription ? Color.green : Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                (iapStore.hasActiveSubscription ? Color.green : Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                                    .opacity(0.12),
+                                in: Capsule()
                             )
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        }
                     }
-
-                    Text(iapStore.hasActiveSubscription ? "已开通" : "立即开通")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(iapStore.hasActiveSubscription ? Color.green : Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            (iapStore.hasActiveSubscription ? Color.green : Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
-                                .opacity(0.12),
-                            in: Capsule()
-                        )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 22)
+                            .fill(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.06))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(
+                                Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.12),
+                                lineWidth: 1
+                            )
+                    )
                 }
-                .padding(18)
-                .background(
-                    RoundedRectangle(cornerRadius: 22)
-                        .fill(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.06))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22)
-                        .stroke(
-                            Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.12),
-                            lineWidth: 1
-                        )
-                )
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .listRowBackground(Color.clear)
 
             // 第二组：设置
             Section(header: Text("账号设置"))

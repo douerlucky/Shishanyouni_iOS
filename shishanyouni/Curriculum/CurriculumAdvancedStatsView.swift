@@ -137,6 +137,7 @@ struct CurriculumAdvancedStatsView: View {
                 statCell(title: "日均课时", value: String(format: "%.1f", overview.avgDailyPeriods), suffix: "节/天", icon: "calendar.badge.clock", color: .green)
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(16)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -159,6 +160,7 @@ struct CurriculumAdvancedStatsView: View {
         .padding(12)
         .background(color.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .optionalLiquidGlass(enabled: true, cornerRadius: 12)
     }
 
     // MARK: - 周学时趋势
@@ -200,6 +202,7 @@ struct CurriculumAdvancedStatsView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(16)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -252,6 +255,7 @@ struct CurriculumAdvancedStatsView: View {
                     }
                 }
             }
+        .frame(maxWidth: .infinity)
         .padding(16)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -343,6 +347,7 @@ struct CurriculumAdvancedStatsView: View {
             }
             .font(.caption2)
         }
+        .frame(maxWidth: .infinity)
         .padding(16)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
