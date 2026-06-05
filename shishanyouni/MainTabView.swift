@@ -12,7 +12,9 @@ import UIKit
 struct MainTabView: View
 {
     @EnvironmentObject var userinfo: userInfo
-    @State private var selectedTab = 1 // 默认选中「课表」tab
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(PreferenceKey.lastShownWhatsNewVersion) private var lastShownWhatsNewVersion = ""
+    @State private var showWhatsNew = false
 
     init()
     {
@@ -26,7 +28,7 @@ struct MainTabView: View
 
     var body: some View
     {
-        TabView(selection: $selectedTab)
+        TabView(selection: $userinfo.selectedTab)
         {
             NavigationStack
             {
@@ -73,6 +75,46 @@ struct MainTabView: View
         .accentColor(.blue)
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarBackground(Color(uiColor: .systemBackground), for: .tabBar)
+        .onChange(of: scenePhase)
+        { phase in
+            guard phase == .active else { return }
+            Task
+            {
+                await IAPStore.shared.refreshEntitlements()
+            }
+        }
+        .onAppear
+        {
+            showWhatsNewIfNeeded()
+        }
+        .sheet(isPresented: $showWhatsNew)
+        {
+            if #available(iOS 17.0, *)
+            {
+                WhatsNewView
+                {
+                    lastShownWhatsNewVersion = currentWhatsNewVersion
+                    showWhatsNew = false
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    private var currentWhatsNewVersion: String
+    {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
+        return "\(version)-\(build)"
+    }
+
+    private func showWhatsNewIfNeeded()
+    {
+        guard #available(iOS 17.0, *) else { return }
+        guard lastShownWhatsNewVersion != currentWhatsNewVersion else { return }
+
+        showWhatsNew = true
     }
 }
 

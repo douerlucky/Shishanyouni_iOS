@@ -337,7 +337,7 @@ struct AllCurriculumSetting: View
 
     private func loadSavedCourses()
     {
-        courses = WidgetSharedStore.loadCourses()
+        courses = CurriculumStore.shared.loadCourses()
         sortCoursesByNameAndTime()
     }
 
@@ -351,7 +351,7 @@ struct AllCurriculumSetting: View
 
     private func saveCourses()
     {
-        WidgetSharedStore.saveCourses(courses)
+        CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
     }
 
     private func sortCoursesByNameAndTime()
@@ -419,8 +419,8 @@ struct AllCurriculumSetting: View
     }
 
     private func loadSemesterStartDate() {
-        if let ts = WidgetSharedStore.loadSemesterStartTimestamp(), ts > 0 {
-            semesterStartDate = Date(timeIntervalSince1970: ts)
+        if let date = CurriculumStore.shared.loadSemesterStartDate() {
+            semesterStartDate = date
         } else {
             let ts = UserDefaults.standard.double(forKey: "semesterStartDateTimestamp")
             if ts > 0 {

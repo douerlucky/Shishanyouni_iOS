@@ -18,6 +18,9 @@ struct shishanyouniApp: App
 
     init()
     {
+        PreferenceDefaults.register()
+        PreferenceDefaults.applyDefaultEnabledMigrationIfNeeded()
+
         guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1"
         else
         {

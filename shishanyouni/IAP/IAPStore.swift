@@ -31,9 +31,7 @@ final class IAPStore: ObservableObject
     @Published private(set) var isPurchasing = false
     @Published var statusMessage = "正在加载校园通行证商品..."
 
-#if DEBUG
     private var previewSubscriptionOverride: Bool?
-#endif
 
     private let productIDs = [
         IAPStore.monthProductID,
@@ -170,11 +168,7 @@ final class IAPStore: ObservableObject
 
     var hasActiveSubscription: Bool
     {
-#if DEBUG
         previewSubscriptionOverride ?? (activeProductID != nil)
-#else
-        activeProductID != nil
-#endif
     }
 
     func isPurchased(_ productID: String) -> Bool
@@ -189,13 +183,13 @@ final class IAPStore: ObservableObject
         case IAPStore.monthProductID:
             return ProductCopy(
                 title: "校园通行证（1个月）",
-                subtitle: "一个月畅享狮山有你所有Pro功能",
+                subtitle: "免费试用3个月，之后¥6/月，可随时取消",
                 accent: "month"
             )
         case IAPStore.halfYearProductID:
             return ProductCopy(
                 title: "校园通行证一学期（6个月）",
-                subtitle: "一学期畅享狮山有你所有Pro功能",
+                subtitle: "免费试用3个月，之后¥30/6个月，可随时取消",
                 accent: "halfyear"
             )
         default:
@@ -238,7 +232,6 @@ final class IAPStore: ObservableObject
 
 }
 
-#if DEBUG
 extension IAPStore
 {
     static func preview(hasActiveSubscription: Bool = false) -> IAPStore
@@ -248,7 +241,6 @@ extension IAPStore
         return store
     }
 }
-#endif
 
 extension IAPStore
 {

@@ -2,6 +2,13 @@
 import EventKit
 import SwiftUI
 
+private let queryTimestampFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "zh_CN")
+    formatter.dateFormat = "yyyy-MM-dd HH:mm"
+    return formatter
+}()
+
 struct ExamView: View
 {
     @EnvironmentObject var userinfo: userInfo
@@ -33,6 +40,18 @@ struct ExamView: View
     private let scheduleQuery = ScheduleQuery()
     private let examQuery = ExamQuery.shared
 
+    private var lastQueryText: String?
+    {
+        guard !userinfo.username.isEmpty,
+              let date = ExamStore.shared.lastUpdatedAt(
+                username: userinfo.username,
+                year: selectedYear,
+                term: selectedTerm,
+                source: querySource
+              ) else { return nil }
+        return "上次查询：\(queryTimestampFormatter.string(from: date))"
+    }
+
     var body: some View
     {
         ZStack(alignment: .bottom)
@@ -45,8 +64,15 @@ struct ExamView: View
             {
                 if exams.isEmpty
                 {
-                    VStack
+                    VStack(spacing: 10)
                     {
+                        if let lastQueryText
+                        {
+                            Text(lastQueryText)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        }
                         Spacer()
                         Image(systemName: "calendar.badge.exclamationmark")
                             .font(.system(size: 50))
@@ -62,21 +88,34 @@ struct ExamView: View
                 }
                 else
                 {
-                    List(exams)
-                        { item in
+                    List
+                    {
+                        if let lastQueryText
+                        {
+                            Text(lastQueryText)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                        }
+
+                        ForEach(exams) { item in
                             ExamCard(exam: item)
                                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                         }
-                        .listStyle(.plain)
-                        .scrollContentBackground(.hidden)
-                        .background(Color.clear)
-                        .blur(radius: isLoading ? 3 : 0)
-                        .safeAreaInset(edge: .bottom)
-                        {
-                            Color.clear.frame(height: 100)
-                        }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .blur(radius: isLoading ? 3 : 0)
+                    .safeAreaInset(edge: .bottom)
+                    {
+                        Color.clear.frame(height: 100)
+                    }
                 }
 
                 if isLoading
@@ -142,6 +181,33 @@ struct ExamView: View
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
         }
+        .onAppear
+        {
+            loadCachedExams()
+        }
+        .onChange(of: selectedYear)
+        { _ in
+            loadCachedExams()
+        }
+        .onChange(of: selectedTerm)
+        { _ in
+            loadCachedExams()
+        }
+        .onChange(of: querySourceRaw)
+        { _ in
+            loadCachedExams()
+        }
+    }
+
+    private func loadCachedExams()
+    {
+        guard !userinfo.username.isEmpty else { return }
+        exams = ExamStore.shared.loadExams(
+            username: userinfo.username,
+            year: selectedYear,
+            term: selectedTerm,
+            source: querySource
+        )
     }
 }
 
@@ -873,6 +939,13 @@ struct ExamBottomControlBar: View
                 await MainActor.run
                 {
                     self.exams = result
+                    ExamStore.shared.saveExams(
+                        result,
+                        username: userinfo.username,
+                        year: selectedYear,
+                        term: selectedTerm,
+                        source: querySource
+                    )
                     self.isLoading = false
                     self.onQuerySuccess()
                     if result.isEmpty

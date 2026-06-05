@@ -14,6 +14,7 @@ struct ProfileView: View
     @State private var showNicknameAlert = false
     @State private var tempNickname = "" // 弹窗临时的输入
     @State private var navigateToSubscription = false
+    @State private var showWhatsNew = false
 
     var greeting: String
     {
@@ -197,8 +198,44 @@ struct ProfileView: View
                 .buttonStyle(.plain)
             }
 
-            // 第二组：设置
-            Section(header: Text("账号设置"))
+            if #available(iOS 17.0, *)
+            {
+                Section(header: Text("新功能"))
+                {
+                    Button
+                    {
+                        showWhatsNew = true
+                    } label: {
+                        HStack(spacing: 15)
+                        {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.white)
+                                .frame(width: 30, height: 30)
+                                .background(Color.orange)
+                                .cornerRadius(6)
+
+                            VStack(alignment: .leading, spacing: 2)
+                            {
+                                Text("查看新功能")
+                                    .foregroundColor(.primary)
+                                Text("看看这次更新了什么")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.footnote)
+                                .foregroundColor(Color(.systemGray3))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // 第二组：个性化设置
+            Section(header: Text("个性化设置"))
             {
                 Button(action: {
                     // 1. 先把当前的昵称同步给临时变量
@@ -251,10 +288,10 @@ struct ProfileView: View
                     HStack(spacing: 12)
                     {
                         Image(systemName: "calendar.badge.clock")
-                            .font(.footnote) // 这个图标比较复杂，稍微缩小一点点字号
+                            .font(.footnote)
                             .foregroundColor(.white)
                             .frame(width: 30, height: 30)
-                            .background(Color.green) // 天数用充满希望的绿色
+                            .background(Color.green)
                             .cornerRadius(6)
 
                         Text("显示入校天数")
@@ -262,6 +299,61 @@ struct ProfileView: View
                     }
                 }
                 .tint(.accentColor)
+
+                // 4. 显示下一个安排
+                Toggle(isOn: $userinfo.showNextEvent)
+                {
+                    HStack(spacing: 12)
+                    {
+                        Image(systemName: "rectangle.and.text.magnifyingglass")
+                            .font(.footnote)
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.blue)
+                            .cornerRadius(6)
+
+                        Text("显示下一个安排")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .tint(.accentColor)
+
+                // 5. 背景图片设置
+                NavigationLink {
+                    BackgroundSettingView()
+                } label: {
+                    HStack(spacing: 15)
+                    {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.blue)
+                            .cornerRadius(6)
+                        Text("背景图片设置")
+                            .foregroundColor(.primary)
+                        Spacer()
+                    }
+                }
+
+                // 6. 默认启动页面
+                Picker(selection: $userinfo.defaultTab) {
+                    Text("日程").tag(0)
+                    Text("课表").tag(1)
+                    Text("首页").tag(2)
+                } label: {
+                    HStack(spacing: 12)
+                    {
+                        Image(systemName: "house.and.flag.fill")
+                            .font(.footnote)
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.purple)
+                            .cornerRadius(6)
+
+                        Text("默认启动页面")
+                            .foregroundColor(.primary)
+                    }
+                }
 
                 NavigationLink
                 {
@@ -300,6 +392,24 @@ struct ProfileView: View
         .navigationDestination(isPresented: $navigateToSubscription)
         {
             SubscriptionView()
+        }
+        .sheet(isPresented: $showWhatsNew)
+        {
+            if #available(iOS 17.0, *)
+            {
+                WhatsNewView
+                {
+                    showWhatsNew = false
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            else
+            {
+                Text("新功能介绍需要 iOS 17 或更高版本")
+                    .font(.headline)
+                    .padding()
+            }
         }
     }
 }

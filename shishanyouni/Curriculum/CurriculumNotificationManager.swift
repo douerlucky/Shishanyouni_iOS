@@ -66,7 +66,7 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
             print("📭 无已开启提醒的课程，已清除所有提醒")
             return
         }
-        let courses = WidgetSharedStore.loadCourses()
+        let courses = CurriculumStore.shared.loadCourses()
         let semesterStart = semesterStartDate()
         var scheduledCount = 0
         for course in courses {
@@ -77,8 +77,8 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
     }
 
     private func semesterStartDate() -> Date {
-        if let ts = WidgetSharedStore.loadSemesterStartTimestamp(), ts > 0 {
-            return Date(timeIntervalSince1970: ts)
+        if let date = CurriculumStore.shared.loadSemesterStartDate() {
+            return date
         }
         let ts = UserDefaults.standard.double(forKey: "semesterStartDateTimestamp")
         if ts > 0 {

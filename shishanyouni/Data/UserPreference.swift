@@ -35,6 +35,14 @@ enum PreferenceKey
     static let prefShowClock = "pref_showClock"
     /// 首页显示入学天数 - userInfo → HomeView
     static let prefShowEnrollmentDays = "pref_showEnrollmentDays"
+    /// 首页显示下一个安排 - HomeView
+    static let prefShowNextEvent = "pref_showNextEvent"
+    /// 默认启动 Tab - MainTabView
+    static let prefDefaultTab = "pref_defaultTab"
+    /// 已展示的新功能版本标记 - MainTabView
+    static let lastShownWhatsNewVersion = "last_shown_whats_new_version"
+    /// 已应用本次默认开启迁移 - App/UserInfo
+    static let didApplyDefaultEnabledMigration = "did_apply_default_enabled_migration"
     /// 登录绑定数据源选择 - LoginView
     static let loginBindingSource = "login_binding_source"
 
@@ -49,6 +57,12 @@ enum PreferenceKey
     static let scheduleContentOpacity = "scheduleContentOpacity"
     /// 液态玻璃效果开关 - CurriculumView / CurriculumSettingView / AllCurriculumSetting
     static let enableLiquidGlassEffect = "enableLiquidGlassEffect"
+    /// 首页单独控制背景 - HomeView
+    static let homeBackgroundEnabled = "homeBackgroundEnabled"
+    /// 日程单独控制背景 - ScheduleView
+    static let scheduleBackgroundEnabled = "scheduleBackgroundEnabled"
+    /// 课表单独控制背景 - CurriculumView
+    static let curriculumBackgroundEnabled = "curriculumBackgroundEnabled"
     /// 上课提前提醒分钟数（Int，默认 10 分钟） - CurriculumSettingView / CurriculumNotificationManager
     static let scheduleNotificationMinutes = "scheduleNotificationMinutes"
     /// 已开启提醒的课程 ID 数组 - CurriculumNotificationManager
@@ -95,4 +109,28 @@ enum PreferenceKey
     /// 学术查询结果缓存（带命名空间和用户名的动态 key）
     /// 模式：academicQueryCache.{namespace}.{username}.{parts} - AcademicQueryCache
     static let academicQueryCachePrefix = "academicQueryCache"
+}
+
+enum PreferenceDefaults
+{
+    static func register()
+    {
+        UserDefaults.standard.register(defaults: [
+            PreferenceKey.prefShowClock: true,
+            PreferenceKey.prefShowEnrollmentDays: true,
+            PreferenceKey.prefShowNextEvent: true,
+            PreferenceKey.enableLiquidGlassEffect: true,
+        ])
+    }
+
+    static func applyDefaultEnabledMigrationIfNeeded()
+    {
+        guard !UserDefaults.standard.bool(forKey: PreferenceKey.didApplyDefaultEnabledMigration) else { return }
+
+        UserDefaults.standard.set(true, forKey: PreferenceKey.prefShowClock)
+        UserDefaults.standard.set(true, forKey: PreferenceKey.prefShowEnrollmentDays)
+        UserDefaults.standard.set(true, forKey: PreferenceKey.prefShowNextEvent)
+        UserDefaults.standard.set(true, forKey: PreferenceKey.enableLiquidGlassEffect)
+        UserDefaults.standard.set(true, forKey: PreferenceKey.didApplyDefaultEnabledMigration)
+    }
 }

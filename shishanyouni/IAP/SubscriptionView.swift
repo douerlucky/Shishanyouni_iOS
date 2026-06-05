@@ -45,10 +45,7 @@ struct SubscriptionView: View
         .toolbar(.hidden, for: .tabBar)
         .task
         {
-            if store.products.isEmpty
-            {
-                await store.bootstrap()
-            }
+            await store.bootstrap()
         }
     }
 
@@ -59,7 +56,7 @@ struct SubscriptionView: View
             Text("购买狮山有你iOS通行证")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
 
-            Text("开发iOS版不易，感谢使用，我们保证所有小程序的功能iOS版全部免费。开通后即可解锁狮山有你iOS校园通行证权益，享受更完整的iOS版专属功能体验。")
+            Text("现在可免费试用3个月，试用结束后按所选方案自动续费。你可以随时在 Apple 订阅管理中取消。")
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
 
@@ -166,7 +163,8 @@ struct SubscriptionView: View
             VStack(alignment: .leading, spacing: 10)
             {
                 Text("狮山有你iOS校园通行证仅可在狮山有你iOS App内使用。")
-                Text("当前校园通行证为自动续期订阅，可在 Apple 订阅管理中随时取消续费。")
+                Text("当前校园通行证为自动续期订阅，新用户可免费试用3个月，试用结束后按所选方案自动续费。")
+                Text("订阅可在 Apple 订阅管理中随时取消；取消后仍可使用到当前试用期或已付费周期结束。")
                 Text("狮山有你iOS版与狮山有你微信小程序、狮山有你Android App并非同一开发团队。")
                 Text("狮山有你iOS版遇到的问题，请联系沸点工作室移动App开发组。")
                 Text("狮山有你iOS版相关功能由iOS开发团队负责解释与后续更新。")
@@ -265,6 +263,20 @@ struct SubscriptionView: View
                     .foregroundColor(.secondary)
             }
 
+            VStack(alignment: .leading, spacing: 6)
+            {
+                Label("免费试用 3 个月", systemImage: "gift.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(themePrimary)
+
+                Text("试用结束后自动续费为 \(renewalPriceText(for: product.id))，你可以随时取消。")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(themePrimary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+
             Button
             {
                 Task
@@ -272,7 +284,7 @@ struct SubscriptionView: View
                     await store.purchase(product)
                 }
             } label: {
-                Text(purchased ? "当前方案生效中" : "立即开通")
+                Text(purchased ? "当前方案生效中" : "开始免费试用")
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -402,6 +414,19 @@ struct SubscriptionView: View
         }
     }
 
+    private func renewalPriceText(for productID: String) -> String
+    {
+        switch productID
+        {
+        case IAPStore.monthProductID:
+            return "¥6/月"
+        case IAPStore.halfYearProductID:
+            return "¥30/6个月"
+        default:
+            return "所选价格"
+        }
+    }
+
     private var themePrimary: Color
     {
         Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255)
@@ -487,10 +512,14 @@ private extension SubscriptionView
     {
         [
             ComparisonRow(title: "所有狮山有你小程序功能", normalUserAvailable: true, passUserAvailable: true),
+            ComparisonRow(title: "私人行程与日程", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "体测查询", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "ITC平台查询", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "桌面小组件（即将推出）", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "私人行程与日程", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "图书馆预约", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "桌面小组件", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "学期分析", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "GPA分析", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "课程上课提醒", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "后续iOS版专属功能更新", normalUserAvailable: false, passUserAvailable: true),
         ]
     }

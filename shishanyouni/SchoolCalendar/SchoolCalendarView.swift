@@ -33,6 +33,8 @@ struct SchoolCalendarWeb: UIViewRepresentable
 struct SchoolCalendarView: View
 {
     @EnvironmentObject var userinfo: userInfo
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
 
     @State private var currentMonth: Date
     @State private var selectedDate: Date
@@ -72,6 +74,7 @@ struct SchoolCalendarView: View
             monthSelector
                 .padding(.horizontal)
                 .padding(.vertical, 6)
+                .opacity(scheduleContentOpacity)
 
             ScrollView
             {
@@ -84,19 +87,21 @@ struct SchoolCalendarView: View
                         selectedDate: $selectedDate
                     )
                     .padding(16)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+                    .background(Color(.secondarySystemGroupedBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 20))
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
+                    .opacity(scheduleContentOpacity)
                     .padding(.horizontal, 12)
                     
                     schoolEventsForSelectedDateSection
+                        .opacity(scheduleContentOpacity)
                         .padding(.bottom, 20)
                     schoolCalendarWebSection
+                        .opacity(scheduleContentOpacity)
                 }
                 .padding(.top, 8)
             }
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
-        .navigationTitle("校历")
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.clear)
         .toolbar
         {
             ToolbarItem(placement: .navigationBarTrailing)
@@ -177,7 +182,8 @@ struct SchoolCalendarView: View
                     .foregroundColor(Color(.systemGray3))
             }
             .padding(16)
-            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+            .background(Color(.secondarySystemGroupedBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 20))
+            .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(Color.orange.opacity(0.12), lineWidth: 1)
@@ -205,6 +211,7 @@ struct SchoolCalendarView: View
                     .foregroundColor(.blue)
                     .frame(width: 36, height: 36)
                     .background(Color.blue.opacity(0.1), in: Circle())
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
             }
 
             Spacer()
@@ -225,6 +232,7 @@ struct SchoolCalendarView: View
                     .padding(.vertical, 6)
                     .background(Color.blue.opacity(0.1), in: Capsule())
                     .foregroundColor(.blue)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
             }
 
             Spacer()
@@ -243,6 +251,7 @@ struct SchoolCalendarView: View
                     .foregroundColor(.blue)
                     .frame(width: 36, height: 36)
                     .background(Color.blue.opacity(0.1), in: Circle())
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
             }
         }
     }
@@ -458,6 +467,9 @@ struct SchoolCalendarView: View
 
 private struct SchoolCalendarEmptyState: View
 {
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+
     let systemImage: String
     let title: String
     let subtitle: String
@@ -480,6 +492,10 @@ private struct SchoolCalendarEmptyState: View
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
         .padding(.horizontal, 16)
+        .background(Color(.secondarySystemBackground).opacity(0.55), in: RoundedRectangle(cornerRadius: 18))
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+        .opacity(scheduleContentOpacity)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -487,6 +503,9 @@ private struct SchoolCalendarEmptyState: View
 
 struct SchoolEventRow: View
 {
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+
     let event: SchoolCalendarEvent
 
     var body: some View
@@ -528,7 +547,9 @@ struct SchoolEventRow: View
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color(.secondarySystemBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 16))
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
+        .opacity(scheduleContentOpacity)
     }
 }
 

@@ -10,6 +10,13 @@ import SwiftUI
 struct ScheduleView: View
 {
     @State private var selectedMode: ScheduleMode = .personal
+    @State private var backgroundImage: UIImage?
+
+    @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename = ""
+    @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage("scheduleBackgroundEnabled") private var scheduleBackgroundEnabled: Bool = false
 
     private enum ScheduleMode: String, CaseIterable, Identifiable
     {
@@ -21,33 +28,92 @@ struct ScheduleView: View
 
     var body: some View
     {
-        VStack(spacing: 0)
+        ZStack
         {
-            Picker("切换视图", selection: $selectedMode)
-            {
-                ForEach(ScheduleMode.allCases)
-                { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
-            .background(Color(.systemGroupedBackground))
+            Color(.systemGroupedBackground)
+                .opacity(scheduleBackgroundEnabled ? 0 : 1)
+                .ignoresSafeArea()
 
-            Group
+            if scheduleBackgroundEnabled, let backgroundImage
             {
-                switch selectedMode
+                Image(uiImage: backgroundImage)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .opacity(backgroundOpacity)
+            }
+
+            VStack(spacing: 0)
+            {
+                Picker("切换视图", selection: $selectedMode)
                 {
-                case .personal:
-                    PersonalScheduleView()
-                case .schoolCalendar:
-                    SchoolCalendarView()
+                    ForEach(ScheduleMode.allCases)
+                    { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+                .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 18))
+                .opacity(scheduleContentOpacity)
+                .padding(.horizontal, 12)
+
+                Group
+                {
+                    switch selectedMode
+                    {
+                    case .personal:
+                        PersonalScheduleView()
+                    case .schoolCalendar:
+                        SchoolCalendarView()
+                    }
                 }
             }
+            .padding(.top, scheduleBackgroundEnabled ? 72 : 0)
+            .ignoresSafeArea(.container, edges: .bottom)
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("日程")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear
+        {
+            loadScheduleBackgroundImage()
+        }
+        .onChange(of: backgroundImageFilename)
+        { _ in
+            loadScheduleBackgroundImage()
+        }
+    }
+
+    private func loadScheduleBackgroundImage()
+    {
+        guard !backgroundImageFilename.isEmpty
+        else
+        {
+            backgroundImage = nil
+            return
+        }
+
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(backgroundImageFilename)
+
+        if let data = try? Data(contentsOf: documentsURL),
+           let image = UIImage(data: data)
+        {
+            backgroundImage = image
+            return
+        }
+
+        if let sharedURL = WidgetSharedStore.sharedContainerURL()?.appendingPathComponent(backgroundImageFilename),
+           let data = try? Data(contentsOf: sharedURL),
+           let image = UIImage(data: data)
+        {
+            backgroundImage = image
+            return
+        }
+
+        backgroundImage = nil
     }
 }
 

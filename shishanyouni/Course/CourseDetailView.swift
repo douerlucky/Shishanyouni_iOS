@@ -200,7 +200,7 @@ struct CourseDetailView: View
             return
         }
 
-        var savedCourses = WidgetSharedStore.loadCourses()
+        var savedCourses = CurriculumStore.shared.loadCourses()
         let coursesToAdd = parsedCourses.filter
         { newCourse in
             !savedCourses.contains(where: { isSameScheduleCourse($0, newCourse) })
@@ -214,7 +214,7 @@ struct CourseDetailView: View
         }
 
         savedCourses.append(contentsOf: coursesToAdd)
-        WidgetSharedStore.saveCourses(savedCourses)
+        CurriculumStore.shared.saveCourses(savedCourses, semesterStart: nil)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         addAlertMessage = "已添加「\(course.kcmc)」的 \(coursesToAdd.count) 条上课安排到课表。"
         showAddAlert = true

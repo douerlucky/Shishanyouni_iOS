@@ -46,6 +46,7 @@ struct CurriculumView: View
     @State private var editCourseContext: Course?
     
     @AppStorage("enableLiquidGlassEffect") public var enableLiquidGlassEffect: Bool = false
+    @AppStorage("curriculumBackgroundEnabled") private var curriculumBackgroundEnabled: Bool = false
 
     @State var semesterStartDate: Date = {
         var components = DateComponents()
@@ -78,7 +79,7 @@ struct CurriculumView: View
 
     private func saveCourses()
     {
-        WidgetSharedStore.saveCourses(courses)
+        CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
         print("✅ 课程保存成功，共 \(courses.count) 门")
         CurriculumNotificationManager.shared.rescheduleAllNotifications()
     }
@@ -112,12 +113,12 @@ struct CurriculumView: View
         }
         .background
         {
-            if let backgroundImage = backgroundImage
+            if curriculumBackgroundEnabled, let backgroundImage = backgroundImage
             {
                 Image(uiImage: backgroundImage)
                     .resizable()
                     .scaledToFill()
-                    .ignoresSafeArea() // 穿透灵动岛和底部
+                    .ignoresSafeArea()
                     .opacity(backgroundOpacity)
             }
         }
@@ -483,13 +484,13 @@ struct CurriculumView: View
         {
             semesterStartDate = Date(timeIntervalSince1970: savedTimestamp)
         }
-        else if let sharedTs = WidgetSharedStore.loadSemesterStartTimestamp(), sharedTs > 0
+        else if let sharedDate = CurriculumStore.shared.loadSemesterStartDate()
         {
-            savedTimestamp = sharedTs
-            semesterStartDate = Date(timeIntervalSince1970: sharedTs)
+            savedTimestamp = sharedDate.timeIntervalSince1970
+            semesterStartDate = sharedDate
         }
 
-        courses = WidgetSharedStore.loadCourses()
+        courses = CurriculumStore.shared.loadCourses()
         print("✅ 已加载 \(courses.count) 门课程")
         loadBackgroundImage()
     }

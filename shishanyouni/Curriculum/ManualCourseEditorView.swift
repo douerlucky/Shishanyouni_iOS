@@ -432,7 +432,7 @@ struct ManualCourseEditorView: View
 
     private func persistCourses()
     {
-        WidgetSharedStore.saveCourses(courses)
+        CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
         print("✅ 课程保存成功，共 \(courses.count) 门")
     }
 }

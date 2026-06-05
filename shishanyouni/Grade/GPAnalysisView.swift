@@ -167,13 +167,18 @@ class GPAnalysisViewModel: ObservableObject
 struct GPAnalysisView: View
 {
     @EnvironmentObject var userinfo: userInfo
+    @EnvironmentObject var iapStore: IAPStore
     @StateObject private var vm = GPAnalysisViewModel()
 
     var body: some View
     {
         Group
         {
-            if vm.isLoading
+            if !iapStore.hasActiveSubscription
+            {
+                SubscriptionView()
+            }
+            else if vm.isLoading
             {
                 VStack(spacing: 16)
                 {
@@ -217,7 +222,7 @@ struct GPAnalysisView: View
         .toolbar(.hidden, for: .tabBar)
         .background(Color(uiColor: .systemGroupedBackground))
         .task {
-            if vm.semesters.isEmpty
+            if iapStore.hasActiveSubscription, vm.semesters.isEmpty
             {
                 await vm.fetchAllSemesters(
                     username: userinfo.username,

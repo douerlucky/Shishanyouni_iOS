@@ -35,6 +35,8 @@ private enum PersonalEventFilter: String, CaseIterable
 struct PersonalScheduleView: View
 {
     @EnvironmentObject var iapStore: IAPStore
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
 
     @State private var currentMonth: Date
     @State private var selectedDate: Date
@@ -52,6 +54,11 @@ struct PersonalScheduleView: View
     private var isSubscribed: Bool
     {
         iapStore.hasActiveSubscription
+    }
+
+    private var scheduleCardOpacity: Double
+    {
+        max(scheduleContentOpacity, 0.9)
     }
 
     private var dateRange: ClosedRange<Date>
@@ -106,56 +113,64 @@ struct PersonalScheduleView: View
 
     var body: some View
     {
-        VStack(spacing: 0)
+        ZStack(alignment: .bottom)
         {
-            monthSelector
-                .padding(.horizontal)
-                .padding(.vertical, 6)
-
-            if isSubscribed
+            VStack(spacing: 0)
             {
-                quickAddBar
-            }
+                monthSelector
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .opacity(scheduleCardOpacity)
 
-            ScrollView
-            {
-                VStack(spacing: 16)
+                if isSubscribed
                 {
-                    CalendarMonthView(
-                        month: currentMonth,
-                        schoolEvents: [],
-                        personalEvents: isSubscribed ? personalEvents : [],
-                        selectedDate: $selectedDate
-                    )
-                    .padding(16)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
-                    .padding(.horizontal, 12)
-
-                    if isSubscribed
-                    {
-                        selectedDatePersonalEventsSection
-                        personalEventsFilter
-                        personalEventsListSection
-                    }
-                    else
-                    {
-                        iapTeaserSection
-                            .padding(.top, 8)
-                    }
-
-                    Spacer(minLength: 24)
+                    quickAddBar
+                        .opacity(scheduleCardOpacity)
                 }
-                .padding(.top, 8)
+
+                ScrollView
+                {
+                    VStack(spacing: 16)
+                    {
+                        CalendarMonthView(
+                            month: currentMonth,
+                            schoolEvents: [],
+                            personalEvents: isSubscribed ? personalEvents : [],
+                            selectedDate: $selectedDate
+                        )
+                        .padding(16)
+                        .background(Color(.secondarySystemGroupedBackground).opacity(0.88), in: RoundedRectangle(cornerRadius: 20))
+                        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
+                        .opacity(scheduleCardOpacity)
+                        .padding(.horizontal, 12)
+
+                        if isSubscribed
+                        {
+                            selectedDatePersonalEventsSection
+                            personalEventsFilter
+                            personalEventsListSection
+                        }
+                        else
+                        {
+                            iapTeaserSection
+                                .padding(.top, 8)
+                        }
+
+                        Spacer(minLength: 24)
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, isSubscribed ? 180 : 24)
+                }
             }
 
             if isSubscribed
             {
                 addEventButton
+                    .opacity(scheduleCardOpacity)
+                    .padding(.bottom, 96)
             }
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
-        .navigationTitle("日程")
-        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.clear)
         .onAppear
         {
             loadEventData()
@@ -204,6 +219,7 @@ struct PersonalScheduleView: View
                     .foregroundColor(.purple)
                     .frame(width: 36, height: 36)
                     .background(Color.purple.opacity(0.1), in: Circle())
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
             }
 
             Spacer()
@@ -224,6 +240,7 @@ struct PersonalScheduleView: View
                     .padding(.vertical, 6)
                     .background(Color.purple.opacity(0.1), in: Capsule())
                     .foregroundColor(.purple)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
             }
 
             Spacer()
@@ -242,6 +259,7 @@ struct PersonalScheduleView: View
                     .foregroundColor(.purple)
                     .frame(width: 36, height: 36)
                     .background(Color.purple.opacity(0.1), in: Circle())
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
             }
         }
     }
@@ -274,7 +292,9 @@ struct PersonalScheduleView: View
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(.secondarySystemBackground).opacity(0.5))
+        .background(Color(.secondarySystemBackground).opacity(0.82), in: RoundedRectangle(cornerRadius: 16))
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
+        .padding(.horizontal, 12)
     }
 
     private var selectedDatePersonalEventsSection: some View
@@ -466,6 +486,7 @@ struct PersonalScheduleView: View
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(Color.purple, in: RoundedRectangle(cornerRadius: 12))
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 12)
             }
             .padding(.horizontal, 16)
         }
@@ -486,12 +507,13 @@ struct PersonalScheduleView: View
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color.purple, in: RoundedRectangle(cornerRadius: 14))
+                    .background(Color.purple.opacity(0.92), in: Capsule())
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 28)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
+        .background(.clear)
     }
 
     private var groupedPersonalEvents: [String: [Event]]
@@ -595,9 +617,17 @@ private struct SectionHeader: View
 
 private struct ScheduleEmptyState: View
 {
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+
     let systemImage: String
     let title: String
     let subtitle: String
+
+    private var cardOpacity: Double
+    {
+        max(scheduleContentOpacity, 0.92)
+    }
 
     var body: some View
     {
@@ -617,6 +647,10 @@ private struct ScheduleEmptyState: View
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
         .padding(.horizontal, 16)
+        .background(Color(.secondarySystemBackground).opacity(0.88), in: RoundedRectangle(cornerRadius: 18))
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+        .opacity(cardOpacity)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -624,8 +658,16 @@ private struct ScheduleEmptyState: View
 
 private struct PersonalEventRow: View
 {
+    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+
     let event: Event
     @Binding var completed: Bool
+
+    private var cardOpacity: Double
+    {
+        max(scheduleContentOpacity, 0.92)
+    }
 
     var body: some View
     {
@@ -737,7 +779,9 @@ private struct PersonalEventRow: View
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color(.secondarySystemBackground).opacity(0.9), in: RoundedRectangle(cornerRadius: 16))
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
+        .opacity(cardOpacity)
     }
 
     private func relativeDueText(for date: Date) -> String

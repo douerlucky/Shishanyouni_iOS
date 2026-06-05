@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+private let gradeQueryTimestampFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "zh_CN")
+    formatter.dateFormat = "yyyy-MM-dd HH:mm"
+    return formatter
+}()
+
 // MARK: - GPA 计算 & 颜色
 
 /// 根据百分制成绩计算绩点（按学校标准）
@@ -339,6 +346,7 @@ struct GradeSummaryCard: View
 struct GradeInquiry: View
 {
     @EnvironmentObject var userinfo: userInfo
+    @EnvironmentObject var iapStore: IAPStore
     @State var Grades: [Grade] = []
     @State private var isLoading = false
 
@@ -351,11 +359,23 @@ struct GradeInquiry: View
     @State var selectedTerm = "2"
 
     @State private var navigateToAnalysis = false
+    @State private var navigateToSubscription = false
 
     /// 被排除（不计入统计）的课程 ID 集合
     @State private var excludedIDs: Set<String> = []
 
     let gradeService = GradeService()
+
+    private var lastQueryText: String?
+    {
+        guard !userinfo.username.isEmpty,
+              let date = GradeStore.shared.lastUpdatedAt(
+                username: userinfo.username,
+                year: selectedYear,
+                term: selectedTerm
+              ) else { return nil }
+        return "上次查询：\(gradeQueryTimestampFormatter.string(from: date))"
+    }
 
     /// 已勾选（计入统计）的课程
     private var includedGrades: [Grade]
@@ -376,6 +396,12 @@ struct GradeInquiry: View
                 {
                     VStack(spacing: 16)
                     {
+                        if let lastQueryText
+                        {
+                            Text(lastQueryText)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 60))
                             .foregroundColor(.gray.opacity(0.3))
@@ -395,6 +421,14 @@ struct GradeInquiry: View
                     {
                         VStack(alignment: .leading, spacing: 20)
                         {
+                            if let lastQueryText
+                            {
+                                Text(lastQueryText)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                            }
+
                             Text("总成绩")
                                 .font(.title2.bold())
                                 .padding(.horizontal, 16)
@@ -481,7 +515,16 @@ struct GradeInquiry: View
             {
                 ToolbarItem(placement: .topBarTrailing)
                 {
-                    Button(action: { navigateToAnalysis = true })
+                    Button(action: {
+                        if iapStore.hasActiveSubscription
+                        {
+                            navigateToAnalysis = true
+                        }
+                        else
+                        {
+                            navigateToSubscription = true
+                        }
+                    })
                     {
                         HStack(spacing: 4)
                         {
@@ -497,6 +540,10 @@ struct GradeInquiry: View
         {
             GPAnalysisView()
                 .environmentObject(userinfo)
+        }
+        .navigationDestination(isPresented: $navigateToSubscription)
+        {
+            SubscriptionView()
         }
         .alert(alertTitle, isPresented: $showAlert)
         {
@@ -521,20 +568,14 @@ struct GradeInquiry: View
         }
     }
 
-    private var gradeCacheParts: [String]
-    {
-        [selectedYear, selectedTerm]
-    }
-
     private func loadCachedGrades()
     {
         guard !userinfo.username.isEmpty else { return }
-        Grades = AcademicQueryCache.load(
-            [Grade].self,
-            namespace: "grade",
+        Grades = GradeStore.shared.loadGrades(
             username: userinfo.username,
-            parts: gradeCacheParts
-        ) ?? []
+            year: selectedYear,
+            term: selectedTerm
+        )
         excludedIDs = []
     }
 }
@@ -695,11 +736,11 @@ struct BottomButtonView: View
                 {
                     isLoading = false
                     Grades = result
-                    AcademicQueryCache.save(
+                    GradeStore.shared.saveGrades(
                         Grades,
-                        namespace: "grade",
                         username: userinfo.username,
-                        parts: [selectedYear, selectedTerm]
+                        year: selectedYear,
+                        term: selectedTerm
                     )
                     onGradesLoaded?()
                     alertTitle   = "查询成功"
@@ -783,4 +824,5 @@ struct BottomButtonView: View
 {
     GradeInquiry()
         .environmentObject(userInfo())
+        .environmentObject(IAPStore.preview(hasActiveSubscription: false))
 }

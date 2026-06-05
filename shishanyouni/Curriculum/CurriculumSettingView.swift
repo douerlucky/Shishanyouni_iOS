@@ -78,7 +78,6 @@ struct CurriculumSettingView: View {
                 importSection
                 clearSection
                 notificationSection
-                backgroundSection
                 saveSection
             }
             .navigationTitle("设置")
@@ -289,78 +288,23 @@ struct CurriculumSettingView: View {
 
     private var backgroundSection: some View {
         Section {
-            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                HStack {
-                    Spacer()
-                    Text("选择背景图片").fontWeight(.semibold)
-                    Spacer()
-                }
-            }
-            .onChange(of: selectedPhotoItem) { newItem in
-                // 增加守卫，防止我们下面置空时触发死循环
-                guard let item = newItem else { return }
-                
-                Task {
-                    if let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        
-                        await MainActor.run {
-                            self.photoToCrop = image
-                        }
-                        
-                        // 关键修复 1：让代码“睡” 0.5 秒，等待 PhotosPicker 完全降下去
-                        try? await Task.sleep(nanoseconds: 500_000_000)
-                        
-                        await MainActor.run {
-                            self.showCropper = true
-                            // 关键修复 2：用完之后把选中项置空。
-                            // 这样如果你裁剪取消了，再选同一张图，onChange 才会再次触发！
-                            self.selectedPhotoItem = nil
-                        }
+            NavigationLink(destination: BackgroundSettingView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("背景图片设置")
+                            .font(.body)
+                        Text("背景图 · 透明度 · 液态玻璃")
+                            .font(.caption).foregroundColor(.secondary)
                     }
                 }
+                .padding(.vertical, 4)
             }
-            .listRowSeparator(.hidden)
-            
-            if !backgroundImageFilename.isEmpty {
-                Button(role: .destructive) {
-                    clearBackgroundImage()
-                    hasSelectedPhoto = true
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("清除背景图片").fontWeight(.semibold)
-                        Spacer()
-                    }
-                }
-                .listRowSeparator(.hidden)
-            }
-            
-            VStack(alignment: .leading) {
-                Text("背景不透明度: \(Int(backgroundOpacity * 100))%")
-                    .font(.subheadline)
-                Slider(value: $backgroundOpacity, in: 0.0...1.0, step: 0.05)
-            }
-            .padding(.vertical, 8)
-            .listRowSeparator(.hidden)
-            
-            VStack(alignment: .leading) {
-                Text("课表内容不透明度: \(Int(scheduleContentOpacity * 100))%")
-                    .font(.subheadline)
-                Slider(value: $scheduleContentOpacity, in: 0.0...1.0, step: 0.05)
-            }
-            .padding(.vertical, 8)
-            .listRowSeparator(.hidden)
-            if #available(iOS 26.0, *)
-            {
-                Toggle("背景液态玻璃效果", isOn: $enableLiquidGlassEffect)
-            }
-            
         } header: {
-                Text("背景图片")
-            
+            Text("课表外观")
         }
-
     }
 
     private var saveSection: some View {
@@ -549,7 +493,7 @@ struct CurriculumSettingView: View {
     // MARK: - 持久化
 
     private func persistCourses(_ courses: [Course]) {
-        WidgetSharedStore.saveCourses(courses)
+        CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
         print("✅ 课表已保存到共享存储，共 \(courses.count) 条")
     }
 
@@ -606,7 +550,7 @@ struct CurriculumSettingView: View {
     private func saveSettings() {
         semesterStartDate   = tempStartDate
         savedTimestamp      = tempStartDate.timeIntervalSince1970
-        WidgetSharedStore.saveSemesterStartTimestamp(savedTimestamp)
+        CurriculumStore.shared.saveSemesterStartTimestamp(savedTimestamp)
         WidgetSharedStore.saveBackgroundMeta(filename: backgroundImageFilename, opacity: backgroundOpacity)
         showSaveConfirmation = true
     }
