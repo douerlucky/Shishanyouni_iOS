@@ -7,6 +7,7 @@
 
 import StoreKit
 import SwiftUI
+import UIKit
 import WebKit
 
 struct SubscriptionView: View
@@ -28,18 +29,7 @@ struct SubscriptionView: View
             }
             .padding(20)
         }
-        .background(
-            LinearGradient(
-                colors: [
-                    themePrimary.opacity(0.18),
-                    themePrimary.opacity(0.08),
-                    Color.white,
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
         .navigationTitle("校园通行证服务")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -56,7 +46,7 @@ struct SubscriptionView: View
             Text("购买狮山有你iOS通行证")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
 
-            Text("现在可免费试用3个月，试用结束后按所选方案自动续费。你可以随时在 Apple 订阅管理中取消。")
+            Text("现在可免费试用7天，试用结束后按所选方案自动续费。你可以随时在 Apple 订阅管理中取消。")
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
 
@@ -82,6 +72,15 @@ struct SubscriptionView: View
         {
             Text("通行证选项")
                 .font(.title3.bold())
+
+            NavigationLink
+            {
+                ShareRewardRedeemView()
+                    .environmentObject(store)
+            } label: {
+                shareRewardEntryCard
+            }
+            .buttonStyle(.plain)
 
             if store.products.isEmpty
             {
@@ -116,10 +115,10 @@ struct SubscriptionView: View
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: 18))
+                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18)
-                            .stroke(themePrimary.opacity(0.18), lineWidth: 1)
+                            .stroke(Color(.separator).opacity(0.15), lineWidth: 1)
                     )
             }
             .buttonStyle(.plain)
@@ -163,7 +162,7 @@ struct SubscriptionView: View
             VStack(alignment: .leading, spacing: 10)
             {
                 Text("狮山有你iOS校园通行证仅可在狮山有你iOS App内使用。")
-                Text("当前校园通行证为自动续期订阅，新用户可免费试用3个月，试用结束后按所选方案自动续费。")
+                Text("当前校园通行证为自动续期订阅，新用户可免费试用7天，试用结束后按所选方案自动续费。")
                 Text("订阅可在 Apple 订阅管理中随时取消；取消后仍可使用到当前试用期或已付费周期结束。")
                 Text("狮山有你iOS版与狮山有你微信小程序、狮山有你Android App并非同一开发团队。")
                 Text("狮山有你iOS版遇到的问题，请联系沸点工作室移动App开发组。")
@@ -182,6 +181,53 @@ struct SubscriptionView: View
                     .stroke(themePrimary.opacity(0.10), lineWidth: 1)
             )
         }
+    }
+
+    private var shareRewardEntryCard: some View
+    {
+        HStack(alignment: .top, spacing: 14)
+        {
+            ZStack
+            {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(themePrimary.opacity(0.12))
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: "megaphone.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(themePrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 6)
+            {
+                Text("将狮山有你iOS版分享给社交平台")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+
+                Text("免费获得 3 个月通行证兑换码")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(themePrimary)
+
+                Text("发布截图、带上话题限时领取兑换码。")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.secondary.opacity(0.7))
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+        )
     }
 
     private var legalLinksSection: some View
@@ -265,7 +311,7 @@ struct SubscriptionView: View
 
             VStack(alignment: .leading, spacing: 6)
             {
-                Label("免费试用 3 个月", systemImage: "gift.fill")
+                Label("免费试用 7 天", systemImage: "gift.fill")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(themePrimary)
 
@@ -534,5 +580,165 @@ struct SubscriptionView_Previews: PreviewProvider
             SubscriptionView()
                 .environmentObject(IAPStore.preview(hasActiveSubscription: false))
         }
+    }
+}
+
+private struct ShareRewardRedeemView: View
+{
+    @State private var groupCopyMessage: String?
+    @State private var offerCodeMessage: String?
+
+    private var themePrimary: Color
+    {
+        Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255)
+    }
+
+    var body: some View
+    {
+        ScrollView
+        {
+            VStack(alignment: .leading, spacing: 20)
+            {
+                VStack(alignment: .leading, spacing: 10)
+                {
+                    Text("分享应用领取兑换码")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+
+                    Text("如果你觉得狮山有你 iOS 好用，可以把它分享给更多华农同学，审核通过后免费领取 3 个月校园通行证兑换码。")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(.ultraThinMaterial)
+                )
+
+                redeemContentCard
+            }
+            .padding(20)
+        }
+        .background(
+            LinearGradient(
+                colors: [
+                    themePrimary.opacity(0.18),
+                    themePrimary.opacity(0.08),
+                    Color.white,
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        )
+        .navigationTitle("免费领取兑换码")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var redeemContentCard: some View
+    {
+        VStack(alignment: .leading, spacing: 14)
+        {
+            Text("活动规则")
+                .font(.title3.bold())
+
+            Text("在任意公开社交平台发布 1 张 App 使用截图，并带上 #华中农业大学 #狮山有你iOS 两个话题。发布后进入反馈群提交截图与链接，审核通过后可获得 3 个月校园通行证兑换码。")
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+                .lineSpacing(4)
+
+            VStack(alignment: .leading, spacing: 6)
+            {
+                HStack(alignment: .top, spacing: 6) { Text("•").foregroundColor(themePrimary); Text("要求「公开可见」").font(.system(size: 12)).foregroundColor(.secondary) }
+                HStack(alignment: .top, spacing: 6) { Text("•").foregroundColor(themePrimary); Text("「截图 + 两个话题标签」").font(.system(size: 12)).foregroundColor(.secondary) }
+                HStack(alignment: .top, spacing: 6) { Text("•").foregroundColor(themePrimary); Text("每个账号限领一次").font(.system(size: 12)).foregroundColor(.secondary) }
+                HStack(alignment: .top, spacing: 6) { Text("•").foregroundColor(themePrimary); Text("兑换的是 Apple App Store 优惠码，兑换成功后会直接绑定到当前 Apple 账号的订阅权益").font(.system(size: 12)).foregroundColor(.secondary) }
+                HStack(alignment: .top, spacing: 6) { Text("•").foregroundColor(themePrimary); Text("3 个月优惠结束后，将按 Apple 显示的订阅规则自动续订，可随时在系统订阅中取消").font(.system(size: 12)).foregroundColor(.secondary) }
+            }
+
+            HStack(spacing: 10)
+            {
+                HStack(spacing: 6)
+                {
+                    Image(systemName: "message.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(themePrimary)
+
+                    Text("反馈群号：1090311516")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(themePrimary)
+                }
+
+                Spacer(minLength: 8)
+
+                Button("复制群号")
+                {
+                    UIPasteboard.general.string = "1090311516"
+                    groupCopyMessage = "已复制反馈群号"
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(themePrimary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(themePrimary.opacity(0.12), in: Capsule())
+            }
+            .padding(10)
+            .padding(.horizontal, 6)
+            .background(themePrimary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+
+            if let groupCopyMessage
+            {
+                Text(groupCopyMessage)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10)
+            {
+                Text("兑换优惠码")
+                    .font(.system(size: 15, weight: .semibold))
+
+                Button
+                {
+                    offerCodeMessage = "已打开 Apple 系统兑换窗口，请在系统弹窗中输入优惠码。"
+                    SKPaymentQueue.default().presentCodeRedemptionSheet()
+                }
+                label:
+                {
+                    HStack(spacing: 8)
+                    {
+                        Image(systemName: "appstore")
+                            .font(.system(size: 15, weight: .semibold))
+
+                        Text("兑换优惠码")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(themePrimary, in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+
+                if let offerCodeMessage
+                {
+                    Text(offerCodeMessage)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+        )
     }
 }

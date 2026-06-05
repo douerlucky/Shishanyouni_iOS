@@ -15,7 +15,6 @@ struct ScheduleView: View
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
-    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
     @AppStorage("scheduleBackgroundEnabled") private var scheduleBackgroundEnabled: Bool = false
 
     private enum ScheduleMode: String, CaseIterable, Identifiable
@@ -45,7 +44,7 @@ struct ScheduleView: View
 
             VStack(spacing: 0)
             {
-                Picker("切换视图", selection: $selectedMode)
+                Picker("日程模式", selection: $selectedMode)
                 {
                     ForEach(ScheduleMode.allCases)
                     { mode in
@@ -56,7 +55,6 @@ struct ScheduleView: View
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .padding(.bottom, 8)
-                .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 18))
                 .opacity(scheduleContentOpacity)
                 .padding(.horizontal, 12)
 

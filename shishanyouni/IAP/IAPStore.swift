@@ -183,13 +183,13 @@ final class IAPStore: ObservableObject
         case IAPStore.monthProductID:
             return ProductCopy(
                 title: "校园通行证（1个月）",
-                subtitle: "免费试用3个月，之后¥6/月，可随时取消",
+                subtitle: "免费试用7天，之后¥6/月，可随时取消",
                 accent: "month"
             )
         case IAPStore.halfYearProductID:
             return ProductCopy(
                 title: "校园通行证一学期（6个月）",
-                subtitle: "免费试用3个月，之后¥30/6个月，可随时取消",
+                subtitle: "免费试用7天，之后¥30/6个月，可随时取消",
                 accent: "halfyear"
             )
         default:

@@ -130,7 +130,7 @@ struct BackgroundSettingView: View
             } header: {
                 Text("页面背景配置")
             } footer: {
-                Text("这里可以多选。勾选哪些页面，哪些页面就显示这张背景图；背景图片、内容透明度和液态玻璃效果仍然是三页共享的。")
+         
             }
 
             // 透明度与效果
