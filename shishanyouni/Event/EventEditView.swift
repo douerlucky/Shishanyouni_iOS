@@ -34,8 +34,8 @@ struct EventEditView: View {
     @State private var title: String = ""
     @State private var date: Date = Date()
     @State private var isAllDay: Bool = false
-    @State private var startTime: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
-    @State private var endTime: Date = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var startTime: Date = Date()
+    @State private var endTime: Date = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
     @State private var note: String = ""
     
     // 行程属性
@@ -43,20 +43,11 @@ struct EventEditView: View {
     @State private var category: EventCategory = .todo
     @State private var colorIndex: Int = 0
 
-    // 优先级 & 截止时间
-    @State private var priority: EventPriority = .medium
-    @State private var hasDueDate: Bool = false
-    @State private var dueDate: Date = Date()
-
     // 重复设置
     @State private var isRepeating: Bool = false
     @State private var repeatFrequency: RepeatFrequency = .daily
     @State private var repeatInterval: Int = 1
 
-    // 子任务
-    @State private var subtasks: [SubTask] = []
-    @State private var newSubtaskTitle: String = ""
-    
     private let timeFormatter: DateFormatter = {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "zh_CN")
@@ -72,22 +63,18 @@ struct EventEditView: View {
             _title = State(initialValue: event.title)
             _date = State(initialValue: event.date)
             _isAllDay = State(initialValue: event.isAllDay)
-            _startTime = State(initialValue: event.startTime ?? Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date())
-            _endTime = State(initialValue: event.endTime ?? Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date()) ?? Date())
+            _startTime = State(initialValue: event.startTime ?? Date())
+            _endTime = State(initialValue: event.endTime ?? Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date())
             _note = State(initialValue: event.note ?? "")
             _location = State(initialValue: event.location ?? "")
             _category = State(initialValue: event.category)
             _colorIndex = State(initialValue: event.colorIndex ?? 0)
-            _priority = State(initialValue: event.priority)
-            _hasDueDate = State(initialValue: event.dueDate != nil)
-            _dueDate = State(initialValue: event.dueDate ?? Date())
 
             if let rule = event.repeatRule {
                 _isRepeating = State(initialValue: true)
                 _repeatFrequency = State(initialValue: rule.frequency)
                 _repeatInterval = State(initialValue: rule.interval)
             }
-            _subtasks = State(initialValue: event.subtasks)
         }
     }
     
@@ -174,37 +161,6 @@ struct EventEditView: View {
                         }
                     }
                 }
-                
-                Section("优先级与截止") {
-                    Picker(selection: $priority) {
-                        ForEach(EventPriority.allCases, id: \.self) { p in
-                            HStack(spacing: 4) {
-                                Image(systemName: p.systemImage)
-                                    .foregroundColor(p.tintColor)
-                                    .font(.system(size: 12))
-                                Text(p.rawValue)
-                            }
-                            .tag(p)
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "flag")
-                            Text("优先级")
-                        }
-                    }
-
-                    Toggle(isOn: $hasDueDate) {
-                        HStack {
-                            Image(systemName: "calendar.badge.exclamationmark")
-                            Text("截止时间")
-                        }
-                    }
-
-                    if hasDueDate {
-                        DatePicker("截止", selection: $dueDate, displayedComponents: .date)
-                            .environment(\.locale, Locale(identifier: "zh_CN"))
-                    }
-                }
 
                 Section("重复设置") {
                     Toggle("重复", isOn: $isRepeating)
@@ -225,45 +181,6 @@ struct EventEditView: View {
                         Text("此日程将从选定日期开始重复，直到您手动删除")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                    }
-                }
-                
-                Section("子任务") {
-                    ForEach($subtasks) { $subtask in
-                        HStack {
-                            Button {
-                                subtask.isCompleted.toggle()
-                            } label: {
-                                Image(systemName: subtask.isCompleted ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(subtask.isCompleted ? .green : .gray)
-                            }
-                            .buttonStyle(.plain)
-
-                            TextField("子任务", text: $subtask.title)
-                        }
-                    }
-                    .onDelete { subtasks.remove(atOffsets: $0) }
-
-                    HStack {
-                        TextField("添加子任务", text: $newSubtaskTitle)
-                            .onSubmit {
-                                let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
-                                if !trimmed.isEmpty {
-                                    subtasks.append(SubTask(title: trimmed))
-                                    newSubtaskTitle = ""
-                                }
-                            }
-                        Button {
-                            let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
-                            if !trimmed.isEmpty {
-                                subtasks.append(SubTask(title: trimmed))
-                                newSubtaskTitle = ""
-                            }
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.blue)
-                        }
-                        .disabled(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }
 
@@ -320,28 +237,6 @@ struct EventEditView: View {
                             .foregroundColor(.secondary)
                         }
                         
-                        HStack(spacing: 4) {
-                            Image(systemName: priority.systemImage)
-                                .font(.caption)
-                            Text(priority.rawValue)
-                        }
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(priority.tintColor.opacity(0.1))
-                        .foregroundColor(priority.tintColor)
-                        .cornerRadius(4)
-
-                        if hasDueDate {
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar.badge.exclamationmark")
-                                    .font(.caption)
-                                Text("截止: \(formatDate(dueDate))")
-                            }
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        }
-
                         if !note.isEmpty {
                             Text(note)
                                 .font(.caption)
@@ -389,7 +284,6 @@ struct EventEditView: View {
         let repeatRule: RepeatRule? = isRepeating ? RepeatRule(frequency: repeatFrequency, interval: repeatInterval, endCondition: .never) : nil
 
         let trimmedLocation = location.trimmingCharacters(in: .whitespaces)
-        let finalDueDate: Date? = hasDueDate ? dueDate : nil
 
         let newEvent: Event
         switch mode {
@@ -405,10 +299,7 @@ struct EventEditView: View {
                 category: category,
                 colorIndex: colorIndex,
                 isCompleted: false,
-                repeatRule: repeatRule,
-                priority: priority,
-                dueDate: finalDueDate,
-                subtasks: subtasks
+                repeatRule: repeatRule
             )
             events.append(newEvent)
 
@@ -425,10 +316,7 @@ struct EventEditView: View {
                 category: category,
                 colorIndex: colorIndex,
                 isCompleted: oldEvent.isCompleted,
-                repeatRule: repeatRule,
-                priority: priority,
-                dueDate: finalDueDate,
-                subtasks: subtasks
+                repeatRule: repeatRule
             )
             if let index = events.firstIndex(where: { $0.id == oldEvent.id }) {
                 events[index] = newEvent

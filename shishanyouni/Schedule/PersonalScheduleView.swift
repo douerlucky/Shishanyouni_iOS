@@ -81,8 +81,6 @@ struct PersonalScheduleView: View
             .flatMap { $0.instances(in: dateRange) }
             .sorted
             { lhs, rhs in
-                if lhs.isOverdue != rhs.isOverdue { return lhs.isOverdue }
-                if lhs.priority.sortOrder != rhs.priority.sortOrder { return lhs.priority.sortOrder < rhs.priority.sortOrder }
                 return lhs.date < rhs.date
             }
 
@@ -355,6 +353,27 @@ struct PersonalScheduleView: View
                         }
                         .tint(.blue)
                     }
+                    .contextMenu
+                    {
+                        Button
+                        {
+                            editingEvent = event
+                        }
+                        label:
+                        {
+                            Label("编辑", systemImage: "pencil")
+                        }
+                        Button(role: .destructive)
+                        {
+                            deleteEvent(event)
+                        }
+                        label:
+                        {
+                            Label("删除", systemImage: "trash")
+                        }
+                    } preview: {
+                        EventContextPreview(event: event, completed: bindingForEvent(event).wrappedValue)
+                    }
                 }
             }
         }
@@ -376,21 +395,6 @@ struct PersonalScheduleView: View
                 }
             }
             .pickerStyle(.segmented)
-
-            if hasCompletedItems
-            {
-                Button(role: .destructive)
-                {
-                    clearCompleted()
-                }
-                label:
-                {
-                    Text("清理")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                }
-                .padding(.leading, 4)
-            }
         }
         .padding(.horizontal, 16)
     }
@@ -453,6 +457,27 @@ struct PersonalScheduleView: View
                                 Label("编辑", systemImage: "pencil")
                             }
                             .tint(.blue)
+                        }
+                        .contextMenu
+                        {
+                            Button
+                            {
+                                editingEvent = event
+                            }
+                            label:
+                            {
+                                Label("编辑", systemImage: "pencil")
+                            }
+                            Button(role: .destructive)
+                            {
+                                deleteEvent(event)
+                            }
+                            label:
+                            {
+                                Label("删除", systemImage: "trash")
+                            }
+                        } preview: {
+                            EventContextPreview(event: event, completed: bindingForEvent(event).wrappedValue)
                         }
                     }
                 }
@@ -521,11 +546,6 @@ struct PersonalScheduleView: View
         Dictionary(grouping: filteredPersonalInstances) { $0.formattedDate() }
     }
 
-    private var hasCompletedItems: Bool
-    {
-        filteredPersonalInstances.contains { $0.isCompleted && $0.category == .todo }
-    }
-
     private var formattedSelectedDate: String
     {
         let fmt = DateFormatter()
@@ -547,8 +567,7 @@ struct PersonalScheduleView: View
         let newEvent = Event(
             title: trimmed,
             date: selectedDate,
-            category: .todo,
-            priority: .medium
+            category: .todo
         )
         personalEvents.append(newEvent)
         EventStore.shared.saveEvents(personalEvents)
@@ -562,13 +581,6 @@ struct PersonalScheduleView: View
         EventStore.shared.saveEvents(personalEvents)
     }
 
-    private func clearCompleted()
-    {
-        let idsToRemove = personalEvents.filter { $0.isCompleted && $0.category == .todo }.map(\.id)
-        personalEvents.removeAll { idsToRemove.contains($0.id) }
-        EventStore.shared.saveEvents(personalEvents)
-    }
-
     private func bindingForEvent(_ event: Event) -> Binding<Bool>
     {
         Binding(
@@ -576,6 +588,11 @@ struct PersonalScheduleView: View
                 EventStore.shared.isCompleted(eventId: event.id, date: event.date)
             },
             set: { newValue in
+                if let index = personalEvents.firstIndex(where: { $0.id == event.id }), personalEvents[index].repeatRule == nil
+                {
+                    personalEvents[index].isCompleted = newValue
+                    EventStore.shared.saveEvents(personalEvents)
+                }
                 EventStore.shared.setCompletion(eventId: event.id, date: event.date, completed: newValue)
                 var newCompletions = completions
                 newCompletions[EventStore.shared.completionKey(for: event.id, date: event.date)] = newValue
@@ -674,7 +691,7 @@ private struct PersonalEventRow: View
         HStack(spacing: 10)
         {
             RoundedRectangle(cornerRadius: 2)
-                .fill(event.isOverdue ? Color.red : event.displayColor)
+                .fill(event.displayColor)
                 .frame(width: 4, height: 42)
 
             Button
@@ -684,7 +701,7 @@ private struct PersonalEventRow: View
             label:
             {
                 Image(systemName: completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(completed ? .green : (event.isOverdue ? .red : .gray))
+                    .foregroundColor(completed ? .green : .gray)
                     .font(.title3)
                     .frame(width: 32, height: 32)
                     .contentShape(Rectangle())
@@ -693,19 +710,10 @@ private struct PersonalEventRow: View
 
             VStack(alignment: .leading, spacing: 3)
             {
-                HStack(spacing: 4)
-                {
-                    if event.priority == .high
-                    {
-                        Image(systemName: "exclamationmark.3")
-                            .font(.system(size: 9))
-                            .foregroundColor(.red)
-                    }
-                    Text(event.title)
-                        .font(.system(size: 14, weight: .medium))
-                        .strikethrough(completed, color: .gray)
-                        .foregroundColor(completed ? .gray : (event.isOverdue ? .red : .primary))
-                }
+                Text(event.title)
+                    .font(.system(size: 14, weight: .medium))
+                    .strikethrough(completed, color: .gray)
+                    .foregroundColor(completed ? .gray : .primary)
 
                 HStack(spacing: 5)
                 {
@@ -737,41 +745,6 @@ private struct PersonalEventRow: View
                     .background(event.category.defaultColor.opacity(0.1))
                     .foregroundColor(event.category.defaultColor)
                     .cornerRadius(3)
-
-                    if event.isOverdue
-                    {
-                        Text("已过期")
-                            .font(.system(size: 10))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Color.red.opacity(0.1))
-                            .foregroundColor(.red)
-                            .cornerRadius(3)
-                    }
-
-                    let progress = event.subtaskProgress
-                    if progress.total > 0
-                    {
-                        Text("\(progress.done)/\(progress.total)")
-                            .font(.system(size: 10, weight: .medium))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Color.blue.opacity(0.1))
-                            .foregroundColor(.blue)
-                            .cornerRadius(3)
-                    }
-                }
-
-                if let due = event.dueDate
-                {
-                    HStack(spacing: 2)
-                    {
-                        Image(systemName: "calendar.badge.exclamationmark")
-                            .font(.system(size: 9))
-                        Text(relativeDueText(for: due))
-                            .font(.system(size: 10))
-                            .foregroundColor(dueDateColor(for: due))
-                    }
                 }
             }
 
@@ -783,39 +756,101 @@ private struct PersonalEventRow: View
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
         .opacity(cardOpacity)
     }
+}
 
-    private func relativeDueText(for date: Date) -> String
-    {
-        let today = Calendar.current.startOfDay(for: Date())
-        let dueDay = Calendar.current.startOfDay(for: date)
-        let days = Calendar.current.dateComponents([.day], from: today, to: dueDay).day ?? 0
-        switch days
-        {
-        case ..<0: return "已过期\(-days)天"
-        case 0: return "今天截止"
-        case 1: return "明天截止"
-        case 2: return "后天截止"
-        case 3 ... 7: return "\(days)天后截止"
-        default:
-            let fmt = DateFormatter()
-            fmt.locale = Locale(identifier: "zh_CN")
-            fmt.dateFormat = "M月d日截止"
-            return fmt.string(from: date)
-        }
-    }
+// MARK: - 上下文预览卡片
 
-    private func dueDateColor(for date: Date) -> Color
+private struct EventContextPreview: View
+{
+    let event: Event
+    let completed: Bool
+
+    var body: some View
     {
-        let today = Calendar.current.startOfDay(for: Date())
-        let dueDay = Calendar.current.startOfDay(for: date)
-        let days = Calendar.current.dateComponents([.day], from: today, to: dueDay).day ?? 0
-        switch days
+        VStack(alignment: .leading, spacing: 10)
         {
-        case ..<0: return .red
-        case 0: return .red
-        case 1 ... 2: return .orange
-        default: return .secondary
+            HStack(spacing: 8)
+            {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(event.displayColor)
+                    .frame(width: 5, height: 36)
+
+                VStack(alignment: .leading, spacing: 4)
+                {
+                    Text(event.title)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(completed ? .secondary : .primary)
+                        .strikethrough(completed)
+
+                    HStack(spacing: 6)
+                    {
+                        Text(event.category.rawValue)
+                            .font(.system(size: 11))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(event.category.defaultColor.opacity(0.12))
+                            .foregroundColor(event.category.defaultColor)
+                            .cornerRadius(4)
+                        if let loc = event.location, !loc.isEmpty
+                        {
+                            Label(loc, systemImage: "mappin.and.ellipse")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 6)
+            {
+                HStack(spacing: 8)
+                {
+                    Label(event.formattedDate(), systemImage: "calendar")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    if let time = event.formattedTime()
+                    {
+                        Label(time, systemImage: "clock")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
+                    if event.isAllDay
+                    {
+                        Text("全天")
+                            .font(.system(size: 11))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.1))
+                            .foregroundColor(.blue)
+                            .cornerRadius(4)
+                    }
+                }
+
+                if let note = event.note, !note.isEmpty
+                {
+                    Text(note)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            if completed
+            {
+                HStack(spacing: 4)
+                {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("已完成")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.green)
+                }
+            }
         }
+        .padding(16)
+        .frame(width: 280)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

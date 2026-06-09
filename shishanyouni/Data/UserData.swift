@@ -457,37 +457,6 @@ class GradeStore
 // MARK: - ==================== 4. 日程 Event ====================
 /// 用于：PersonalScheduleView、EventEditView
 
-// MARK: - 优先级
-enum EventPriority: String, Codable, CaseIterable, Equatable {
-    case high = "⚠️ 高"
-    case medium = "中"
-    case low = "低"
-
-    var sortOrder: Int {
-        switch self {
-        case .high: return 0
-        case .medium: return 1
-        case .low: return 2
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .high: return "exclamationmark.3"
-        case .medium: return "exclamationmark.2"
-        case .low: return "exclamationmark"
-        }
-    }
-
-    var tintColor: Color {
-        switch self {
-        case .high: return .red
-        case .medium: return .orange
-        case .low: return .gray
-        }
-    }
-}
-
 // MARK: - 事项分类
 enum EventCategory: String, Codable, CaseIterable, Equatable {
     case trip = "行程"
@@ -571,19 +540,6 @@ struct RepeatRule: Codable, Equatable {
     }
 }
 
-// MARK: - 子任务
-struct SubTask: Identifiable, Codable, Equatable {
-    let id: UUID
-    var title: String
-    var isCompleted: Bool
-
-    init(id: UUID = UUID(), title: String = "", isCompleted: Bool = false) {
-        self.id = id
-        self.title = title
-        self.isCompleted = isCompleted
-    }
-}
-
 struct Event: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
@@ -597,17 +553,8 @@ struct Event: Identifiable, Codable, Equatable {
     var colorIndex: Int?
     var isCompleted: Bool
     var repeatRule: RepeatRule?
-    var priority: EventPriority
-    var dueDate: Date?
-    var subtasks: [SubTask]
 
-    var subtaskProgress: (done: Int, total: Int) {
-        guard !subtasks.isEmpty else { return (0, 0) }
-        let done = subtasks.filter(\.isCompleted).count
-        return (done, subtasks.count)
-    }
-
-    init(id: UUID = UUID(), title: String, date: Date, isAllDay: Bool = false, startTime: Date? = nil, endTime: Date? = nil, note: String? = nil, location: String? = nil, category: EventCategory = .todo, colorIndex: Int? = nil, isCompleted: Bool = false, repeatRule: RepeatRule? = nil, priority: EventPriority = .medium, dueDate: Date? = nil, subtasks: [SubTask] = []) {
+    init(id: UUID = UUID(), title: String, date: Date, isAllDay: Bool = false, startTime: Date? = nil, endTime: Date? = nil, note: String? = nil, location: String? = nil, category: EventCategory = .todo, colorIndex: Int? = nil, isCompleted: Bool = false, repeatRule: RepeatRule? = nil) {
         self.id = id
         self.title = title
         self.date = date
@@ -620,14 +567,10 @@ struct Event: Identifiable, Codable, Equatable {
         self.colorIndex = colorIndex
         self.isCompleted = isCompleted
         self.repeatRule = repeatRule
-        self.priority = priority
-        self.dueDate = dueDate
-        self.subtasks = subtasks
     }
 
     var isOverdue: Bool {
-        guard !isCompleted, let due = dueDate else { return false }
-        return Calendar.current.startOfDay(for: Date()) > Calendar.current.startOfDay(for: due)
+        false
     }
 
     init(from decoder: Decoder) throws {
@@ -644,9 +587,6 @@ struct Event: Identifiable, Codable, Equatable {
         colorIndex = try container.decodeIfPresent(Int.self, forKey: .colorIndex)
         isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
         repeatRule = try container.decodeIfPresent(RepeatRule.self, forKey: .repeatRule)
-        priority = try container.decodeIfPresent(EventPriority.self, forKey: .priority) ?? .medium
-        dueDate = try container.decodeIfPresent(Date.self, forKey: .dueDate)
-        subtasks = try container.decodeIfPresent([SubTask].self, forKey: .subtasks) ?? []
     }
 
     var displayColor: Color {

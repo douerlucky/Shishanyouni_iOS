@@ -173,6 +173,12 @@ struct HomeView: View
             navigateToClub = true
         })
 
+        #if DEBUG
+        //items.append(HomeFeatureItem(key: .debug, title: "Debug", icon: "ladybug.fill", color: HomeMenuColor.purple2) {
+        //    navigateDebugRoom = true
+        //})
+        #endif
+
         return items
     }
 

@@ -53,7 +53,7 @@ struct ScheduleView: View
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16)
-                .padding(.top, 10)
+                .padding(.top, 16)
                 .padding(.bottom, 8)
                 .opacity(scheduleContentOpacity)
                 .padding(.horizontal, 12)

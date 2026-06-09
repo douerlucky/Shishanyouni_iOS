@@ -36,7 +36,7 @@ struct MainTabView: View
             }
             .tabItem
             {
-                Label("日程", systemImage: "calendar.badge.clock")
+                Label("日程与校历", systemImage: "calendar.badge.clock")
             }
             .tag(0)
 

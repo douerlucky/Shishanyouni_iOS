@@ -16,9 +16,18 @@ struct CurriculumWidgetSettingView: View
     @State private var isCurriculumPluginOn = WidgetSharedStore.loadCurriculumPluginEnabled()
     @State private var navigateToSubscription = false
 
+    private var isOSSupported: Bool
+    {
+        if #available(iOS 17.0, *)
+        {
+            return true
+        }
+        return false
+    }
+
     private var canUseWidget: Bool
     {
-        iapStore.hasActiveSubscription
+        isOSSupported && iapStore.hasActiveSubscription
     }
 
     var body: some View
@@ -61,14 +70,41 @@ struct CurriculumWidgetSettingView: View
                     VStack(alignment: .leading, spacing: 4)
                     {
                         Text("启用课表小组件")
-                        Text(canUseWidget ? "已满足校园通行证要求" : "需要先开通校园通行证")
-                            .font(.footnote)
-                            .foregroundColor(canUseWidget ? .secondary : .orange)
+                        if !isOSSupported
+                        {
+                            Text("小组件要求 iOS 17.0 以上才能使用，请升级手机系统")
+                                .font(.footnote)
+                                .foregroundColor(.orange)
+                        }
+                        else if canUseWidget
+                        {
+                            Text("已满足校园通行证要求")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                        else
+                        {
+                            Text("需要先开通校园通行证")
+                                .font(.footnote)
+                                .foregroundColor(.orange)
+                        }
                     }
                 }
                 .tint(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                .disabled(!isOSSupported)
 
-                if !canUseWidget
+                if !isOSSupported
+                {
+                    HStack(spacing: 8)
+                    {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text("当前系统版本过低，小组件无法使用")
+                            .font(.footnote)
+                            .foregroundColor(.orange)
+                    }
+                }
+                else if !canUseWidget
                 {
                     Button
                     {
@@ -95,7 +131,11 @@ struct CurriculumWidgetSettingView: View
         .onAppear
         {
             isCurriculumPluginOn = WidgetSharedStore.loadCurriculumPluginEnabled()
-            if !canUseWidget, isCurriculumPluginOn
+            if !isOSSupported
+            {
+                setWidgetEnabled(false)
+            }
+            else if !canUseWidget, isCurriculumPluginOn
             {
                 setWidgetEnabled(false)
             }
@@ -111,6 +151,11 @@ struct CurriculumWidgetSettingView: View
         Binding(
             get: { isCurriculumPluginOn },
             set: { newValue in
+                if newValue, !isOSSupported
+                {
+                    setWidgetEnabled(false)
+                    return
+                }
                 if newValue, !canUseWidget
                 {
                     navigateToSubscription = true
