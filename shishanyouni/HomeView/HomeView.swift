@@ -36,6 +36,7 @@ struct HomeView: View
     @State private var navigateToGIS = false
     @State private var navigateToLibrary = false
     @State private var navigateToITC = false
+    @State private var navigateToAIAssistant = false
     @State private var navigateToSubscription = false
     @State private var currentPage = 0
     @State private var isEditingFavorites = false
@@ -171,6 +172,9 @@ struct HomeView: View
         })
         items.append(HomeFeatureItem(key: .club, title: "社团", icon: "person.2.fill", color: HomeMenuColor.yellow2) {
             navigateToClub = true
+        })
+        items.append(HomeFeatureItem(key: .aiAssistant, title: "智学助手\n(beta)", icon: "sparkles", color: HomeMenuColor.purple2) {
+            navigateToAIAssistant = true
         })
 
         #if DEBUG
@@ -318,6 +322,8 @@ struct HomeView: View
             { LibraryOverviewView() }
             .navigationDestination(isPresented: $navigateToITC)
             { ITCView() }
+            .navigationDestination(isPresented: $navigateToAIAssistant)
+            { AIAssistantView() }
         }
     }
 

@@ -16,6 +16,7 @@ enum HomeFeatureKey: String, CaseIterable, Codable, Identifiable
     case bus
     case strategy
     case club
+    case aiAssistant
     case debug
 
     var id: String { rawValue }
