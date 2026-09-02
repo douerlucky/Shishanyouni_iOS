@@ -13,14 +13,14 @@ struct AllCourseView: View
     @State private var searchText: String = ""
     @State private var courses: [CourseInfo] = []
     @State private var isLoading = false
+    /// 清除搜索或切换数据源后，用新的 ID 忽略旧请求的迟到响应，避免结果串台。
+    @State private var searchRequestID = UUID()
     @State private var querySource: CourseQuerySource = .shishanyouni
     @State private var showMFASheet = false
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaSendCodeAction: (() async -> String?)?
-    @FocusState private var isSearchFocused: Bool
-
     // MARK: - Filter States
 
     @State var selectedYear = "2025"
@@ -60,7 +60,7 @@ struct AllCourseView: View
                                     .font(.title3)
                                     .fontWeight(.bold)
 
-                                Text(searchText.isEmpty ? "在下方输入框开始查询" : emptyHintText)
+                                Text(searchText.isEmpty ? "使用上方搜索栏开始查询" : emptyHintText)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -86,91 +86,77 @@ struct AllCourseView: View
                         }
                         .listStyle(.plain)
                         .scrollContentBackground(.hidden)
-                        // 为底部的悬浮组件留出安全区域，防止遮挡
-                        .safeAreaInset(edge: .bottom)
-                        {
-                            Color.clear.frame(height: 110)
-                        }
                     }
                 }
 
-                VStack(spacing: 12) // 控制气泡和搜索框之间的间距
-                {
-                    Spacer() // 整体推到底部
-
-                    HStack
-                    {
-                        QuerySourcePickerButton(
-                            selection: $querySource,
-                            fontSize: 13,
-                            horizontalPadding: 14,
-                            verticalPadding: 8,
-                            background: Color.blue.opacity(0.15),
-                            foreground: .blue,
-                            onSelect: { source in switchSource(to: source) }
-                        )
-
-                        if querySource == .cas
-                        {
-                            Button(action: { showPicker = true })
-                            {
-                                HStack(spacing: 6)
-                                {
-                                    Image(systemName: "calendar")
-                                    Text("\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
-                                    Image(systemName: "chevron.up")
-                                        .font(.system(size: 10, weight: .bold))
-                                }
-                                .font(.system(size: 13, weight: .bold))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(Color.blue.opacity(0.15))
-                                .foregroundColor(.blue)
-                                .clipShape(Capsule())
-                                .shadow(color: Color.black.opacity(0.05), radius: 4, y: 2)
-                            }
-                            .optionalLiquidGlass()
-                        }
-                    }
-
-                    // 2. 底部搜索框
-                    HStack
-                    {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-
-                        TextField(searchPlaceholder, text: $searchText)
-                            .focused($isSearchFocused)
-                            .submitLabel(.search)
-                            .onSubmit { performSearch() }
-
-                        if !searchText.isEmpty
-                        {
-                            Button(action: { searchText = "" })
-                            {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .glassBackground(cornerRadius: 32) // 建议 cornerRadius 不要设太大，64 有点太圆了
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 25) // 这里的 padding 控制整个组件离屏幕底部的距离
+                // 不再让加载提示跟着底部搜索区偏移；ZStack 默认会把它放在页面中心。
                 if isLoading
                 {
-                    ProgressView()
-                        .padding(20)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
-                        .offset(y: -100)
+                    ProgressView("正在查询课程…")
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
             .navigationTitle("课程搜索")
             .navigationBarTitleDisplayMode(.automatic)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: searchPlaceholder
+            )
+            .onSubmit(of: .search)
+            {
+                performSearch()
+            }
+            .onChange(of: searchText)
+            { newValue in
+                // 原生搜索框的清除按钮代表回到初始查询状态，不能继续展示旧关键词的结果。
+                if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                {
+                    searchRequestID = UUID()
+                    courses = []
+                    isLoading = false
+                }
+            }
             .toolbar(.hidden, for: .tabBar)
+            .toolbar
+            {
+                ToolbarItemGroup(placement: .topBarTrailing)
+                {
+                    if querySource == .cas
+                    {
+                        Button(action: { showPicker = true })
+                        {
+                            Image(systemName: "calendar")
+                        }
+                        .accessibilityLabel("选择查询学期：\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
+                    }
+
+                    Menu
+                    {
+                        ForEach(CourseQuerySource.allCases)
+                        { source in
+                            Button
+                            {
+                                switchSource(to: source)
+                            } label: {
+                                if source == querySource
+                                {
+                                    Label(source.title, systemImage: "checkmark")
+                                }
+                                else
+                                {
+                                    Text(source.title)
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
+                    .accessibilityLabel("切换课程数据源，当前为\(querySource.title)")
+                }
+            }
             .sheet(isPresented: $showPicker)
             {
                 VStack(spacing: 20)
@@ -241,16 +227,27 @@ struct AllCourseView: View
 
     func performSearch()
     {
-        guard !searchText.isEmpty else { return }
+        let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else
+        {
+            courses = []
+            return
+        }
+        // 统一用清理后的关键词请求，避免仅输入空格时仍向两个数据源发起查询。
+        searchText = keyword
+        let requestID = UUID()
+        searchRequestID = requestID
+        let source = querySource
+        let year = selectedYear
+        let term = selectedTerm
         isLoading = true
-        isSearchFocused = false
 
         Task
         {
             do
             {
                 let result: [CourseInfo]
-                switch querySource
+                switch source
                 {
                 case .cas:
                     let cookie = try await scheduleQuery.loginAndGetCookie(
@@ -263,16 +260,17 @@ struct AllCourseView: View
 
                     result = try await AllCourseQuery.shared.fetchAllCourses(
                         cookie: cookie,
-                        xnm: selectedYear,
-                        xqm: selectedTerm,
-                        kch: searchText
+                        xnm: year,
+                        xqm: term,
+                        kch: keyword
                     )
                 case .shishanyouni:
-                    result = try await fetchLionCoursesWithMFA(keyword: searchText)
+                    result = try await fetchLionCoursesWithMFA(keyword: keyword)
                 }
 
                 await MainActor.run
                 {
+                    guard searchRequestID == requestID else { return }
                     withAnimation(.spring())
                     {
                         self.courses = result
@@ -283,7 +281,11 @@ struct AllCourseView: View
             catch
             {
                 print("AllCourse查询失败: \(error)")
-                await MainActor.run { self.isLoading = false }
+                await MainActor.run
+                {
+                    guard searchRequestID == requestID else { return }
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -333,7 +335,9 @@ struct AllCourseView: View
     {
         guard querySource != source else { return }
         querySource = source
+        searchRequestID = UUID()
         courses = []
+        isLoading = false
     }
 }
 

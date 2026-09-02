@@ -2,7 +2,8 @@
 //  ChooseCourse.swift
 //  shishanyouni
 //
-//  第一阶段只读取当前学期的已选课程；不会在这里发送选课或退选请求。
+//  已选课程的数据模型与只读查询。
+//  选课/退选写请求位于 CourseEdit.swift，避免列表刷新意外改变教务系统状态。
 //
 
 import Foundation
@@ -20,6 +21,14 @@ struct SelectedCourse: Identifiable, Decodable
     let credit: String?
     let selectedCount: String?
     let capacity: String?
+
+    /// 以下字段不显示在界面，用于退选前重新核验当前页面参数。
+    /// 它们只在内存中保留，绝不写入日志或 UserDefaults。
+    let courseID: String
+    let selectionTokens: [String]
+    let dropAllowed: Bool
+    let selectionContext: CourseSelectionContext
+    let selectionCaption: String
 
     var id: String
     {
@@ -67,13 +76,15 @@ struct SelectedCourse: Identifiable, Decodable
         case location = "jxdd"
         case classTime = "sksj"
         case credit = "xf"
-        case selectedCount = "yxzrs"
-        case capacity = "jxbrs"
+        case selectedCount = "jxbrs"
+        case capacity = "jxbrl"
+        case courseID = "kch_id"
     }
 
     init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let dynamicContainer = try decoder.container(keyedBy: DynamicCodingKey.self)
         teachingClassID = container.stringValue(forKey: .teachingClassID) ?? ""
         teachingClassName = container.stringValue(forKey: .teachingClassName)
         courseCode = container.stringValue(forKey: .courseCode)
@@ -83,15 +94,216 @@ struct SelectedCourse: Identifiable, Decodable
         location = container.stringValue(forKey: .location)
         classTime = container.stringValue(forKey: .classTime)
         credit = container.stringValue(forKey: .credit)
+        // 子教学班和已选列表都以 jxbrs / jxbrl 表示“已选 / 容量”；旧版本
+        // 可能只给 yxzrs，因此只把它作为已选人数的回退，不能误当容量。
         selectedCount = container.stringValue(forKey: .selectedCount)
+            ?? dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: "yxzrs"))
         capacity = container.stringValue(forKey: .capacity)
+            ?? dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: "kyrs"))
+
+        // ChoosedDisplay 中的 do_jxb_id / jxb_ids 是本次会话签发的退选参数；
+        // 不根据 jxb_id 或课程号伪造，缺失时 CourseEdit 会安全地阻止退选。
+        courseID = container.stringValue(forKey: .courseID) ?? courseCode ?? ""
+        selectionTokens = Self.selectionTokens(
+            from: ["jxb_ids", "jxbids", "do_jxb_id", "doJxbId"].compactMap
+            { dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: $0)) }
+        )
+        // 网页的退选按钮条件是 `sfktk == 1 && tktjrs < jxbrs`。字段既可能是
+        // 字符串，也可能是数字 / 布尔值；缺少人数时只按 sfktk 回退，避免误判可退课。
+        dropAllowed = Self.canDrop(
+            flag: dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: "sfktk")),
+            minimumSelectedCount: dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: "tktjrs")),
+            currentSelectedCount: selectedCount
+        )
+        selectionCaption = ["kcmc_xk", "kcmc_display", "kcmcDisplay", "kcmc"]
+            .compactMap { dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: $0)) }
+            .first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) ?? courseName
+
+        var contextValues: [String: String] = [:]
+        for field in CourseSelectionContext.responseFields
+        {
+            guard let value = dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: field)),
+                  !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { continue }
+            contextValues[field == "jg_id_1" ? "jg_id" : field] = value
+        }
+        selectionContext = CourseSelectionContext(values: contextValues)
     }
 
     private static func displayText(_ value: String?) -> String?
     {
         guard let value else { return nil }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = value
+            .replacingOccurrences(of: #"<br\s*/?>"#, with: "\n", options: [.regularExpression, .caseInsensitive])
+            .replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty || trimmed == "--" ? nil : trimmed
+    }
+
+    private static func isAffirmativeFlag(_ value: String?) -> Bool
+    {
+        guard let value else { return false }
+        return ["1", "true", "yes", "ok", "success"]
+            .contains(value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+    }
+
+    private static func canDrop(
+        flag: String?,
+        minimumSelectedCount: String?,
+        currentSelectedCount: String?
+    ) -> Bool
+    {
+        guard isAffirmativeFlag(flag) else { return false }
+        guard let minimum = wholeNumber(minimumSelectedCount),
+              let selected = wholeNumber(currentSelectedCount)
+        else {
+            return true
+        }
+        return minimum < selected
+    }
+
+    private static func wholeNumber(_ value: String?) -> Int?
+    {
+        guard let value else { return nil }
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let number = Int(normalized) { return number }
+        if let number = Double(normalized), number.rounded() == number { return Int(number) }
+        return nil
+    }
+
+    private static func selectionTokens(from rawValues: [String]) -> [String]
+    {
+        var tokens: [String] = []
+        for rawValue in rawValues
+        {
+            // 临时教学班参数是长十六进制串。只接受服务端明确返回的这种格式，
+            // 不把 jxb_id、课程号等普通字段误当成可用于退选的参数。
+            let pattern = #"(?i)(?<![0-9a-f])[0-9a-f]{48,}(?![0-9a-f])"#
+            guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
+            let range = NSRange(rawValue.startIndex ..< rawValue.endIndex, in: rawValue)
+            for match in expression.matches(in: rawValue, range: range)
+            {
+                guard let tokenRange = Range(match.range, in: rawValue) else { continue }
+                let token = String(rawValue[tokenRange])
+                if !tokens.contains(token)
+                {
+                    tokens.append(token)
+                }
+            }
+        }
+        return tokens
+    }
+
+    /// 同一门课在 ChoosedDisplay 中可能按层级拆成多行。
+    /// 合并后才交给退选流程，确保 `jxb_ids` 完全来自这次刷新返回的所有 token。
+    static func mergeServerRows(_ rows: [SelectedCourse]) -> [SelectedCourse]
+    {
+        var merged: [SelectedCourse] = []
+        var indexes: [String: Int] = [:]
+
+        for row in rows
+        {
+            let identity = row.courseID.ifEmpty(row.courseCode ?? row.teachingClassID)
+            guard !identity.isEmpty else
+            {
+                merged.append(row)
+                continue
+            }
+
+            if let index = indexes[identity]
+            {
+                merged[index] = merged[index].merging(row)
+            }
+            else
+            {
+                indexes[identity] = merged.count
+                merged.append(row)
+            }
+        }
+        return merged
+    }
+
+    private func merging(_ other: SelectedCourse) -> SelectedCourse
+    {
+        var allTokens = selectionTokens
+        for token in other.selectionTokens where !allTokens.contains(token)
+        {
+            allTokens.append(token)
+        }
+
+        return SelectedCourse(
+            teachingClassID: teachingClassID,
+            teachingClassName: teachingClassName,
+            courseCode: courseCode,
+            courseName: courseName,
+            courseType: courseType,
+            teacherInfo: teacherInfo,
+            location: location,
+            classTime: classTime,
+            credit: credit,
+            selectedCount: selectedCount,
+            capacity: capacity,
+            courseID: courseID,
+            selectionTokens: allTokens,
+            // 每一行都明确允许退选，才允许把合并后的课程交给写操作。
+            dropAllowed: dropAllowed && other.dropAllowed,
+            selectionContext: selectionContext.merged(with: other.selectionContext),
+            selectionCaption: selectionCaption.ifEmpty(other.selectionCaption)
+        )
+    }
+
+    private init(
+        teachingClassID: String,
+        teachingClassName: String?,
+        courseCode: String?,
+        courseName: String,
+        courseType: String?,
+        teacherInfo: String?,
+        location: String?,
+        classTime: String?,
+        credit: String?,
+        selectedCount: String?,
+        capacity: String?,
+        courseID: String,
+        selectionTokens: [String],
+        dropAllowed: Bool,
+        selectionContext: CourseSelectionContext,
+        selectionCaption: String
+    )
+    {
+        self.teachingClassID = teachingClassID
+        self.teachingClassName = teachingClassName
+        self.courseCode = courseCode
+        self.courseName = courseName
+        self.courseType = courseType
+        self.teacherInfo = teacherInfo
+        self.location = location
+        self.classTime = classTime
+        self.credit = credit
+        self.selectedCount = selectedCount
+        self.capacity = capacity
+        self.courseID = courseID
+        self.selectionTokens = selectionTokens
+        self.dropAllowed = dropAllowed
+        self.selectionContext = selectionContext
+        self.selectionCaption = selectionCaption
+    }
+}
+
+private struct DynamicCodingKey: CodingKey
+{
+    let stringValue: String
+    let intValue: Int? = nil
+
+    init(stringValue: String)
+    {
+        self.stringValue = stringValue
+    }
+
+    init?(intValue: Int)
+    {
+        return nil
     }
 }
 
@@ -103,6 +315,7 @@ private extension KeyedDecodingContainer
         if let value = try? decode(String.self, forKey: key) { return value }
         if let value = try? decode(Int.self, forKey: key) { return String(value) }
         if let value = try? decode(Double.self, forKey: key) { return String(value) }
+        if let value = try? decode(Bool.self, forKey: key) { return value ? "true" : "false" }
         return nil
     }
 }
@@ -192,29 +405,49 @@ final class SelectedCourseQuery
         ]
         request.httpBody = formEncodedData(parameters)
 
-        let (data, response) = try await NetworkService.perform(request: request)
-        guard let httpResponse = response as? HTTPURLResponse else
-        {
-            throw SelectedCourseQueryError.invalidResponse
-        }
-        guard (200 ..< 300).contains(httpResponse.statusCode) else
-        {
-            throw SelectedCourseQueryError.serverError(httpResponse.statusCode)
-        }
-
-        let responseText = String(data: data, encoding: .utf8) ?? ""
-        if responseText.contains("用户登录") || responseText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("<")
-        {
-            throw SelectedCourseQueryError.sessionExpired
-        }
-
+        ChooseCourseDebug.request(
+            url: url,
+            method: "POST",
+            parameters: parameters,
+            retryCount: NetworkService.maxRetries,
+            hasCookie: !cookie.isEmpty
+        )
         do
         {
-            return try JSONDecoder().decode([SelectedCourse].self, from: data)
+            let (data, response) = try await NetworkService.perform(request: request)
+            guard let httpResponse = response as? HTTPURLResponse else
+            {
+                throw SelectedCourseQueryError.invalidResponse
+            }
+            ChooseCourseDebug.response(url: url, response: httpResponse, data: data)
+            guard (200 ..< 300).contains(httpResponse.statusCode) else
+            {
+                throw SelectedCourseQueryError.serverError(httpResponse.statusCode)
+            }
+
+            let responseText = String(data: data, encoding: .utf8) ?? ""
+            if responseText.contains("用户登录") || responseText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("<")
+            {
+                throw SelectedCourseQueryError.sessionExpired
+            }
+
+            do
+            {
+                let rows = try JSONDecoder().decode([SelectedCourse].self, from: data)
+                let courses = SelectedCourse.mergeServerRows(rows)
+                ChooseCourseDebug.info("已选课程解析完成：服务端行数=\(rows.count)，合并后课程数=\(courses.count)")
+                return courses
+            }
+            catch
+            {
+                ChooseCourseDebug.error("已选课程 JSON 解析失败：\(error.localizedDescription)")
+                throw SelectedCourseQueryError.invalidResponse
+            }
         }
         catch
         {
-            throw SelectedCourseQueryError.invalidResponse
+            ChooseCourseDebug.requestFailed(url: url, error: error)
+            throw error
         }
     }
 

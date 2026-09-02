@@ -6,46 +6,22 @@ struct WhatsNewView: View
 
     private let features: [WhatsNewFeature] = [
         WhatsNewFeature(
-            title: "校园通行证上线",
-            message: "解锁桌面小组件、ITC 平台查询、GPA 分析、学期课程分析和个人日程等高级功能。",
-            icon: "checkmark.seal.fill",
-            color: .orange
-        ),
-        WhatsNewFeature(
-            title: "桌面小组件正式上线",
-            message: "通行证用户可以在桌面直接查看课程安排，不打开 App 也能快速掌握下一节课。",
-            icon: "rectangle.on.rectangle.angled",
-            color: .cyan
-        ),
-        WhatsNewFeature(
-            title: "信息学院 ITC 平台查询",
-            message: "支持查看作业截止时间、提交状态和最终得分；暂不支持提交作业。",
-            icon: "chevron.left.forwardslash.chevron.right",
-            color: .green
-        ),
-        WhatsNewFeature(
-            title: "首页焕然一新",
-            message: "首页 UI 全面重做，功能卡片可以自由移动、隐藏和整理，并新增 3 日内「下一个安排」。",
-            icon: "house.and.flag.fill",
+            title: "选课功能上线",
+            message: "支持查看课程、教学班和子教学班，并直接提交选课。",
+            icon: "list.bullet.clipboard.fill",
             color: .blue
         ),
         WhatsNewFeature(
-            title: "日程与校历统一管理",
-            message: "「校历查询」升级为「日程」：免费用户可看校历事件，通行证用户可管理待办、行程和备忘。",
-            icon: "calendar.badge.clock",
+            title: "校历更新",
+            message: "校历活动从教务系统获取，已更新至 2026–2027 学年。",
+            icon: "arrow.triangle.2.circlepath.circle.fill",
+            color: .teal
+        ),
+        WhatsNewFeature(
+            title: "课程查询更方便",
+            message: "选课和全校课程查询支持系统搜索，滑到底部会自动加载更多课程。",
+            icon: "magnifyingglass.circle.fill",
             color: .purple
-        ),
-        WhatsNewFeature(
-            title: "个性化背景加强",
-            message: "首页、日程和课表现在都能分别启用自定义背景，并跟随透明度与玻璃效果设置。",
-            icon: "photo.on.rectangle.angled",
-            color: .mint
-        ),
-        WhatsNewFeature(
-            title: "体验细节增强",
-            message: "截止时间会显示今天、明天、3 天后或已过期；近期筛选更快，7 个查询模块的错误弹窗新增重试按钮。",
-            icon: "wand.and.stars",
-            color: .pink
         ),
     ]
 
@@ -69,10 +45,10 @@ struct WhatsNewView: View
                                 )
                             )
 
-                        Text("狮山有你iOS更新啦")
+                        Text("狮山有你更新啦")
                             .font(.system(size: 28, weight: .black, design: .rounded))
 
-                        Text("正式上线以来的最大的一次更新")
+                        Text("选课上线，校历与课程查询更新")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)

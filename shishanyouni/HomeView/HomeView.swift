@@ -125,9 +125,18 @@ struct HomeView: View
             items.append(HomeFeatureItem(key: .allCourses, title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: HomeMenuColor.yellow1) {
                 navigateToAllCoueseSearch = true
             })
-//            items.append(HomeFeatureItem(key: .chooseCourse, title: "选课", icon: "checklist", color: HomeMenuColor.yellow2) {
-//                navigateToChooseCourse = true
-//            })
+            items.append(HomeFeatureItem(key: .chooseCourse, title: "选课(beta)", icon: "checklist", color: HomeMenuColor.yellow2) {
+                // 选课会实际向教务系统提交选、退课请求，纳入校园通行证权益保护。
+                // 页面自身也会再次检查权限，避免从其它入口直达时绕过这里。
+                if iapStore.hasActiveSubscription
+                {
+                    navigateToChooseCourse = true
+                }
+                else
+                {
+                    navigateToSubscription = true
+                }
+            })
         }
 
         items.append(HomeFeatureItem(key: .classroom, title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1) {
