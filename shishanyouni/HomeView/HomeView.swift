@@ -1,6 +1,11 @@
 import SwiftUI
 import UIKit
 
+// 首页职责：
+// 1. 在 allFeatures 定义所有入口及其跳转动作；
+// 2. 通过 HomeLayer 选出首页常用入口；
+// 3. 用 HomeVerticalPager 在“首页概览”和“全部功能”之间上下翻页。
+
 private enum HomeMenuColor
 {
     static let red1 = Color.adaptive(light: Color(red: 0.89, green: 0.24, blue: 0.22), dark: Color(red: 0.95, green: 0.40, blue: 0.38))
@@ -21,6 +26,8 @@ private enum HomeMenuColor
 
 struct HomeView: View
 {
+    /// 每个入口各自对应一个导航开关；功能卡片的 action 只负责把相应开关设为 true。
+    /// 这些状态集中在 HomeView，避免 Grid 组件和具体业务页面互相依赖。
     @State private var navigateToGrades = false
     @State private var navigateDebugRoom = false
     @State private var navigateToExams = false
@@ -28,6 +35,7 @@ struct HomeView: View
     @State private var navigateToPhysicalTest = false
     @State private var navigateToPhysicalTestCalculator = false
     @State private var navigateToAllCoueseSearch = false
+    @State private var navigateToChooseCourse = false
     @State private var navigateToBus = false
     @State private var navigateElectricity = false
     @State private var navigateToClassroom = false
@@ -38,9 +46,11 @@ struct HomeView: View
     @State private var navigateToITC = false
     @State private var navigateToAIAssistant = false
     @State private var navigateToSubscription = false
+    /// 0 是首页概览，1 是全部功能页；编辑常用入口时会锁住翻页，避免手势冲突。
     @State private var currentPage = 0
     @State private var isEditingFavorites = false
     @State private var backgroundImage: UIImage?
+    /// 常用入口的选择/排序状态。必须由 @StateObject 持有，避免首页重绘时丢失编辑状态。
     @StateObject private var homeLayer = HomeLayer()
 
     @State private var currentTime = Date()
@@ -81,6 +91,8 @@ struct HomeView: View
         max(scheduleContentOpacity, 0.9)
     }
 
+    /// 旧的 SwiftUI Grid 配置；当前首页实际使用的是 HomeFavoriteGridView（UICollectionView）。
+    /// 保留它不影响功能，但它不是控制首页入口布局的地方。
     let columns = [
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -89,6 +101,7 @@ struct HomeView: View
 
     private var featuredFeatures: [HomeFeatureItem]
     {
+        // 用 key 先恢复 HomeLayer 保存的顺序，再从全量功能中取回完整显示/跳转信息。
         let candidateMap = Dictionary(uniqueKeysWithValues: allFeatures.map { ($0.key, $0) })
         let orderedKeys = homeLayer.visiblePreferredKeys(from: allFeatures.map(\.key))
 
@@ -97,6 +110,8 @@ struct HomeView: View
 
     private var allFeatures: [HomeFeatureItem]
     {
+        // 首页功能的唯一入口清单：新增一个功能通常要在此定义 item，
+        // 再在下方 navigationDestination 中补上目标页面。
         var items: [HomeFeatureItem] = []
 
         if !isGuestMode
@@ -110,6 +125,9 @@ struct HomeView: View
             items.append(HomeFeatureItem(key: .allCourses, title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: HomeMenuColor.yellow1) {
                 navigateToAllCoueseSearch = true
             })
+//            items.append(HomeFeatureItem(key: .chooseCourse, title: "选课", icon: "checklist", color: HomeMenuColor.yellow2) {
+//                navigateToChooseCourse = true
+//            })
         }
 
         items.append(HomeFeatureItem(key: .classroom, title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1) {
@@ -173,9 +191,9 @@ struct HomeView: View
         items.append(HomeFeatureItem(key: .club, title: "社团", icon: "person.2.fill", color: HomeMenuColor.yellow2) {
             navigateToClub = true
         })
-        items.append(HomeFeatureItem(key: .aiAssistant, title: "智学助手\n(beta)", icon: "sparkles", color: HomeMenuColor.purple2) {
-            navigateToAIAssistant = true
-        })
+//        items.append(HomeFeatureItem(key: .aiAssistant, title: "智学助手\n(beta)", icon: "sparkles", color: HomeMenuColor.purple2) {
+//            navigateToAIAssistant = true
+//        })
 
         #if DEBUG
         //items.append(HomeFeatureItem(key: .debug, title: "Debug", icon: "ladybug.fill", color: HomeMenuColor.purple2) {
@@ -247,6 +265,7 @@ struct HomeView: View
                         .opacity(backgroundOpacity)
                 }
 
+                // 两页共用同一份 allFeatures 和 HomeLayer，因此“添加到首页”会立即反映在第一页。
                 HomeVerticalPager(currentPage: $currentPage, isPagingLocked: isEditingFavorites, pages: [
                     AnyView(homeOverviewPage),
                     AnyView(
@@ -272,10 +291,17 @@ struct HomeView: View
             .onAppear
             {
                 loadHomeBackgroundImage()
+                // 覆盖“启动时已自动登录”的场景；已有自定义首页时该调用不会改动顺序。
+                homeLayer.applyFirstLoginDefaultsIfNeeded(for: userinfo.username)
             }
             .onChange(of: backgroundImageFilename)
             { _ in
                 loadHomeBackgroundImage()
+            }
+            .onChange(of: userinfo.username)
+            { username in
+                // LoginView 登录成功后会更新 username，此处立即切换首次登录的默认入口。
+                homeLayer.applyFirstLoginDefaultsIfNeeded(for: username)
             }
             .toolbar
             {
@@ -298,6 +324,7 @@ struct HomeView: View
                     .accessibilityLabel(isEditingFavorites ? "完成编辑" : "编辑常用功能")
                 }
             }
+            // allFeatures 中的 action 只切换状态，真正的页面路由集中在这里，便于查找和维护。
             .navigationDestination(isPresented: $navigateToGrades) { GradeInquiry() }
             .navigationDestination(isPresented: $navigateDebugRoom) { DebugRoom() }
             .navigationDestination(isPresented: $navigateToExams) { ExamView() }
@@ -306,6 +333,7 @@ struct HomeView: View
             .navigationDestination(isPresented: $navigateToSubscription) { SubscriptionView() }
             .navigationDestination(isPresented: $navigateToPhysicalTestCalculator) { PhysicalTestCalculatorView() }
             .navigationDestination(isPresented: $navigateToAllCoueseSearch) { AllCourseView() }
+            .navigationDestination(isPresented: $navigateToChooseCourse) { ChooseCourseView() }
             .navigationDestination(isPresented: $navigateToBus)
             { SchoolBusView() }
             .navigationDestination(isPresented: $navigateElectricity)
@@ -412,6 +440,7 @@ struct HomeView: View
                         .opacity(homeCardOpacity)
                     }
 
+                    // 首页的常用功能入口 Grid：由 HomeLayer 的偏好决定内容和顺序。
                     VStack(alignment: .leading, spacing: 14)
                     {
                         HomeFavoriteGridView(
@@ -472,6 +501,9 @@ struct HomeFloatingPagerButton: View
     }
 }
 
+/// 使用 UIPageViewController 做纵向分页。
+/// SwiftUI 没有直接等价的纵向分页组件；编辑常用功能时会禁用其内部滚动，
+/// 防止长按拖拽与页面翻动抢手势。
 private struct HomeVerticalPager: UIViewControllerRepresentable
 {
     @Binding var currentPage: Int
@@ -491,6 +523,7 @@ private struct HomeVerticalPager: UIViewControllerRepresentable
         )
         controller.view.backgroundColor = .clear
 
+        // 每个 SwiftUI 页面放进一个 UIHostingController，交给 UIKit 分页控制器管理。
         let viewControllers = pages.map
         {
             let hostingController = UIHostingController(rootView: $0)
@@ -528,6 +561,7 @@ private struct HomeVerticalPager: UIViewControllerRepresentable
         )
     }
 
+    /// 维护 UIKit 页面控制器与 SwiftUI 的 currentPage 双向同步。
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate
     {
         var parent: HomeVerticalPager

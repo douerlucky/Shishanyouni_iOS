@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import WebKit
 
 // MARK: - WebView 包装
@@ -52,7 +53,7 @@ struct SchoolCalendarView: View
     private let calendar = Calendar.current
     private let scheduleQuery = ScheduleQuery()
     private let calendarFetcher = SchoolCalendarFetcher.shared
-    private let schoolCalendarURL = "https://open.work.weixin.qq.com/wwopen/mpnews?mixuin=lu0DCgAABwCtk1udAAAUAA&mfid=WW0313-r02y_AAABwD-jQWRBOWZ_Q52-zt98&idx=0&sn=d9818177ae6ac23d94424b331809cfd4"
+    private let schoolCalendarURL = "https://open.work.weixin.qq.com/wwopen/mpnews?mixuin=lu0DCgAABwCtk1udAAAUAA&mfid=WW0330-Z_3nCwAABwA3LVBi1SETCAdPydka6&idx=0&sn=31fb6968b113196aeff1db5776c0fcc2&version=5.0.9.6029&platform=win"
 
     private var isGuestMode: Bool
     {
@@ -199,6 +200,7 @@ struct SchoolCalendarView: View
         {
             Button
             {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 withAnimation
                 {
                     currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
@@ -218,6 +220,7 @@ struct SchoolCalendarView: View
 
             Button
             {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 withAnimation
                 {
                     selectedDate = Calendar.current.startOfDay(for: Date())
@@ -239,6 +242,7 @@ struct SchoolCalendarView: View
 
             Button
             {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 withAnimation
                 {
                     currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
@@ -325,43 +329,16 @@ struct SchoolCalendarView: View
                     mfaCodeProvider: requestMFACode
                 )
 
-                let currentYear = calendar.component(.year, from: Date())
-                let currentMonth = calendar.component(.month, from: Date())
+                let fetched = try await calendarFetcher.fetchSchoolCalendar(cookie: cookie)
 
-                let currentXnm = String(currentMonth <= 7 ? currentYear - 1 : currentYear)
-                let currentXqm = currentMonth <= 7 ? "12" : "3"
-
-                var allEvents: [SchoolCalendarEvent] = []
-
-                let fetched = try await calendarFetcher.fetchSchoolCalendar(
-                    cookie: cookie,
-                    xnm: currentXnm,
-                    xqm: currentXqm
-                )
-                allEvents.append(contentsOf: fetched)
-
-                if allEvents.isEmpty
-                {
-                    let prevXnm = currentMonth <= 7 ? String(currentYear - 2) : String(currentYear - 1)
-                    let prevXqm = currentMonth <= 7 ? "3" : "12"
-                    let prevFetched = try await calendarFetcher.fetchSchoolCalendar(
-                        cookie: cookie,
-                        xnm: prevXnm,
-                        xqm: prevXqm
-                    )
-                    allEvents.append(contentsOf: prevFetched)
-                }
-
-                let merged = mergeFetchedSchoolEvents(allEvents)
-                SchoolCalendarStore.shared.saveEvents(merged)
+                // 学校页面是唯一可信来源；成功同步后直接替换旧的估算/缓存活动。
+                SchoolCalendarStore.shared.saveEvents(fetched)
 
                 await MainActor.run
                 {
-                    schoolEvents = merged
+                    schoolEvents = fetched
                     isSyncing = false
-                    alertMessage = allEvents.isEmpty
-                        ? "未从学校系统获取到校历数据，请确认学期设置"
-                        : "成功同步 \(allEvents.count) 条校历信息"
+                    alertMessage = "成功同步 \(fetched.count) 条校历信息"
                     showAlert = true
                 }
             }
@@ -375,66 +352,6 @@ struct SchoolCalendarView: View
                 }
             }
         }
-    }
-
-    private func mergeFetchedSchoolEvents(_ allEvents: [SchoolCalendarEvent]) -> [SchoolCalendarEvent]
-    {
-        var merged = SchoolCalendarStore.shared.loadEvents()
-        var combinedEvents: [SchoolCalendarEvent] = []
-        let sorted = allEvents.sorted { $0.startDate < $1.startDate }
-
-        var i = 0
-        while i < sorted.count
-        {
-            let current = sorted[i]
-            var earliestStart = current.startDate
-            var latestEnd = current.endDate ?? current.startDate
-            var j = i
-
-            while j + 1 < sorted.count
-            {
-                let next = sorted[j + 1]
-                let nextStart = next.startDate
-                let gap = calendar.dateComponents([.day], from: latestEnd, to: nextStart).day ?? 999
-                if current.title == next.title && current.type == next.type && gap <= 30
-                {
-                    j += 1
-                    if next.startDate < earliestStart { earliestStart = next.startDate }
-                    if let end = next.endDate, end > latestEnd { latestEnd = end }
-                    else if next.startDate > latestEnd { latestEnd = next.startDate }
-                }
-                else
-                {
-                    break
-                }
-            }
-
-            combinedEvents.append(SchoolCalendarEvent(
-                title: current.title,
-                startDate: earliestStart,
-                endDate: earliestStart == latestEnd ? nil : latestEnd,
-                type: current.type,
-                description: current.description
-            ))
-            i = j + 1
-        }
-
-        let fetchedTitles: [String: Set<SchoolEventType>] = {
-            var dict: [String: Set<SchoolEventType>] = [:]
-            for event in combinedEvents
-            {
-                dict[event.title, default: []].insert(event.type)
-            }
-            return dict
-        }()
-
-        merged.removeAll
-        {
-            if let types = fetchedTitles[$0.title], types.contains($0.type) { return true }
-            return false
-        }
-        merged.append(contentsOf: combinedEvents)
-        return merged
     }
 
     private func requestMFACode(maskedPhone: String?) async -> String?

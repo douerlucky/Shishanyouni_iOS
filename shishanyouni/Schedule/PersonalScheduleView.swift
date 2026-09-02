@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - 行程筛选
 
@@ -205,6 +206,7 @@ struct PersonalScheduleView: View
         {
             Button
             {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 withAnimation
                 {
                     currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
@@ -224,6 +226,7 @@ struct PersonalScheduleView: View
 
             Button
             {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 withAnimation
                 {
                     selectedDate = Calendar.current.startOfDay(for: Date())
@@ -245,6 +248,7 @@ struct PersonalScheduleView: View
 
             Button
             {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
                 withAnimation
                 {
                     currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth

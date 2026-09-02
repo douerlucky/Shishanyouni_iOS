@@ -3,7 +3,7 @@
 //  shishanyouni
 //
 //  AI 智学助手（beta）：绩点分析 / 课程分析 / 自由对话。
-//  接入大模型 API（用户自带 Key），参考 Zhitu 的智学 Agent 实现。
+//  接入大模型 API（用户自带 Key），提供成绩分析、课程分析与自由对话。
 //
 
 import SwiftUI

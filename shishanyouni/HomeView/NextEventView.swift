@@ -4,6 +4,7 @@
 //
 //  首页「下一个事件」横向滑动卡片组件。
 //  聚合四种事件源：课程、个人日程、校历、考试，按时间排序展示接下来3天内的事件。
+//  本组件不直接发网络请求，只读取各模块已保存的本地数据；各模块更新后通过通知触发刷新。
 //
 
 import SwiftUI
@@ -11,6 +12,7 @@ import Foundation
 
 extension Notification.Name
 {
+    /// 课程、日程或校历写入完成后发出，首页无需重新进入即可更新“下一个安排”。
     static let homeNextEventsDidChange = Notification.Name("homeNextEventsDidChange")
 }
 
@@ -63,6 +65,8 @@ enum NextEventType: String
 
 // MARK: - ViewModel
 
+/// 将不同来源的数据规范化为 NextEventItem，并按发生时间排序。
+/// 当前读取的数据量很小，刷新同步完成，避免首页出现不必要的异步加载状态。
 @MainActor
 class NextEventViewModel: ObservableObject
 {
@@ -73,6 +77,7 @@ class NextEventViewModel: ObservableObject
 
     func refresh()
     {
+        // 保留 isLoading 是为了未来接入异步数据源；目前四类数据均来自本地存储。
         isLoading = true
         nextEvents = buildUpcomingEvents()
         isLoading = false
@@ -85,6 +90,7 @@ class NextEventViewModel: ObservableObject
 
         var items: [NextEventItem] = []
 
+        // 每个来源先独立转换，最后统一排序，避免 UI 层知道各业务模型的细节。
         // ——— 1. 课表事件 ———
         let courses = CurriculumStore.shared.loadCourses()
         let semesterStart = loadSemesterStart()
@@ -111,6 +117,7 @@ class NextEventViewModel: ObservableObject
 
     private func courseEvents(from courses: [Course], semesterStart: Date, now: Date, limit: Date) -> [NextEventItem]
     {
+        // 课表只存“第几周/周几/第几节”，这里扫描未来三天并还原为实际 Date。
         var result: [NextEventItem] = []
         let classPeriods: [(period: Int, startHour: Int, startMin: Int)] = [
             (1, 8, 0), (2, 9, 0), (3, 10, 0), (4, 10, 55),
@@ -165,7 +172,7 @@ class NextEventViewModel: ObservableObject
         {
             guard !event.isCompleted else { continue }
 
-            // 全部实例（含重复规则）
+            // Event.instances 会展开重复规则，首页只需要检查展开后的真实发生时间。
             let instances = event.instances(in: instanceRange)
 
             for instance in instances
@@ -208,6 +215,7 @@ class NextEventViewModel: ObservableObject
 
         for event in events
         {
+            // 校历的多日事件按开始日进入“下一个安排”，不为每天重复生成一张卡片。
             guard event.startDate >= now && event.startDate <= limit else { continue }
 
             result.append(NextEventItem(
@@ -361,6 +369,7 @@ struct NextEventView: View
             }
         }
         .frame(height: 132)
+        // 首次显示和任一数据源写入后都会刷新，保持首页卡片与课表/日程同步。
         .onAppear { vm.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: .homeNextEventsDidChange)) { _ in
             vm.refresh()

@@ -7,7 +7,7 @@
         "key": "我的考试",
         "location": {
           "startingColumn": 26,
-          "startingLine": 98
+          "startingLine": 163
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "未查询到任何考试安排",
         "location": {
           "startingColumn": 30,
-          "startingLine": 41
+          "startingLine": 81
         }
       },
       {
@@ -23,7 +23,15 @@
         "key": "正在努力加载考试信息...",
         "location": {
           "startingColumn": 30,
-          "startingLine": 74
+          "startingLine": 127
+        }
+      },
+      {
+        "comment": "",
+        "key": "重试",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 168
         }
       },
       {
@@ -31,23 +39,31 @@
         "key": "好的",
         "location": {
           "startingColumn": 20,
-          "startingLine": 102
+          "startingLine": 170
         }
       },
       {
         "comment": "",
         "key": "%@学分",
         "location": {
-          "startingColumn": 26,
-          "startingLine": 138
+          "startingColumn": 30,
+          "startingLine": 334
         }
       },
       {
         "comment": "",
-        "key": "座位: %@",
+        "key": "日历",
         "location": {
           "startingColumn": 34,
-          "startingLine": 178
+          "startingLine": 347
+        }
+      },
+      {
+        "comment": "",
+        "key": "好的",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 418
         }
       },
       {
@@ -55,7 +71,7 @@
         "key": "%@ %@",
         "location": {
           "startingColumn": 26,
-          "startingLine": 226
+          "startingLine": 741
         }
       },
       {
@@ -63,7 +79,7 @@
         "key": "查询",
         "location": {
           "startingColumn": 26,
-          "startingLine": 246
+          "startingLine": 761
         }
       },
       {
@@ -71,7 +87,7 @@
         "key": "选择查询范围",
         "location": {
           "startingColumn": 22,
-          "startingLine": 266
+          "startingLine": 781
         }
       },
       {
@@ -79,7 +95,7 @@
         "key": "年份",
         "location": {
           "startingColumn": 28,
-          "startingLine": 272
+          "startingLine": 787
         }
       },
       {
@@ -87,7 +103,7 @@
         "key": "学期",
         "location": {
           "startingColumn": 28,
-          "startingLine": 291
+          "startingLine": 806
         }
       },
       {
@@ -95,7 +111,7 @@
         "key": "%@学年",
         "location": {
           "startingColumn": 38,
-          "startingLine": 284
+          "startingLine": 799
         }
       },
       {
@@ -103,7 +119,7 @@
         "key": "%@-%@学年",
         "location": {
           "startingColumn": 38,
-          "startingLine": 279
+          "startingLine": 794
         }
       },
       {
@@ -111,7 +127,7 @@
         "key": "确定",
         "location": {
           "startingColumn": 26,
-          "startingLine": 300
+          "startingLine": 815
         }
       }
     ]

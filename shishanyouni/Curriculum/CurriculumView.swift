@@ -171,6 +171,8 @@ struct CurriculumView: View
         {
             CurriculumSettingView(semesterStartDate: $semesterStartDate, courses: $courses)
                 .environmentObject(userinfo)
+                // 课表设置只能通过左上角叉号退出，避免下滑时绕过导入后的保存确认。
+                .interactiveDismissDisabled()
         }
         .sheet(isPresented: $showWidgetSettings)
         {

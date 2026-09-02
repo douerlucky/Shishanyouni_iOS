@@ -21,14 +21,19 @@ struct CurriculumSettingView: View {
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
 
-    @State private var tempStartDate: Date = {
-        let components = DateComponents(year: 2026, month: 3, day: 2)
-        return Calendar.current.date(from: components) ?? Date()
-    }()
+    /// `nil` 表示从未设置过开学日期，不能用任意默认日期伪装成已有数据。
+    @State private var tempStartDate: Date?
+    @State private var hasLoadedSemesterStartDate = false
+    @State private var showSemesterStartDatePicker = false
+    @State private var draftSemesterStartDate = Date()
 
     @State private var hasUserSelectedDate   = false
     @State private var showSaveConfirmation  = false
+    @State private var hasPendingImportedSchedule = false
+    @State private var showImportExitConfirmation = false
     @State private var showImportPicker      = false
+    /// 确认后等选择器完全收起再发请求，避免两个 sheet 在转场期间互相抢 presenter。
+    @State private var shouldStartImportAfterPickerDismissal = false
     @State private var showImportAlert       = false
     @State private var showClearConfirmation = false
     @State private var importAlertMessage    = ""
@@ -52,8 +57,8 @@ struct CurriculumSettingView: View {
     @State private var showClearAllConfirmation      = false
 
     // 导入学期选择
-    @State private var selectedYear     = "2025"       // 学年起始年份
-    @State private var selectedTerm     = "2"          // "1"=秋季, "2"=春季
+    @State private var selectedYear     = CurriculumSettingView.defaultImportSemester(for: Date()).year
+    @State private var selectedTerm     = CurriculumSettingView.defaultImportSemester(for: Date()).term
     
     @State private var hasSelectedPhoto = false
     // 裁剪器：用 navigationDestination push 进去，不用 sheet
@@ -67,8 +72,12 @@ struct CurriculumSettingView: View {
 
     @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
 
-    /// 学年显示列表
-    private let availableYears  = ["2023", "2024", "2025", "2026"]
+    /// 以当前学年为基准显示历史和后续可导入的学年，不再写死到 2026。
+    private var availableYears: [String] {
+        let currentAcademicYear = Int(Self.defaultImportSemester(for: Date()).year) ?? 2026
+        return ((currentAcademicYear - 3)...(currentAcademicYear + 2)).map(String.init)
+    }
+
     private let terms           = [("秋季学期", "1"), ("春季学期", "2")]
 
     var body: some View {
@@ -84,76 +93,20 @@ struct CurriculumSettingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                }
-            }        .fullScreenCover(isPresented: $showCropper) {
-                if let photo = photoToCrop {
-                    ImageCropperView(image: photo) { cropped in
-                        saveBackgroundImage(cropped)
-                        hasSelectedPhoto = true
-                    }
+                    Button(action: requestDismissal) { Image(systemName: "xmark") }
                 }
             }
         }
-    }
-
-    // MARK: - 拆分后的 Section (解决编译器超时问题)
-
-    private var dateSection: some View {
-        Section {
-            DatePicker(
-                "本学期开学日期",
-                selection: $tempStartDate,
-                displayedComponents: [.date]
-            )
-            .environment(\.locale, Locale(identifier: "zh_CN"))
-            .onChange(of: tempStartDate) { newValue in
-                hasUserSelectedDate = true
-                adjustToMonday(newValue)
-            }
-            .listRowSeparator(.hidden) // 消除分隔线
-        } header: {
-            Text("学期设置")
+        // 导入相关的 presenter 必须挂在稳定的页面根节点，而不是 Form/Section 内。
+        // 否则 Form 刷新时会让正在显示的选择器被 SwiftUI 自动取消。
+        .sheet(isPresented: $showImportPicker, onDismiss: importPickerDidDismiss) {
+            importPickerView
         }
-    }
-
-    private var importSection: some View {
-        Section {
-            Button {
-                showImportPicker = true
-            } label: {
-                if userinfo.username.isEmpty {
-                    Text("请先在个人页面登录")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    HStack {
-                        Spacer()
-                        if isImporting { ProgressView().padding(.trailing, 8) }
-                        Text(isImporting ? "导入中…" : "导入课表")
-                            .fontWeight(.semibold)
-                        Spacer()
-                    }
-                }
-            }
-            .disabled(userinfo.username.isEmpty || isImporting)
-            .listRowSeparator(.hidden) // 消除分隔线
-        } header: {
-            Text("课表导入")
+        .sheet(isPresented: $showSemesterStartDatePicker) {
+            semesterStartDatePickerView
         }
-        // 把弹窗绑在对应的 Section 上，分解编译器的压力！
-        .sheet(isPresented: $showImportPicker) { importPickerView }
-        .sheet(isPresented: $showMFASheet)
-        {
-            MFACodeInputSheet(
-                maskedPhone: mfaMaskedPhone,
-                code: $mfaCode,
-                fromShishanyouni: true,
-                onSendCode: $mfaSendCodeAction,
-                onCancel: { resolveMFACode(nil) },
-                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
-            )
+        .sheet(isPresented: $showMFASheet) {
+            mfaCodeInputSheet
         }
         .alert(importAlertMessage, isPresented: $showImportAlert) {
             if let retry = importErrorRetryAction {
@@ -178,6 +131,91 @@ struct CurriculumSettingView: View {
             }
         } message: {
             Text("点击「保留」将保留手动课程，仅替换导入课程；点击「清除」将删除所有课程后重新导入。")
+        }
+        .alert(
+            "是否保存该课表？",
+            isPresented: $showImportExitConfirmation,
+            actions: {
+                Button("保存课表") {
+                    // 与页面底部的“保存设置”按钮共用同一条保存路径。
+                    saveSettings()
+                }
+                .disabled(!canSaveSettings)
+
+                Button("直接退出", role: .destructive) {
+                    dismiss()
+                }
+            },
+            message: {
+                Text("已导入的课表尚未确认保存。")
+            }
+        )
+        .fullScreenCover(isPresented: $showCropper) {
+            if let photo = photoToCrop {
+                ImageCropperView(image: photo) { cropped in
+                    saveBackgroundImage(cropped)
+                    hasSelectedPhoto = true
+                }
+            }
+        }
+        .onAppear(perform: loadSemesterStartDateIfNeeded)
+    }
+
+    // MARK: - 拆分后的 Section (解决编译器超时问题)
+
+    private var dateSection: some View {
+        Section {
+            if tempStartDate == nil {
+                Button {
+                    draftSemesterStartDate = Calendar.current.startOfDay(for: Date())
+                    showSemesterStartDatePicker = true
+                } label: {
+                    HStack {
+                        Text("本学期开学日期")
+                        Spacer()
+                        Text("未设置")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowSeparator(.hidden) // 消除分隔线
+            } else {
+                DatePicker(
+                    "本学期开学日期",
+                    selection: semesterStartDateBinding,
+                    displayedComponents: [.date]
+                )
+                .environment(\.locale, Locale(identifier: "zh_CN"))
+                .listRowSeparator(.hidden) // 消除分隔线
+            }
+        } header: {
+            Text("学期设置")
+        }
+    }
+
+    private var importSection: some View {
+        Section {
+            Button {
+                presentImportPicker()
+            } label: {
+                if userinfo.username.isEmpty {
+                    Text("请先在个人页面登录")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    HStack {
+                        Spacer()
+                        if isImporting { ProgressView().padding(.trailing, 8) }
+                        Text(isImporting ? "导入中…" : "导入课表")
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                }
+            }
+            .disabled(userinfo.username.isEmpty || isImporting)
+            .listRowSeparator(.hidden) // 消除分隔线
+        } header: {
+            Text("课表导入")
         }
     }
 
@@ -318,17 +356,53 @@ struct CurriculumSettingView: View {
                     Spacer()
                 }
             }
-            .disabled(!hasUserSelectedDate && !hasSelectedPhoto)
+            .disabled(!canSaveSettings)
             .listRowSeparator(.hidden)
         }
         .alert("设置已保存", isPresented: $showSaveConfirmation) {
             Button("确定", role: .cancel) { dismiss() }
         } message: {
-            Text("开学日期已更新为 \(formatDate(tempStartDate))")
+            if let tempStartDate {
+                Text("开学日期已更新为 \(formatDate(tempStartDate))")
+            } else {
+                Text("设置已保存")
+            }
         }
     }
 
     // MARK: - Import Picker
+
+    private var semesterStartDatePickerView: some View {
+        NavigationStack {
+            VStack {
+                DatePicker(
+                    "本学期开学日期",
+                    selection: $draftSemesterStartDate,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .environment(\.locale, Locale(identifier: "zh_CN"))
+                .padding()
+
+                Spacer()
+            }
+            .navigationTitle("设置开学日期")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") { showSemesterStartDatePicker = false }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("确定") {
+                        updateSemesterStartDate(draftSemesterStartDate)
+                        showSemesterStartDatePicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .interactiveDismissDisabled()
+    }
     
     private var importPickerView: some View {
         NavigationStack {
@@ -365,20 +439,52 @@ struct CurriculumSettingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { showImportPicker = false }
+                    Button("取消") {
+                        shouldStartImportAfterPickerDismissal = false
+                        showImportPicker = false
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("确认") {
+                        // 在选择器收起的转场期间锁住入口，保证此次请求使用用户刚确认的学期。
+                        isImporting = true
+                        shouldStartImportAfterPickerDismissal = true
                         showImportPicker = false
-                        Task { await importCourses() }
                     }
                     .disabled(isImporting)
                 }
             }
         }
+        .interactiveDismissDisabled()
+    }
+
+    private var mfaCodeInputSheet: some View {
+        MFACodeInputSheet(
+            maskedPhone: mfaMaskedPhone,
+            code: $mfaCode,
+            fromShishanyouni: true,
+            onSendCode: $mfaSendCodeAction,
+            onCancel: { resolveMFACode(nil) },
+            onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        )
     }
 
     // MARK: 导入课表
+    private func presentImportPicker() {
+        let defaultSemester = Self.defaultImportSemester(for: Date())
+        selectedYear = defaultSemester.year
+        selectedTerm = defaultSemester.term
+        shouldStartImportAfterPickerDismissal = false
+        showImportPicker = true
+    }
+
+    private func importPickerDidDismiss() {
+        guard shouldStartImportAfterPickerDismissal else { return }
+
+        shouldStartImportAfterPickerDismissal = false
+        Task { await importCourses() }
+    }
+
     private func importCourses() async {
         isImporting = true
         importErrorRetryAction = nil
@@ -502,6 +608,7 @@ struct CurriculumSettingView: View {
         let manual = keepManual ? courses.filter { $0.isManual } : []
         courses = manual + result.courses
         persistCourses(courses)
+        hasPendingImportedSchedule = true
 
         if let apiDate = result.startDate {
             tempStartDate       = apiDate
@@ -548,11 +655,64 @@ struct CurriculumSettingView: View {
     }
 
     private func saveSettings() {
-        semesterStartDate   = tempStartDate
-        savedTimestamp      = tempStartDate.timeIntervalSince1970
-        CurriculumStore.shared.saveSemesterStartTimestamp(savedTimestamp)
+        guard canSaveSettings else { return }
+        if let tempStartDate {
+            semesterStartDate = tempStartDate
+            savedTimestamp = tempStartDate.timeIntervalSince1970
+            CurriculumStore.shared.saveSemesterStartTimestamp(savedTimestamp)
+        }
         WidgetSharedStore.saveBackgroundMeta(filename: backgroundImageFilename, opacity: backgroundOpacity)
+        hasPendingImportedSchedule = false
         showSaveConfirmation = true
+    }
+
+    /// 只有导入后的课表还未走过原有保存流程时，关闭才需要二次确认。
+    private func requestDismissal() {
+        if hasPendingImportedSchedule {
+            showImportExitConfirmation = true
+        } else {
+            dismiss()
+        }
+    }
+
+    private var canSaveSettings: Bool {
+        hasUserSelectedDate || hasSelectedPhoto
+    }
+
+    private var semesterStartDateBinding: Binding<Date> {
+        Binding(
+            get: { tempStartDate ?? Calendar.current.startOfDay(for: Date()) },
+            set: updateSemesterStartDate
+        )
+    }
+
+    private func updateSemesterStartDate(_ date: Date) {
+        hasUserSelectedDate = true
+        tempStartDate = date
+        adjustToMonday(date)
+    }
+
+    private func loadSemesterStartDateIfNeeded() {
+        guard !hasLoadedSemesterStartDate else { return }
+        hasLoadedSemesterStartDate = true
+
+        if savedTimestamp > 0 {
+            tempStartDate = Date(timeIntervalSince1970: savedTimestamp)
+        } else if let sharedDate = CurriculumStore.shared.loadSemesterStartDate() {
+            tempStartDate = sharedDate
+            savedTimestamp = sharedDate.timeIntervalSince1970
+        }
+    }
+
+    /// 学年从每年 8 月 1 日开始：8 月至次年 1 月为秋季，2 月至 7 月为同一学年的春季。
+    private static func defaultImportSemester(for date: Date, calendar: Calendar = .current) -> (year: String, term: String) {
+        let components = calendar.dateComponents([.year, .month], from: date)
+        let calendarYear = components.year ?? calendar.component(.year, from: Date())
+        let month = components.month ?? 8
+        let isAutumnTerm = month >= 8
+        let academicYearStart = isAutumnTerm ? calendarYear : calendarYear - 1
+
+        return (year: String(academicYearStart), term: isAutumnTerm ? "1" : "2")
     }
 
     private func formatDate(_ date: Date) -> String {

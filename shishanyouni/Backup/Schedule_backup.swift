@@ -278,6 +278,19 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         return cookieJar.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
     }
 
+    /// 教务系统除 JSESSIONID 外还依赖 SLBServerPool* 保持会话落在同一台后端。
+    /// 只带 JSESSIONID 时，后续校历请求可能被负载均衡到另一台机器并回到登录页。
+    private func getAcademicCookieHeader() -> String
+    {
+        cookieJar.keys
+            .filter { $0 == "JSESSIONID" || $0.hasPrefix("SLBServerPool") }
+            .sorted()
+            .compactMap { name in
+                cookieJar[name].map { "\(name)=\($0)" }
+            }
+            .joined(separator: "; ")
+    }
+
     private func finishLoginWithTicketLocation(_ location: String) async throws -> String
     {
         print("🔐 获取教务 Ticket")
@@ -299,8 +312,9 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
 
         if let jsessionId = cookieJar["JSESSIONID"]
         {
-            print("✅ 登录成功，获得教务 Cookie")
-            return "JSESSIONID=\(jsessionId)"
+            let academicCookieHeader = getAcademicCookieHeader()
+            print("✅ 登录成功，获得教务 Cookie（JSESSIONID + 负载均衡会话）")
+            return academicCookieHeader.isEmpty ? "JSESSIONID=\(jsessionId)" : academicCookieHeader
         }
 
         throw NSError(domain: "CookieNotFound", code: 404)

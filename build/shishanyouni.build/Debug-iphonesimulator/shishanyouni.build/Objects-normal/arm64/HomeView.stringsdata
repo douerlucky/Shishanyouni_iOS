@@ -1,5 +1,5 @@
 {
-  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/HomeView.swift",
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/shishanyouni/HomeView/HomeView.swift",
   "tables": {
     "Localizable": [
       {
@@ -7,39 +7,79 @@
         "key": "首页",
         "location": {
           "startingColumn": 30,
-          "startingLine": 244
+          "startingLine": 288
         }
       },
       {
         "comment": "",
-        "key": "今天是在华农的第 %lld 天",
+        "key": "完成编辑",
         "location": {
-          "startingColumn": 38,
-          "startingLine": 118
+          "startingColumn": 62,
+          "startingLine": 324
+        }
+      },
+      {
+        "comment": "",
+        "key": "编辑常用功能",
+        "location": {
+          "startingColumn": 79,
+          "startingLine": 324
+        }
+      },
+      {
+        "comment": "",
+        "key": "在华农天数",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 397
         }
       },
       {
         "comment": "",
         "key": "当前为游客模式",
         "location": {
-          "startingColumn": 34,
-          "startingLine": 130
+          "startingColumn": 38,
+          "startingLine": 411
         }
       },
       {
         "comment": "",
         "key": "欢迎使用狮山有你！\n来一起探索华中农业大学吧！",
         "location": {
-          "startingColumn": 34,
-          "startingLine": 134
+          "startingColumn": 38,
+          "startingLine": 415
         }
       },
       {
         "comment": "",
         "key": "游客模式下可使用公开信息与本地工具功能，登录后可解锁个性化校园服务。",
         "location": {
+          "startingColumn": 38,
+          "startingLine": 419
+        }
+      },
+      {
+        "comment": "",
+        "key": "下一个安排",
+        "location": {
           "startingColumn": 34,
-          "startingLine": 138
+          "startingLine": 434
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 691
+        }
+      },
+      {
+        "comment": "",
+        "key": "天",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 696
         }
       }
     ]

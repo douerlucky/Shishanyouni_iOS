@@ -7,31 +7,47 @@
         "key": "环湖跑成绩",
         "location": {
           "startingColumn": 26,
-          "startingLine": 93
+          "startingLine": 100
         }
       },
       {
         "comment": "",
         "key": "暂无环湖跑数据",
         "location": {
-          "startingColumn": 26,
-          "startingLine": 42
+          "startingColumn": 44,
+          "startingLine": 46
         }
       },
       {
         "comment": "",
-        "key": "正在同步南湖跑成绩...",
+        "key": "点击下方按钮同步数据",
+        "location": {
+          "startingColumn": 70,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在通过%@同步南湖跑成绩...",
         "location": {
           "startingColumn": 30,
-          "startingLine": 75
+          "startingLine": 79
+        }
+      },
+      {
+        "comment": "",
+        "key": "重试",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 112
         }
       },
       {
         "comment": "",
         "key": "确定",
         "location": {
-          "startingColumn": 102,
-          "startingLine": 102
+          "startingColumn": 47,
+          "startingLine": 113
         }
       },
       {
@@ -39,7 +55,7 @@
         "key": "%@学年 第%@学期",
         "location": {
           "startingColumn": 26,
-          "startingLine": 197
+          "startingLine": 283
         }
       },
       {
@@ -47,7 +63,7 @@
         "key": "已跑圈数",
         "location": {
           "startingColumn": 22,
-          "startingLine": 216
+          "startingLine": 302
         }
       },
       {
@@ -55,7 +71,7 @@
         "key": "同步数据",
         "location": {
           "startingColumn": 22,
-          "startingLine": 257
+          "startingLine": 351
         }
       }
     ]

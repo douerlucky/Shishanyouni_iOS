@@ -3,7 +3,7 @@
 //  shishanyouni
 //
 //  AI 智学助手（beta）核心网络层。
-//  参考 Zhitu 的 AIService 实现：支持 OpenAI 兼容协议（DeepSeek/Qwen/GPT/Kimi）与 Anthropic 协议（Claude）。
+//  支持 OpenAI 兼容协议（DeepSeek/Qwen/GPT/Kimi）与 Anthropic 协议（Claude）。
 //
 
 import Foundation

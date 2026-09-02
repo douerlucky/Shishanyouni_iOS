@@ -7,7 +7,7 @@
         "key": "空教室查询",
         "location": {
           "startingColumn": 26,
-          "startingLine": 97
+          "startingLine": 99
         }
       },
       {
@@ -15,7 +15,15 @@
         "key": "正在查询...",
         "location": {
           "startingColumn": 30,
-          "startingLine": 73
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "重试",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 104
         }
       },
       {
@@ -23,7 +31,7 @@
         "key": "好哒",
         "location": {
           "startingColumn": 20,
-          "startingLine": 102
+          "startingLine": 105
         }
       },
       {
@@ -31,7 +39,7 @@
         "key": "关注的教室",
         "location": {
           "startingColumn": 22,
-          "startingLine": 133
+          "startingLine": 136
         }
       },
       {
@@ -39,7 +47,7 @@
         "key": "还没有关注的教室",
         "location": {
           "startingColumn": 30,
-          "startingLine": 159
+          "startingLine": 162
         }
       },
       {
@@ -47,7 +55,7 @@
         "key": "长按下方查询结果中的教室名称，可以添加关注，在此处优先显示今日占用情况",
         "location": {
           "startingColumn": 30,
-          "startingLine": 162
+          "startingLine": 165
         }
       },
       {
@@ -55,7 +63,7 @@
         "key": "教室",
         "location": {
           "startingColumn": 26,
-          "startingLine": 177
+          "startingLine": 180
         }
       },
       {
@@ -63,7 +71,7 @@
         "key": "取消关注",
         "location": {
           "startingColumn": 23,
-          "startingLine": 256
+          "startingLine": 259
         }
       },
       {
@@ -71,7 +79,7 @@
         "key": "—",
         "location": {
           "startingColumn": 22,
-          "startingLine": 280
+          "startingLine": 283
         }
       },
       {
@@ -79,7 +87,7 @@
         "key": "上课",
         "location": {
           "startingColumn": 35,
-          "startingLine": 286
+          "startingLine": 289
         }
       },
       {
@@ -87,7 +95,7 @@
         "key": "空闲",
         "location": {
           "startingColumn": 46,
-          "startingLine": 286
+          "startingLine": 289
         }
       },
       {
@@ -95,7 +103,7 @@
         "key": "上课",
         "location": {
           "startingColumn": 43,
-          "startingLine": 364
+          "startingLine": 367
         }
       },
       {
@@ -103,7 +111,7 @@
         "key": "空闲",
         "location": {
           "startingColumn": 54,
-          "startingLine": 364
+          "startingLine": 367
         }
       },
       {
@@ -111,7 +119,7 @@
         "key": "取消关注",
         "location": {
           "startingColumn": 27,
-          "startingLine": 386
+          "startingLine": 389
         }
       },
       {
@@ -119,7 +127,7 @@
         "key": "关注此教室",
         "location": {
           "startingColumn": 27,
-          "startingLine": 395
+          "startingLine": 398
         }
       },
       {
@@ -127,7 +135,7 @@
         "key": "暂无教室数据或未开始查询",
         "location": {
           "startingColumn": 30,
-          "startingLine": 447
+          "startingLine": 450
         }
       },
       {
@@ -135,7 +143,7 @@
         "key": "教室",
         "location": {
           "startingColumn": 34,
-          "startingLine": 461
+          "startingLine": 464
         }
       },
       {
@@ -143,7 +151,7 @@
         "key": "",
         "location": {
           "startingColumn": 28,
-          "startingLine": 579
+          "startingLine": 583
         }
       },
       {
@@ -151,7 +159,7 @@
         "key": "教学楼过滤",
         "location": {
           "startingColumn": 30,
-          "startingLine": 759
+          "startingLine": 764
         }
       },
       {
@@ -159,7 +167,7 @@
         "key": "教室位置",
         "location": {
           "startingColumn": 22,
-          "startingLine": 708
+          "startingLine": 713
         }
       },
       {
@@ -167,7 +175,7 @@
         "key": "教学楼",
         "location": {
           "startingColumn": 28,
-          "startingLine": 717
+          "startingLine": 722
         }
       },
       {
@@ -175,7 +183,7 @@
         "key": "栋号",
         "location": {
           "startingColumn": 28,
-          "startingLine": 733
+          "startingLine": 738
         }
       },
       {
@@ -183,7 +191,7 @@
         "key": "楼层",
         "location": {
           "startingColumn": 28,
-          "startingLine": 747
+          "startingLine": 752
         }
       },
       {
@@ -191,7 +199,7 @@
         "key": "不分栋",
         "location": {
           "startingColumn": 50,
-          "startingLine": 737
+          "startingLine": 742
         }
       },
       {
@@ -199,7 +207,7 @@
         "key": "%@栋",
         "location": {
           "startingColumn": 64,
-          "startingLine": 737
+          "startingLine": 742
         }
       },
       {
@@ -207,7 +215,7 @@
         "key": "%lld 楼",
         "location": {
           "startingColumn": 68,
-          "startingLine": 749
+          "startingLine": 754
         }
       },
       {
@@ -215,7 +223,7 @@
         "key": "完成",
         "location": {
           "startingColumn": 28,
-          "startingLine": 765
+          "startingLine": 770
         }
       }
     ]
