@@ -15,6 +15,27 @@ import SwiftUI
 /// 既不显示在 UI，也不写入本地存储或日志。
 struct CourseSearchResult: Identifiable
 {
+    /// 课程目录按教学班逐行返回，但首层 UI 会把同一门课合并成一张卡片。
+    /// 展开接口有时只给 `jxb_id` 和临时 token，因此需要保留目录中每一行的展示资料，
+    /// 再按教学班 ID 回填，不能把同课程第一行的内容复制给其它教学班。
+    struct CatalogTeachingClass: Hashable
+    {
+        let teachingClassID: String
+        let teachingClassName: String
+        let credit: String
+        let classLevels: Int
+        let teachingClassComposition: String
+        let teacherInfo: String
+        let classTime: String
+        let location: String
+        let courseMaterial: String
+        let selectionRemark: String
+        let courseNature: String
+        let teachingMode: String
+        let selectedCount: String
+        let capacity: String
+    }
+
     let id = UUID()
     let courseCode: String
     let courseID: String
@@ -41,6 +62,8 @@ struct CourseSearchResult: Identifiable
     let capacity: String
     /// 目录会按课程号合并成一张卡片；这个值只用于提示教学班数量，不参与任何选课请求。
     let catalogTeachingClassCount: Int
+    /// 仅保存同一次目录响应的展示快照；不保存教学班临时 token，也不会跨登录会话复用。
+    let catalogTeachingClasses: [CatalogTeachingClass]
 
     init(
         courseCode: String,
@@ -63,7 +86,8 @@ struct CourseSearchResult: Identifiable
         teachingMode: String = "",
         selectedCount: String = "",
         capacity: String = "",
-        catalogTeachingClassCount: Int = 1
+        catalogTeachingClassCount: Int = 1,
+        catalogTeachingClasses: [CatalogTeachingClass] = []
     )
     {
         self.courseCode = courseCode
@@ -87,6 +111,7 @@ struct CourseSearchResult: Identifiable
         self.selectedCount = selectedCount
         self.capacity = capacity
         self.catalogTeachingClassCount = catalogTeachingClassCount
+        self.catalogTeachingClasses = catalogTeachingClasses
     }
 
     /// 正方用 jxbzls 表示教学班层级；大于 1 时必须让用户继续选择叶子教学班。
@@ -127,7 +152,10 @@ struct CourseSearchResult: Identifiable
 
     /// 将同一课程的多条目录摘要合并为一张可展开的课程卡片。
     /// 真正可选的教学班仍在用户展开后，从当前会话重新读取，不能复用旧摘要里的参数。
-    func catalogSummary(teachingClassCount: Int) -> CourseSearchResult
+    func catalogSummary(
+        teachingClassCount: Int,
+        catalogTeachingClasses: [CatalogTeachingClass]
+    ) -> CourseSearchResult
     {
         CourseSearchResult(
             courseCode: courseCode,
@@ -150,7 +178,8 @@ struct CourseSearchResult: Identifiable
             teachingMode: teachingMode,
             selectedCount: selectedCount,
             capacity: capacity,
-            catalogTeachingClassCount: teachingClassCount
+            catalogTeachingClassCount: teachingClassCount,
+            catalogTeachingClasses: catalogTeachingClasses
         )
     }
 }
@@ -266,50 +295,36 @@ enum CourseCatalogCategory: String, CaseIterable, Identifiable
         }
     }
 
-    /// 与当前正方页面五个 Selector 对应的、非个人化的选课规则字段。
-    /// `xkkz_id` 是 2026–2027 秋季学期抓包中的选课方案 ID；学校切换新选课方案时，
-    /// 只需更新这里的方案表，学号、专业、学院等个人上下文仍会继续从当前页面读取。
-    private var selectorOverrides: [String: String]
+    /// 服务端页签名称并非账号数据；仅用于把页面实际返回的规则映射到 App 的五个分段。
+    /// 规则 ID、开课类型、任务类型等提交参数都不会在这里写死。
+    func matchesServerTitle(_ rawTitle: String) -> Bool
     {
+        let title = rawTitle
+            .replacingOccurrences(of: #"\s+"#, with: "", options: .regularExpression)
+            .uppercased()
         switch self
         {
         case .major:
-            return [
-                "rwlx": "1", "sfkknj": "1", "sfkkzy": "1", "sfkxq": "1",
-                "kklxdm": "01", "xkkz_id": "5A12D9710D05D20DE065000000000001"
-            ]
+            return title.contains("主修") || title.contains("培养计划")
         case .generalEducation:
-            return [
-                "rwlx": "2", "sfkknj": "0", "sfkkzy": "0", "sfkxq": "1",
-                "kklxdm": "10", "xkkz_id": "5A0AE6A2EF9833ACE065000000000001"
-            ]
+            return title.contains("通识") && !title.contains("MOOC")
         case .mooc:
-            return [
-                "rwlx": "2", "sfkknj": "0", "sfkkzy": "0", "sfkxq": "1",
-                "kklxdm": "19", "xkkz_id": "5A0AE6A2EFAA33ACE065000000000001"
-            ]
+            return title.contains("MOOC")
         case .physicalEducation:
-            return [
-                "rwlx": "2", "sfkknj": "0", "sfkkzy": "0", "sfkxq": "0",
-                "kklxdm": "05", "xkkz_id": "5A0AE6A2EFC833ACE065000000000001"
-            ]
+            return title.contains("体育")
         case .english:
-            return [
-                "rwlx": "2", "sfkknj": "0", "sfkkzy": "0", "sfkxq": "0",
-                "kklxdm": "07", "xkkz_id": "5A6C18CCCC788AB5E065000000000001"
-            ]
+            return title.contains("英语")
         }
     }
+}
 
-    func applying(to context: CourseSelectionContext) -> CourseSelectionContext
-    {
-        var values = context.values
-        for (key, value) in selectorOverrides
-        {
-            values[key] = value
-        }
-        return CourseSelectionContext(values: values)
-    }
+/// 从当前账号的选课页解析出的一个真实页签规则。
+/// 这两个值由网页 `queryCourse(...)` 直接提供，只在本次页面加载期间保留在内存。
+struct CourseCatalogRule: Equatable
+{
+    let category: CourseCatalogCategory
+    let courseTypeCode: String
+    let controlID: String
 }
 
 /// 一次课程目录区间请求的结果。
@@ -320,6 +335,8 @@ struct CourseCatalogPage
     let courses: [CourseSearchResult]
     let hasMore: Bool
     let nextRangeStart: Int
+    /// 由当前账号的选课 Index / Display 页面返回；设备日期只在页面缺字段时才兜底。
+    let semester: SelectedCourseSemester
     /// 学年、学期、轮次、学分规则和截止时间全部来自本次页面，不来自本地日期推测。
     let overview: CourseSelectionOverview
 }
@@ -424,26 +441,63 @@ struct CourseSelectionContext
             merged["xkkz_id"] = first
         }
 
-        // 正方前端会按课程类型把 t_* / s_* 复制到真正提交的年级、专业字段。
-        let useStudentContext = merged["rwlx"] == "1" && !["01", "30"].contains(merged["kklxdm"] ?? "")
-        if merged["njdm_id"].isEmptyOrNil
-        {
-            merged["njdm_id"] = merged[useStudentContext ? "s_njdm_id" : "t_njdm_id"] ?? ""
-        }
-        if merged["zyh_id"].isEmptyOrNil
-        {
-            merged["zyh_id"] = merged[useStudentContext ? "s_zyh_id" : "t_zyh_id"] ?? ""
-        }
-
-        return CourseSelectionContext(values: merged)
+        return CourseSelectionContext(values: merged).applyingFrontendRuleValues()
     }
 
+    /// 严格复现 `zzxkYzbZy.js`：切换页签后，网页会依据该页签的 rwlx / kklxdm，
+    /// 重新把学生或培养方案的年级、专业写入真正提交字段。不能只在字段为空时补值，
+    /// 否则切换到不同类型的课程仍会带着上一个页签的专业上下文。
+    func applyingFrontendRuleValues() -> CourseSelectionContext
+    {
+        var updated = values
+        let useStudentContext = updated["rwlx"] == "1"
+            && !["01", "30"].contains(updated["kklxdm"] ?? "")
+        let gradeSource = useStudentContext ? "s_njdm_id" : "t_njdm_id"
+        let majorSource = useStudentContext ? "s_zyh_id" : "t_zyh_id"
+        if let grade = updated[gradeSource], !grade.isEmpty
+        {
+            updated["njdm_id"] = grade
+        }
+        if let major = updated[majorSource], !major.isEmpty
+        {
+            updated["zyh_id"] = major
+        }
+        return CourseSelectionContext(values: updated)
+    }
+
+    /// `queryCourse(...)` 切换页签时只改变这两个值，随后由 Display 接口返回该规则的
+    /// 其它开关。它们全部来自当前账号的 Index 页面，不能使用历史抓包中的 ID。
+    func applying(_ rule: CourseCatalogRule) -> CourseSelectionContext
+    {
+        var updated = values
+        updated["kklxdm"] = rule.courseTypeCode
+        updated["xkkz_id"] = rule.controlID
+        return CourseSelectionContext(values: updated)
+    }
+
+    /// 页面明确返回的学年 / 学期优先。传入值只是旧模板漏字段时的安全兜底，
+    /// 绝不能用设备日期把不同账号当前实际开放的选课学期覆盖掉。
     func applying(_ semester: SelectedCourseSemester) -> CourseSelectionContext
     {
         var updated = values
-        updated["xkxnm"] = semester.academicYear
-        updated["xkxqm"] = semester.termCode
+        if updated["xkxnm"].isEmptyOrNil
+        {
+            updated["xkxnm"] = semester.academicYear
+        }
+        if updated["xkxqm"].isEmptyOrNil
+        {
+            updated["xkxqm"] = semester.termCode
+        }
         return CourseSelectionContext(values: updated)
+    }
+
+    /// 从本次教务页面得到真正要提交的学年、学期代码；缺失时才回退到调用方的日期推测。
+    func resolvedSemester(fallback: SelectedCourseSemester) -> SelectedCourseSemester
+    {
+        let academicYear = value("xkxnm").trimmingCharacters(in: .whitespacesAndNewlines)
+        let termCode = value("xkxqm").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !academicYear.isEmpty, !termCode.isEmpty else { return fallback }
+        return SelectedCourseSemester(academicYear: academicYear, termCode: termCode)
     }
 
     var overview: CourseSelectionOverview
@@ -663,6 +717,7 @@ enum CourseSelectionServiceError: LocalizedError
     case noSearchResult
     case noChildClass
     case missingCurrentParameters
+    case missingCategoryRule(String)
     case missingContext([String])
 
     var errorDescription: String?
@@ -685,6 +740,8 @@ enum CourseSelectionServiceError: LocalizedError
             return "该课程没有返回可选择的子教学班，本次没有提交选课请求。"
         case .missingCurrentParameters:
             return "教务系统没有返回本次会话可用的教学班参数，已停止提交。请刷新后重新搜索。"
+        case let .missingCategoryRule(category):
+            return "没有从当前账号的选课页读取到“\(category)”的规则，已停止请求。请以教务系统页面为准。"
         case let .missingContext(fields):
             return "选课页缺少必要上下文（\(fields.joined(separator: "、"))），已停止提交。"
         }
@@ -697,13 +754,16 @@ enum CourseSelectionEndpoint
     static let index = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbIndex.html?gnmkdm=N253512&layout=default"
     static let display = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbDisplay.html"
     static let catalog = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbPartDisplay.html?gnmkdm=N253512"
-    static let parentClass = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxJxbWithKchZzxkYzb.html"
+    static let parentClass = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxJxbWithKchZzxkYzb.html?gnmkdm=N253512"
     static let childDialog = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkZyZzxkYzbZjxb.html?gnmkdm=N253512"
     static let childDisplay = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkZyDisplayZzxkYzbZjxb.html?gnmkdm=N253512"
     static let select = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkBcZyZzxkYzb.html?gnmkdm=N253512"
     static let dropCheck = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkJcInXksjZzxkYzb.html?gnmkdm=N253512"
     static let drop = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_tuikBcZzxkYzb.html?gnmkdm=N253512"
     static let preferenceSync = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkBcZypxZzxkYzb.html?gnmkdm=N253512"
+    /// 已选主教学班对应的实验 / 子教学班明细。请求参数由当前账号的已选课程与
+    /// 选课页面上下文动态组成，不能缓存其它账号的 jxb_ids。
+    static let selectedClassSchedules = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZkcZzxkYzb.html?gnmkdm=N253512"
 }
 
 /// 统一处理教务请求头、表单编码和会话失效检查。
@@ -854,7 +914,11 @@ enum CourseSelectionHTTP
 /// 按网页真实步骤加载 Index 与 Display 片段，得到当前会话的选课上下文。
 enum CourseSelectionPageLoader
 {
-    static func load(cookie: String, semester: SelectedCourseSemester) async throws -> CourseSelectionContext
+    static func load(
+        cookie: String,
+        semester: SelectedCourseSemester,
+        category: CourseCatalogCategory? = nil
+    ) async throws -> CourseSelectionContext
     {
         ChooseCourseDebug.info("开始加载选课页上下文：\(semester.displayName)")
         let (indexData, _) = try await CourseSelectionHTTP.send(
@@ -867,6 +931,7 @@ enum CourseSelectionPageLoader
         )
         let indexHTML = String(data: indexData, encoding: .utf8) ?? ""
         var context = CourseSelectionHTML.context(from: indexHTML).applying(semester)
+        let pageRules = CourseSelectionHTML.catalogRules(from: indexHTML)
         ChooseCourseDebug.context("选课页入口", values: context.values)
 
         guard context.value("iskxk") != "0" else
@@ -875,7 +940,26 @@ enum CourseSelectionPageLoader
             throw CourseSelectionServiceError.selectionClosed
         }
 
-        // Index 是壳页；Display 片段会补齐真实的选课规则、年级与专业上下文。
+        let selectedRule: CourseCatalogRule?
+        if let category
+        {
+            guard let rule = rule(for: category, pageRules: pageRules, context: context) else
+            {
+                ChooseCourseDebug.warning("当前账号未返回课程类别规则：\(category.title)")
+                throw CourseSelectionServiceError.missingCategoryRule(category.title)
+            }
+            selectedRule = rule
+            context = context.applying(rule)
+            let source = pageRules.contains(rule) ? "页签" : "首页默认页签"
+            ChooseCourseDebug.info("课程类别规则已从当前账号选课页读取：\(category.title)，来源=\(source)")
+        }
+        else
+        {
+            selectedRule = nil
+        }
+
+        // Index 是壳页；网页切换任何页签都会先写入它自己的 kklxdm / xkkz_id，
+        // 再加载 Display 片段。这里复现同一顺序，确保不同专业、年级拿到对应规则。
         let displayParameters = [
             ("xkkz_id", context.value("xkkz_id")),
             ("xszxzt", context.value("xszxzt")),
@@ -892,7 +976,14 @@ enum CourseSelectionPageLoader
             retryCount: 1
         )
         let displayHTML = String(data: displayData, encoding: .utf8) ?? ""
-        context = context.merged(with: CourseSelectionHTML.context(from: displayHTML)).applying(semester)
+        context = context.merged(with: CourseSelectionHTML.context(from: displayHTML))
+        if let selectedRule
+        {
+            // Display 会返回选中页签的完整开关；再次写入两个页签参数，防止模板内的
+            // `firstXkkzId` 回填为首页规则。
+            context = context.applying(selectedRule)
+        }
+        context = context.applyingFrontendRuleValues().applying(semester)
         let overview = context.overview
         ChooseCourseDebug.info(
             "选课页展示信息：\(overview.selectionTitle.ifEmpty("未返回学年/轮次"))，倒计时=\(overview.countdownText() ?? "未返回")"
@@ -903,6 +994,31 @@ enum CourseSelectionPageLoader
             requiredFields: CourseSelectionContext.selectionRequiredFields
         )
         return context
+    }
+
+    /// `queryCourse(...)` 就是网页五个页签的真实规则来源。极少数旧模板未把页签
+    /// 直接渲染成可解析的链接时，只允许复用首页默认页签（App 的首项“主修”）；
+    /// 其它类别宁可明确提示，也不能拿别的账号或别的页签的规则 ID 猜测请求。
+    private static func rule(
+        for category: CourseCatalogCategory,
+        pageRules: [CourseCatalogRule],
+        context: CourseSelectionContext
+    ) -> CourseCatalogRule?
+    {
+        if let rule = pageRules.first(where: { $0.category == category })
+        {
+            return rule
+        }
+
+        guard category == .major else { return nil }
+        let courseTypeCode = context.value("kklxdm").ifEmpty(context.value("firstKklxdm"))
+        let controlID = context.value("xkkz_id").ifEmpty(context.value("firstXkkzId"))
+        guard !courseTypeCode.isEmpty, !controlID.isEmpty else { return nil }
+        return CourseCatalogRule(
+            category: .major,
+            courseTypeCode: courseTypeCode,
+            controlID: controlID
+        )
     }
 }
 
@@ -980,9 +1096,13 @@ final class SearchCourse
         ChooseCourseDebug.info(
             "开始加载课程目录：类别=\(category.title)，区间=\(rangeStart)-\(rangeEnd)，搜索词长度=\(normalizedKeyword.count)，\(semester.displayName)"
         )
-        let pageContext = try await CourseSelectionPageLoader.load(cookie: cookie, semester: semester)
-        // Selector 只覆盖规则字段；学号、专业、学院等上下文仍取自当前页面。
-        var categoryContext = category.applying(to: pageContext).applying(semester)
+        // 每次切换分类都按网页的 queryCourse → Display 顺序，读取当前账号对应的规则。
+        // 不能把其它账号抓到的 xkkz_id / 年级 / 专业参数覆盖进来。
+        var categoryContext = try await CourseSelectionPageLoader.load(
+            cookie: cookie,
+            semester: semester,
+            category: category
+        )
         var parameters = catalogParameters(
             context: categoryContext,
             rangeStart: rangeStart,
@@ -1029,7 +1149,8 @@ final class SearchCourse
             courses: courses,
             hasMore: hasMore,
             nextRangeStart: rangeEnd + 1,
-            overview: pageContext.overview
+            semester: categoryContext.resolvedSemester(fallback: semester),
+            overview: categoryContext.overview
         )
     }
 
@@ -1190,7 +1311,29 @@ final class SearchCourse
         return order.compactMap
         { identity in
             guard let group = grouped[identity], let first = group.first else { return nil }
-            return first.catalogSummary(teachingClassCount: group.count)
+            let catalogTeachingClasses = group.map
+            {
+                CourseSearchResult.CatalogTeachingClass(
+                    teachingClassID: $0.teachingClassID,
+                    teachingClassName: $0.teachingClassName,
+                    credit: $0.credit,
+                    classLevels: $0.classLevels,
+                    teachingClassComposition: $0.teachingClassComposition,
+                    teacherInfo: $0.teacherInfo,
+                    classTime: $0.classTime,
+                    location: $0.location,
+                    courseMaterial: $0.courseMaterial,
+                    selectionRemark: $0.selectionRemark,
+                    courseNature: $0.courseNature,
+                    teachingMode: $0.teachingMode,
+                    selectedCount: $0.selectedCount,
+                    capacity: $0.capacity
+                )
+            }
+            return first.catalogSummary(
+                teachingClassCount: group.count,
+                catalogTeachingClasses: catalogTeachingClasses
+            )
         }
     }
 
@@ -1228,8 +1371,11 @@ final class SearchCourse
                 retryCount: 1
             )
             let payload = try CourseSelectionJSON.object(from: data, operation: "主教学班补全")
+            let serverClassCount = CourseSelectionJSON.classRows(in: payload).count
             let classes = parseParentClasses(payload: payload, replacing: course)
-            ChooseCourseDebug.info("主教学班补全解析：课程号=\(course.courseCode)，可用教学班=\(classes.count)")
+            ChooseCourseDebug.info(
+                "主教学班补全解析：课程号=\(course.courseCode)，服务端教学班=\(serverClassCount)，可用教学班=\(classes.count)"
+            )
             guard !classes.isEmpty else
             {
                 ChooseCourseDebug.error("主教学班补全未返回可用的临时参数")
@@ -1304,6 +1450,30 @@ final class SearchCourse
             guard !classID.isEmpty, !token.isEmpty else { return nil }
             guard seen.insert("\(classID)|\(token)").inserted else { return nil }
 
+            // 当前账号的补全接口常只返回 jxb_id、教师、时间、地点、容量和临时 token。
+            // 教学班名称、组成、已选人数仍在目录摘要里；必须按 ID 精确回填，不能一律
+            // 退回首层课程卡片的第一条资料。
+            let normalizedClassID = classID.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            let catalogClass = course.catalogTeachingClasses.first
+            {
+                $0.teachingClassID
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .uppercased() == normalizedClassID
+            }
+            let fallbackTeachingClassName = (catalogClass?.teachingClassName ?? "").ifEmpty(course.teachingClassName)
+            let fallbackCredit = (catalogClass?.credit ?? "").ifEmpty(course.credit)
+            let fallbackClassLevels = catalogClass?.classLevels ?? course.classLevels
+            let fallbackComposition = (catalogClass?.teachingClassComposition ?? "").ifEmpty(course.teachingClassComposition)
+            let fallbackTeacher = (catalogClass?.teacherInfo ?? "").ifEmpty(course.teacherInfo)
+            let fallbackClassTime = (catalogClass?.classTime ?? "").ifEmpty(course.classTime)
+            let fallbackLocation = (catalogClass?.location ?? "").ifEmpty(course.location)
+            let fallbackMaterial = (catalogClass?.courseMaterial ?? "").ifEmpty(course.courseMaterial)
+            let fallbackRemark = (catalogClass?.selectionRemark ?? "").ifEmpty(course.selectionRemark)
+            let fallbackNature = (catalogClass?.courseNature ?? "").ifEmpty(course.courseNature)
+            let fallbackTeachingMode = (catalogClass?.teachingMode ?? "").ifEmpty(course.teachingMode)
+            let fallbackSelectedCount = (catalogClass?.selectedCount ?? "").ifEmpty(course.selectedCount)
+            let fallbackCapacity = (catalogClass?.capacity ?? "").ifEmpty(course.capacity)
+
             var context = course.context
             for field in CourseSelectionContext.responseFields
             {
@@ -1317,24 +1487,25 @@ final class SearchCourse
                 courseCode: course.courseCode,
                 courseID: course.courseID,
                 courseName: course.courseName,
-                teachingClassName: CourseSelectionJSON.string(in: row, keys: ["jxbmc", "jxb_name", "jxbName"]).ifEmpty(course.teachingClassName),
-                credit: CourseSelectionJSON.string(in: row, keys: ["xf", "zixf"]).ifEmpty(course.credit),
-                classLevels: CourseSelectionJSON.integer(in: row, keys: ["jxbzls", "jxbZls"], defaultValue: course.classLevels),
+                teachingClassName: CourseSelectionJSON.string(in: row, keys: ["jxbmc", "jxb_name", "jxbName"]).ifEmpty(fallbackTeachingClassName),
+                credit: CourseSelectionJSON.string(in: row, keys: ["xf", "zixf"]).ifEmpty(fallbackCredit),
+                classLevels: CourseSelectionJSON.integer(in: row, keys: ["jxbzls", "jxbZls"], defaultValue: fallbackClassLevels),
                 teachingClassID: classID,
                 selectionToken: token,
                 context: context,
                 selectionCaption: course.selectionCaption,
-                teachingClassComposition: CourseSelectionJSON.string(in: row, keys: ["jxbzc", "jxbzucc", "teaching_class_composition"]).ifEmpty(course.teachingClassComposition),
-                teacherInfo: CourseSelectionJSON.string(in: row, keys: ["jsxx", "jsxm", "jsmc", "teacher"]).ifEmpty(course.teacherInfo),
-                classTime: CourseSelectionJSON.string(in: row, keys: ["sksj", "sksjmc", "sksj_display", "schedule"]).ifEmpty(course.classTime),
-                location: CourseSelectionJSON.string(in: row, keys: ["jxdd", "jxcd", "jxlmc", "location"]).ifEmpty(course.location),
-                courseMaterial: CourseSelectionJSON.string(in: row, keys: ["jcmc", "kczl", "course_material"]).ifEmpty(course.courseMaterial),
-                selectionRemark: CourseSelectionJSON.string(in: row, keys: ["xkbz", "bz", "remark", "selection_remark"]).ifEmpty(course.selectionRemark),
-                courseNature: CourseSelectionJSON.string(in: row, keys: ["kcxzmc", "kcxz", "kklxmc", "course_nature"]).ifEmpty(course.courseNature),
-                teachingMode: CourseSelectionJSON.string(in: row, keys: ["jxmsmc", "jxms", "teaching_mode"]).ifEmpty(course.teachingMode),
-                selectedCount: CourseSelectionJSON.string(in: row, keys: ["jxbrs", "yxzrs", "yxrs", "selected_count"]).ifEmpty(course.selectedCount),
-                capacity: CourseSelectionJSON.string(in: row, keys: ["jxbrl", "kyrs", "capacity", "jxbrs"]).ifEmpty(course.capacity),
-                catalogTeachingClassCount: course.catalogTeachingClassCount
+                teachingClassComposition: CourseSelectionJSON.string(in: row, keys: ["jxbzc", "jxbzucc", "teaching_class_composition"]).ifEmpty(fallbackComposition),
+                teacherInfo: CourseSelectionJSON.string(in: row, keys: ["jsxx", "jsxm", "jsmc", "teacher"]).ifEmpty(fallbackTeacher),
+                classTime: CourseSelectionJSON.string(in: row, keys: ["sksj", "sksjmc", "sksj_display", "schedule"]).ifEmpty(fallbackClassTime),
+                location: CourseSelectionJSON.string(in: row, keys: ["jxdd", "jxcd", "jxlmc", "location"]).ifEmpty(fallbackLocation),
+                courseMaterial: CourseSelectionJSON.string(in: row, keys: ["jcmc", "kczl", "course_material"]).ifEmpty(fallbackMaterial),
+                selectionRemark: CourseSelectionJSON.string(in: row, keys: ["xkbz", "bz", "remark", "selection_remark"]).ifEmpty(fallbackRemark),
+                courseNature: CourseSelectionJSON.string(in: row, keys: ["kcxzmc", "kcxz", "kklxmc", "course_nature"]).ifEmpty(fallbackNature),
+                teachingMode: CourseSelectionJSON.string(in: row, keys: ["jxmsmc", "jxms", "teaching_mode"]).ifEmpty(fallbackTeachingMode),
+                selectedCount: CourseSelectionJSON.string(in: row, keys: ["jxbrs", "yxzrs", "yxrs", "selected_count"]).ifEmpty(fallbackSelectedCount),
+                capacity: CourseSelectionJSON.string(in: row, keys: ["jxbrl", "kyrs", "capacity", "jxbrs"]).ifEmpty(fallbackCapacity),
+                catalogTeachingClassCount: course.catalogTeachingClassCount,
+                catalogTeachingClasses: course.catalogTeachingClasses
             )
         }
     }
@@ -1463,6 +1634,62 @@ private enum CourseSelectionHTML
             }
         }
         return CourseSelectionContext(values: values).merged(with: CourseSelectionContext())
+    }
+
+    /// Index 页面的五个页签会渲染成 `queryCourse(this, kklxdm, xkkz_id)`。
+    /// 这里仅解析网页已经给出的字面量，绝不由学号、专业或历史抓包推导规则 ID。
+    static func catalogRules(from html: String) -> [CourseCatalogRule]
+    {
+        var rules: [CourseCatalogRule] = []
+        var seen = Set<String>()
+        let anchorPattern = #"(?is)<a\b[^>]*>.*?</a>"#
+
+        for anchor in matches(for: anchorPattern, in: html)
+        {
+            let handlers = [attribute("onclick", in: anchor), attribute("href", in: anchor)]
+                .compactMap { $0 }
+            guard let arguments = handlers.lazy.compactMap(queryCourseArguments).first else { continue }
+
+            let visibleTitle: String
+            if let openingEnd = anchor.firstIndex(of: ">"),
+               let closingStart = anchor.range(of: "</a", options: .caseInsensitive)?.lowerBound
+            {
+                visibleTitle = visibleText(from: String(anchor[anchor.index(after: openingEnd) ..< closingStart]))
+            }
+            else
+            {
+                visibleTitle = ""
+            }
+            let titles = [visibleTitle, attribute("title", in: anchor), attribute("data-original-title", in: anchor)]
+                .compactMap { $0 }
+            guard let category = CourseCatalogCategory.allCases.first(where: { candidate in
+                titles.contains(where: candidate.matchesServerTitle)
+            }) else { continue }
+
+            let courseTypeCode = arguments.0.trimmingCharacters(in: .whitespacesAndNewlines)
+            let controlID = arguments.1.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !courseTypeCode.isEmpty, !controlID.isEmpty else { continue }
+            let identity = "\(category.rawValue)|\(courseTypeCode)|\(controlID)"
+            guard seen.insert(identity).inserted else { continue }
+            rules.append(
+                CourseCatalogRule(
+                    category: category,
+                    courseTypeCode: courseTypeCode,
+                    controlID: controlID
+                )
+            )
+        }
+        return rules
+    }
+
+    private static func queryCourseArguments(in handler: String) -> (String, String)?
+    {
+        // 兼容单双引号以及少数模板里未加引号的数值型开课类型。
+        let pattern = #"(?is)\bqueryCourse\s*\(\s*[^,]+,\s*(?:['\"]([^'\"]+)['\"]|([^,\s)]+))\s*,\s*(?:['\"]([^'\"]+)['\"]|([^,\s)]+))\s*\)"#
+        guard let captures = firstCaptures(for: pattern, in: handler) else { return nil }
+        let values = captures.filter { !$0.isEmpty }
+        guard values.count >= 2 else { return nil }
+        return (values[0], values[1])
     }
 
     private static func presentationMetadata(from html: String) -> [String: String]
@@ -1752,6 +1979,18 @@ private enum CourseSelectionJSON
         if let rows = value as? [[String: Any]]
         {
             return rows
+        }
+        // `JSONSerialization` 在不同系统版本上可能桥接为 [Any] / NSArray，而不是
+        // 直接可转换的 [[String: Any]]。主教学班接口恰好会返回顶层数组，因此逐项
+        // 桥接一次，避免合法的三条教学班记录被误判成“无法识别”。
+        if let values = value as? [Any]
+        {
+            let rows = values.compactMap { item -> [String: Any]? in
+                if let row = item as? [String: Any] { return row }
+                if let dictionary = item as? NSDictionary { return dictionary as? [String: Any] }
+                return nil
+            }
+            if !rows.isEmpty { return rows }
         }
         guard let object = value as? [String: Any] else { return [] }
         if rowKeys.contains(where: { object[$0] != nil })

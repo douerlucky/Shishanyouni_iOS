@@ -65,9 +65,6 @@ class GPAnalysisViewModel: ObservableObject
     @Published var errorMessage: String?
 
     private let gradeService = GradeService()
-    private let years = ["2022", "2023", "2024", "2025"]
-    private let terms: [(String, String)] = [("1", "一"), ("2", "二")]
-
     func fetchAllSemesters(username: String, password: String, token: String) async
     {
         isLoading = true
@@ -75,26 +72,37 @@ class GPAnalysisViewModel: ObservableObject
 
         var results: [SemesterSummary] = []
 
-        for year in years
+        do
         {
-            for (termCode, termName) in terms
-            {
-                do
-                {
-                    let grades = try await gradeService.fetchGrades(
-                        username: username,
-                        password: password,
-                        token: token,
-                        xnm: year,
-                        xqm: termCode
-                    )
-                    if !grades.isEmpty, let summary = buildSummary(grades, year: year, termName: termName)
-                    {
-                        results.append(summary)
-                    }
-                }
-                catch {}
+            // 一次请求全部学年、全部学期，避免依赖固定年份列表，也减少账号差异导致的漏查。
+            let allGrades = try await gradeService.fetchGrades(
+                username: username,
+                password: password,
+                token: token,
+                xnm: "",
+                xqm: "0"
+            )
+
+            let grouped = Dictionary(grouping: allGrades) { grade in
+                "\(grade.xnmmc ?? "未知学年")|\(grade.xqmmc ?? "0")"
             }
+            for grades in grouped.values
+            {
+                guard let first = grades.first,
+                      let academicYear = first.xnmmc,
+                      let startYear = academicYear.split(separator: "-").first,
+                      let termCode = first.xqmmc
+                else { continue }
+                let termName = termCode == "1" ? "一" : termCode == "2" ? "二" : termCode
+                if let summary = buildSummary(grades, year: String(startYear), termName: termName)
+                {
+                    results.append(summary)
+                }
+            }
+        }
+        catch
+        {
+            errorMessage = error.localizedDescription
         }
 
         semesters = results.sorted { a, b in a.semester < b.semester }

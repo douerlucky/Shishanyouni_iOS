@@ -11,6 +11,9 @@ import Foundation
 struct SelectedCourse: Identifiable, Decodable
 {
     let teachingClassID: String
+    /// `cxZkcZzxkYzb` 用 `fjxb_id` 把实验/子教学班挂回主教学班。
+    /// 根教学班没有父 ID 时，回退到本行的 `jxb_id`。
+    let parentTeachingClassID: String
     let teachingClassName: String?
     let courseCode: String?
     let courseName: String
@@ -21,6 +24,9 @@ struct SelectedCourse: Identifiable, Decodable
     let credit: String?
     let selectedCount: String?
     let capacity: String?
+    /// 课表模块补回的实验 / 上机等实际安排。它们仅供展示与空闲度计算，
+    /// 不参与退选 token、人数或课程学分的判断。
+    let supplementalSchedules: [SelectedCourseScheduleEntry]
 
     /// 以下字段不显示在界面，用于退选前重新核验当前页面参数。
     /// 它们只在内存中保留，绝不写入日志或 UserDefaults。
@@ -68,6 +74,7 @@ struct SelectedCourse: Identifiable, Decodable
     private enum CodingKeys: String, CodingKey
     {
         case teachingClassID = "jxb_id"
+        case parentTeachingClassID = "fjxb_id"
         case teachingClassName = "jxbmc"
         case courseCode = "kch"
         case courseName = "kcmc"
@@ -86,6 +93,10 @@ struct SelectedCourse: Identifiable, Decodable
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let dynamicContainer = try decoder.container(keyedBy: DynamicCodingKey.self)
         teachingClassID = container.stringValue(forKey: .teachingClassID) ?? ""
+        let rawParentID = ["fjxb_id", "fjxbId", "parent_jxb_id", "parentJxbId"]
+            .compactMap { dynamicContainer.stringValue(forKey: DynamicCodingKey(stringValue: $0)) }
+            .first(where: { Self.isUsableParentID($0) })
+        parentTeachingClassID = rawParentID ?? teachingClassID
         teachingClassName = container.stringValue(forKey: .teachingClassName)
         courseCode = container.stringValue(forKey: .courseCode)
         courseName = container.stringValue(forKey: .courseName) ?? "未命名课程"
@@ -128,6 +139,7 @@ struct SelectedCourse: Identifiable, Decodable
             contextValues[field == "jg_id_1" ? "jg_id" : field] = value
         }
         selectionContext = CourseSelectionContext(values: contextValues)
+        supplementalSchedules = []
     }
 
     private static func displayText(_ value: String?) -> String?
@@ -224,6 +236,45 @@ struct SelectedCourse: Identifiable, Decodable
         return merged
     }
 
+    /// 已选接口和课表接口职责不同：前者决定课程是否已选、能否退选，后者补齐真实排课。
+    /// 只把能精确对应到某门已选课的记录挂在课程卡片上；无法对应的记录单独返回，
+    /// 仍可用于空闲度概览，但绝不会被伪装成可退选课程。
+    static func mergingScheduleEntries(
+        _ entries: [SelectedCourseScheduleEntry],
+        into courses: [SelectedCourse]
+    ) -> SelectedCourseScheduleMergeResult
+    {
+        var mergedCourses = courses
+        var unmatched: [SelectedCourseScheduleEntry] = []
+
+        for entry in entries
+        {
+            guard let index = mergedCourses.firstIndex(where: { entry.belongs(to: $0) }) else
+            {
+                unmatched.append(entry)
+                continue
+            }
+            mergedCourses[index] = mergedCourses[index].addingSupplementalSchedule(entry)
+        }
+
+        return SelectedCourseScheduleMergeResult(courses: mergedCourses, unmatched: unmatched)
+    }
+
+    /// 主教学班的展示字段与课表补充字段统一交给空闲度解析器，避免子班漏算。
+    var availabilitySchedules: [SelectedCourseScheduleEntry]
+    {
+        var entries: [SelectedCourseScheduleEntry] = []
+        if let mainSchedule = SelectedCourseScheduleEntry(course: self)
+        {
+            entries.append(mainSchedule)
+        }
+        for entry in supplementalSchedules where !entries.contains(entry)
+        {
+            entries.append(entry)
+        }
+        return entries
+    }
+
     private func merging(_ other: SelectedCourse) -> SelectedCourse
     {
         var allTokens = selectionTokens
@@ -234,6 +285,35 @@ struct SelectedCourse: Identifiable, Decodable
 
         return SelectedCourse(
             teachingClassID: teachingClassID,
+            parentTeachingClassID: mergedParentTeachingClassID(with: other),
+            teachingClassName: teachingClassName,
+            courseCode: courseCode,
+            courseName: courseName,
+            courseType: courseType,
+            teacherInfo: teacherInfo,
+            // 同一门课可能同时返回主教学班与子教学班；两边的上课时间、地点都要
+            // 合并，否则空闲度概览会漏掉实验 / 上机等子班安排。
+            location: Self.mergingScheduleText(location, with: other.location),
+            classTime: Self.mergingScheduleText(classTime, with: other.classTime),
+            credit: credit,
+            selectedCount: selectedCount,
+            capacity: capacity,
+            supplementalSchedules: supplementalSchedules + other.supplementalSchedules,
+            courseID: courseID,
+            selectionTokens: allTokens,
+            // 每一行都明确允许退选，才允许把合并后的课程交给写操作。
+            dropAllowed: dropAllowed && other.dropAllowed,
+            selectionContext: selectionContext.merged(with: other.selectionContext),
+            selectionCaption: selectionCaption.ifEmpty(other.selectionCaption)
+        )
+    }
+
+    private func addingSupplementalSchedule(_ entry: SelectedCourseScheduleEntry) -> SelectedCourse
+    {
+        guard !availabilitySchedules.contains(entry) else { return self }
+        return SelectedCourse(
+            teachingClassID: teachingClassID,
+            parentTeachingClassID: parentTeachingClassID,
             teachingClassName: teachingClassName,
             courseCode: courseCode,
             courseName: courseName,
@@ -244,17 +324,56 @@ struct SelectedCourse: Identifiable, Decodable
             credit: credit,
             selectedCount: selectedCount,
             capacity: capacity,
+            supplementalSchedules: supplementalSchedules + [entry],
             courseID: courseID,
-            selectionTokens: allTokens,
-            // 每一行都明确允许退选，才允许把合并后的课程交给写操作。
-            dropAllowed: dropAllowed && other.dropAllowed,
-            selectionContext: selectionContext.merged(with: other.selectionContext),
-            selectionCaption: selectionCaption.ifEmpty(other.selectionCaption)
+            selectionTokens: selectionTokens,
+            dropAllowed: dropAllowed,
+            selectionContext: selectionContext,
+            selectionCaption: selectionCaption
         )
+    }
+
+    /// 保留服务端以 `<br>` 分隔的时段顺序，才能继续和同顺序的地点逐项配对。
+    private static func mergingScheduleText(_ first: String?, with second: String?) -> String?
+    {
+        let first = first?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let second = second?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        switch (first?.isEmpty == false ? first : nil, second?.isEmpty == false ? second : nil)
+        {
+        case let (first?, second?) where first != second:
+            return "\(first)<br/>\(second)"
+        case let (first?, _):
+            return first
+        case let (_, second?):
+            return second
+        default:
+            return nil
+        }
+    }
+
+    /// 合并同一课程的多行响应时，优先保留明确的父教学班 ID；根行只有自身
+    /// `jxb_id` 时，再采用另一行返回的 `fjxb_id`。
+    private func mergedParentTeachingClassID(with other: SelectedCourse) -> String
+    {
+        let ownIsRoot = parentTeachingClassID == teachingClassID || parentTeachingClassID.isEmpty
+        if ownIsRoot, other.parentTeachingClassID != other.teachingClassID,
+           !other.parentTeachingClassID.isEmpty
+        {
+            return other.parentTeachingClassID
+        }
+        return parentTeachingClassID.ifEmpty(other.parentTeachingClassID)
+    }
+
+    private static func isUsableParentID(_ value: String) -> Bool
+    {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !normalized.isEmpty && normalized != "0" && normalized != "-1"
     }
 
     private init(
         teachingClassID: String,
+        parentTeachingClassID: String,
         teachingClassName: String?,
         courseCode: String?,
         courseName: String,
@@ -265,6 +384,7 @@ struct SelectedCourse: Identifiable, Decodable
         credit: String?,
         selectedCount: String?,
         capacity: String?,
+        supplementalSchedules: [SelectedCourseScheduleEntry] = [],
         courseID: String,
         selectionTokens: [String],
         dropAllowed: Bool,
@@ -273,6 +393,7 @@ struct SelectedCourse: Identifiable, Decodable
     )
     {
         self.teachingClassID = teachingClassID
+        self.parentTeachingClassID = parentTeachingClassID.ifEmpty(teachingClassID)
         self.teachingClassName = teachingClassName
         self.courseCode = courseCode
         self.courseName = courseName
@@ -283,6 +404,7 @@ struct SelectedCourse: Identifiable, Decodable
         self.credit = credit
         self.selectedCount = selectedCount
         self.capacity = capacity
+        self.supplementalSchedules = supplementalSchedules
         self.courseID = courseID
         self.selectionTokens = selectionTokens
         self.dropAllowed = dropAllowed
@@ -330,7 +452,9 @@ struct SelectedCourseSemester: Equatable
         let year = calendar.component(.year, from: date)
         let month = calendar.component(.month, from: date)
 
-        // 教务系统用 3 表示秋季、12 表示春季；春季仍属于上一学年。
+        // 仅作页面尚未返回学期字段时的兜底。真正请求优先使用 Index / Display
+        // 返回的 xkxnm / xkxqm，避免设备日期与不同账号的选课开放学期不一致。
+        // 教务系统通常用 3 表示秋季、12 表示春季；春季仍属于上一学年。
         if month >= 8
         {
             return SelectedCourseSemester(academicYear: String(year), termCode: "3")
@@ -341,7 +465,13 @@ struct SelectedCourseSemester: Equatable
     var displayName: String
     {
         let endYear = (Int(academicYear) ?? 0) + 1
-        let termName = termCode == "3" ? "秋季学期" : "春季学期"
+        let termName: String
+        switch termCode
+        {
+        case "3", "1": termName = "秋季学期"
+        case "12", "2": termName = "春季学期"
+        default: termName = "第\(termCode)学期"
+        }
         return endYear > 1 ? "\(academicYear)-\(endYear) \(termName)" : "\(academicYear) \(termName)"
     }
 }
@@ -394,7 +524,7 @@ final class SelectedCourseQuery
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
 
-        // 与教务网页的请求体一致：2026 年秋季时长度正好为抓包中的 114 字节。
+        // 与教务网页请求体一致；学年、学期始终取本次当前账号的选课页面上下文。
         let parameters = [
             ("xkxnm", semester.academicYear),
             ("xkxqm", semester.termCode),

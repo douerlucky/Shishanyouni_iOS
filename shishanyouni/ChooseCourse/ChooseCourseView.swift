@@ -14,6 +14,8 @@ struct ChooseCourseView: View
     @EnvironmentObject var iapStore: IAPStore
 
     @State private var selectedCourses: [SelectedCourse] = []
+    /// 无法精确映射到“已选”主课的实际排课仍保留给空闲度概览，不能丢失实验/子班占用。
+    @State private var unmatchedSelectedCourseSchedules: [SelectedCourseScheduleEntry] = []
     @State private var selectedCoursesError: String?
     @State private var isLoadingSelectedCourses = false
     @State private var catalogCategory: CourseCatalogCategory = .major
@@ -37,6 +39,9 @@ struct ChooseCourseView: View
     /// 目录里的教学班 token 只和本次登录会话绑定，切换类别仍可复用同一 Cookie。
     @State private var catalogCookie: String?
     @State private var catalogRequestID = UUID()
+    /// 切换账号后必须让旧请求的结果失效，不能把上一位同学的课程或 Cookie 留在页面上。
+    @State private var activeAccountIdentifier = ""
+    @State private var selectedCoursesRequestID = UUID()
     @State private var isPreparingSelection = false
     @State private var isMutatingCourse = false
     @State private var semester = SelectedCourseSemester.current()
@@ -56,8 +61,6 @@ struct ChooseCourseView: View
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaSendCodeAction: (() async -> String?)?
-
-    private let scheduleQuery = ScheduleQuery()
 
     /// 全屏流程（首次加载、读取教学班、提交选课）统一在页面中心提示，避免加载框跟随列表滚动到顶部。
     private var loadingOverlayMessage: String?
@@ -174,11 +177,29 @@ struct ChooseCourseView: View
         .toolbar(.hidden, for: .tabBar)
         .toolbar
         {
-            ToolbarItem(placement: .topBarTrailing)
+            ToolbarItemGroup(placement: .topBarTrailing)
             {
+                NavigationLink
+                {
+                    CourseAvailabilityOverviewView(
+                        courses: selectedCourses,
+                        semester: semester,
+                        supplementarySchedules: unmatchedSelectedCourseSchedules
+                    )
+                }
+                label:
+                {
+                    Image(systemName: "calendar.badge.clock")
+                }
+                .disabled(selectedCourses.isEmpty || isLoadingSelectedCourses)
+                .accessibilityLabel("空闲度概览")
+
                 Button
                 {
                     showSelectedCourses = true
+                    // 已选页打开时立即用当前账号的会话刷新；不能依赖课程目录后台回查
+                    // 恰好先完成，否则实验 / 子教学班补充可能要等用户手动刷新才出现。
+                    Task { await loadSelectedCourses(cookie: catalogCookie) }
                 } label: {
                     Image(systemName: "rectangle.stack.fill")
                 }
@@ -188,11 +209,19 @@ struct ChooseCourseView: View
         }
         .task
         {
+            if resetAccountBoundStateIfNeeded()
+            {
+                return
+            }
             if catalogCourses.isEmpty, !isLoadingCatalog
             {
                 ChooseCourseDebug.info("选课页首次出现，开始加载主修课程目录")
                 await reloadCatalog()
             }
+        }
+        .onChange(of: userinfo.username)
+        { _ in
+            _ = resetAccountBoundStateIfNeeded()
         }
         .onChange(of: catalogCategory)
         { _ in
@@ -202,6 +231,7 @@ struct ChooseCourseView: View
         {
             SelectedCourseListScreen(
                 courses: selectedCourses,
+                unmatchedSchedules: unmatchedSelectedCourseSchedules,
                 semester: semester,
                 overview: selectedCourseOverview,
                 isLoading: isLoadingSelectedCourses,
@@ -221,7 +251,8 @@ struct ChooseCourseView: View
                     pendingSelectionAfterParentSheet = PendingParentSelection(
                         course: parentClass,
                         cookie: state.cookie,
-                        semester: state.semester
+                        semester: state.semester,
+                        session: state.session
                     )
                     parentSelectionState = nil
                 }
@@ -238,7 +269,8 @@ struct ChooseCourseView: View
                         course: state.course,
                         childClass: childClass,
                         cookie: state.cookie,
-                        semester: state.semester
+                        semester: state.semester,
+                        session: state.session
                     )
                     childSelectionState = nil
                 }
@@ -263,6 +295,11 @@ struct ChooseCourseView: View
     {
         guard let pending = pendingSelectionAfterChildSheet else { return }
         pendingSelectionAfterChildSheet = nil
+        guard isCurrentCourseSession(pending.session) else
+        {
+            ChooseCourseDebug.warning("子教学班 Sheet 已属于旧账号或旧目录，本次不会提交选课")
+            return
+        }
 
         guard !isMutatingCourse else
         {
@@ -279,6 +316,11 @@ struct ChooseCourseView: View
     {
         guard let pending = pendingSelectionAfterParentSheet else { return }
         pendingSelectionAfterParentSheet = nil
+        guard isCurrentCourseSession(pending.session) else
+        {
+            ChooseCourseDebug.warning("主教学班 Sheet 已属于旧账号或旧目录，本次不会继续读取")
+            return
+        }
         guard !isMutatingCourse else
         {
             ChooseCourseDebug.warning("主教学班 Sheet 关闭后未继续：已有写操作进行中")
@@ -288,7 +330,8 @@ struct ChooseCourseView: View
         startSelectionPreparation(
             for: pending.course,
             cookie: pending.cookie,
-            semester: pending.semester
+            semester: pending.semester,
+            session: pending.session
         )
     }
 
@@ -322,7 +365,8 @@ struct ChooseCourseView: View
     @MainActor
     private func loadSelectedCourses(cookie: String? = nil) async
     {
-        guard !userinfo.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
+        let requestedAccount = currentAccountIdentifier
+        guard !requestedAccount.isEmpty else
         {
             ChooseCourseDebug.warning("读取已选课程被拦截：当前没有登录教务账号")
             selectedCoursesError = "请先登录教务账号后再查询已选课程。"
@@ -336,9 +380,13 @@ struct ChooseCourseView: View
 
         isLoadingSelectedCourses = true
         selectedCoursesError = nil
-        semester = SelectedCourseSemester.current()
-        let requestedSemester = semester
-        ChooseCourseDebug.info("开始读取已选课程：\(requestedSemester.displayName)")
+        let requestID = UUID()
+        selectedCoursesRequestID = requestID
+        // 页面加载过目录后，这里通常已经是服务端解析出的实际学期；若还没有，才用日期兜底。
+        let fallbackSemester = semester
+        var resolvedSemester = fallbackSemester
+        var pageContext = CourseSelectionContext()
+        ChooseCourseDebug.info("开始读取已选课程：\(fallbackSemester.displayName)")
         do
         {
             let currentCookie: String
@@ -350,16 +398,19 @@ struct ChooseCourseView: View
             {
                 currentCookie = try await loginForCourseSelection()
             }
+            guard isCurrentAccount(requestedAccount), requestID == selectedCoursesRequestID else { return }
             // 已选页顶部的学年/轮次/学分规则来自同一份选课页面。即使该展示请求失败，
             // 已选课程本身仍照常显示，并退回主页面已加载到的元数据。
             var overview = catalogOverview
             do
             {
-                let pageContext = try await CourseSelectionPageLoader.load(
+                let loadedContext = try await CourseSelectionPageLoader.load(
                     cookie: currentCookie,
-                    semester: requestedSemester
+                    semester: fallbackSemester
                 )
-                overview = pageContext.overview
+                pageContext = loadedContext
+                resolvedSemester = loadedContext.resolvedSemester(fallback: fallbackSemester)
+                overview = loadedContext.overview
             }
             catch
             {
@@ -367,18 +418,92 @@ struct ChooseCourseView: View
             }
             let courses = try await SelectedCourseQuery.shared.fetchSelectedCourses(
                 cookie: currentCookie,
-                semester: requestedSemester
+                semester: resolvedSemester
             )
-            selectedCourses = courses
-            selectedCourseOverview = overview.replacingSelectedCredit(with: selectedCreditTotal(in: courses))
+            let merged = await enrichingSelectedCourses(
+                courses,
+                cookie: currentCookie,
+                semester: resolvedSemester,
+                pageContext: pageContext
+            )
+            guard isCurrentAccount(requestedAccount), requestID == selectedCoursesRequestID else { return }
+            selectedCourses = merged.courses
+            unmatchedSelectedCourseSchedules = merged.unmatched
+            semester = resolvedSemester
+            selectedCourseOverview = overview.replacingSelectedCredit(with: selectedCreditTotal(in: merged.courses))
             isLoadingSelectedCourses = false
-            ChooseCourseDebug.info("已选课程读取成功：\(courses.count) 门")
+            ChooseCourseDebug.info(
+                "已选课程读取成功：\(merged.courses.count) 门，未映射的真实排课=\(merged.unmatched.count) 条"
+            )
         }
         catch
         {
+            guard isCurrentAccount(requestedAccount), requestID == selectedCoursesRequestID else { return }
             ChooseCourseDebug.error("已选课程读取失败：\(error.localizedDescription)")
             selectedCoursesError = userFacingMessage(for: error)
             isLoadingSelectedCourses = false
+        }
+    }
+
+    /// 选课已选列表可能只给主教学班；课表接口补回实验 / 子教学班的实际节次。
+    /// 补充读取失败绝不阻断已选课程或退选流程，避免一个辅助模块让整个页面不可用。
+    private func enrichingSelectedCourses(
+        _ courses: [SelectedCourse],
+        cookie: String,
+        semester: SelectedCourseSemester,
+        pageContext: CourseSelectionContext = CourseSelectionContext()
+    ) async -> SelectedCourseScheduleMergeResult
+    {
+        guard !courses.isEmpty else
+        {
+            return SelectedCourseScheduleMergeResult(courses: courses, unmatched: [])
+        }
+
+        do
+        {
+            var resolvedPageContext = pageContext
+            // 目录回查路径未必已经保存过 Index/Display 上下文；仅在课程行自身也
+            // 缺字段时补读当前账号页面，避免用旧账号或设备日期猜参数。
+            let supplementFields = ["xkkz_id", "bklx_id", "kklxdm", "rlkz", "zyh_id", "njdm_id"]
+            let pageValues = resolvedPageContext.values
+            let needsPageContext = courses.contains
+            { course in
+                supplementFields.contains
+                { field in
+                    let value = course.selectionContext.values[field] ?? pageValues[field] ?? ""
+                    return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                }
+            }
+            if needsPageContext
+            {
+                do
+                {
+                    let loadedContext = try await CourseSelectionPageLoader.load(
+                        cookie: cookie,
+                        semester: semester
+                    )
+                    resolvedPageContext = loadedContext
+                }
+                catch
+                {
+                    ChooseCourseDebug.warning("补充实验课表时未能读取当前选课页上下文：\(error.localizedDescription)")
+                }
+            }
+            let schedules = try await SelectedCourseScheduleQuery.shared.fetchSchedules(
+                cookie: cookie,
+                courses: courses,
+                pageContext: resolvedPageContext
+            )
+            let result = SelectedCourse.mergingScheduleEntries(schedules, into: courses)
+            ChooseCourseDebug.info(
+                "真实课表补充完成：已挂接=\(schedules.count - result.unmatched.count) 条，未映射=\(result.unmatched.count) 条"
+            )
+            return result
+        }
+        catch
+        {
+            ChooseCourseDebug.warning("真实课表补充读取失败，已选课程仍可正常使用：\(error.localizedDescription)")
+            return SelectedCourseScheduleMergeResult(courses: courses, unmatched: [])
         }
     }
 
@@ -471,6 +596,7 @@ struct ChooseCourseView: View
     {
         let requestedCategory = catalogCategory
         let requestedSemester = semester
+        let requestedAccount = currentAccountIdentifier
         do
         {
             let cookie: String
@@ -492,12 +618,16 @@ struct ChooseCourseView: View
             )
 
             // 类别切换后，前一个网络请求的结果只能被丢弃，不能混入新列表。
-            guard requestID == catalogRequestID, requestedCategory == catalogCategory else { return }
+            guard requestID == catalogRequestID,
+                  requestedCategory == catalogCategory,
+                  isCurrentAccount(requestedAccount)
+            else { return }
             var shouldContinue = page.hasMore
             if reset
             {
                 catalogCourses = page.courses
                 catalogOverview = page.overview
+                semester = page.semester
                 isLoadingCatalog = false
             }
             else
@@ -528,15 +658,21 @@ struct ChooseCourseView: View
                 {
                     await refreshCatalogSelectionState(
                         cookie: cookie,
-                        semester: requestedSemester,
-                        requestID: requestID
+                        semester: page.semester,
+                        session: CourseSelectionSession(
+                            accountIdentifier: requestedAccount,
+                            catalogRequestID: requestID
+                        )
                     )
                 }
             }
         }
         catch
         {
-            guard requestID == catalogRequestID, requestedCategory == catalogCategory else { return }
+            guard requestID == catalogRequestID,
+                  requestedCategory == catalogCategory,
+                  isCurrentAccount(requestedAccount)
+            else { return }
             if reset
             {
                 isLoadingCatalog = false
@@ -598,12 +734,94 @@ struct ChooseCourseView: View
         value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
+    private var currentAccountIdentifier: String
+    {
+        userinfo.username.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    /// 每次目录刷新和账号切换都会生成新的标识。异步读取或写操作返回时必须核对它，
+    /// 否则旧账号的 Cookie、教学班 token 可能在极端时序下回写进新账号的界面。
+    private var currentCourseSession: CourseSelectionSession
+    {
+        CourseSelectionSession(
+            accountIdentifier: currentAccountIdentifier,
+            catalogRequestID: catalogRequestID
+        )
+    }
+
+    private func isCurrentAccount(_ identifier: String) -> Bool
+    {
+        identifier == currentAccountIdentifier && identifier == activeAccountIdentifier
+    }
+
+    private func isCurrentCourseSession(_ session: CourseSelectionSession) -> Bool
+    {
+        session.catalogRequestID == catalogRequestID
+            && isCurrentAccount(session.accountIdentifier)
+    }
+
+    /// 账号、专业、年级、班级、选课规则和短期 token 都属于当前登录会话。
+    /// 更换账号时整个选课内存状态都要失效，绝不复用上一人的任何内容。
+    @MainActor
+    private func resetAccountBoundStateIfNeeded() -> Bool
+    {
+        let newIdentifier = currentAccountIdentifier
+        guard newIdentifier != activeAccountIdentifier else { return false }
+
+        activeAccountIdentifier = newIdentifier
+        catalogCookie = nil
+        selectedCoursesRequestID = UUID()
+        selectedCourses = []
+        unmatchedSelectedCourseSchedules = []
+        selectedCoursesError = nil
+        isLoadingSelectedCourses = false
+        selectedCourseOverview = .empty
+        catalogOverview = .empty
+        catalogSearchText = ""
+        appliedCatalogSearch = ""
+        parentSelectionState = nil
+        childSelectionState = nil
+        pendingSelectionAfterParentSheet = nil
+        pendingSelectionAfterChildSheet = nil
+        activeAlert = nil
+        // 切换账号时，旧账号的验证码绝不能继续完成登录并生成新页面可见的结果。
+        if showMFASheet || mfaContinuation != nil
+        {
+            resolveMFACode(nil)
+        }
+        // 写请求不会因切换账号被强行中断；但不会再让旧结果更新到新账号的界面。
+        if !isMutatingCourse
+        {
+            isPreparingSelection = false
+        }
+
+        let requestID = invalidateCatalog()
+        guard !newIdentifier.isEmpty else
+        {
+            isLoadingCatalog = false
+            return true
+        }
+
+        ChooseCourseDebug.info("检测到选课账号切换，已清除旧会话与课程缓存")
+        Task
+        {
+            await fetchCatalogPage(
+                rangeStart: 1,
+                rangeEnd: 10,
+                reusableCookie: nil,
+                reset: true,
+                requestID: requestID
+            )
+        }
+        return true
+    }
+
     /// 这个回查只更新目录的显示状态；真正退选时 CourseEdit 仍会重新登录、刷新并校验。
     @MainActor
     private func refreshCatalogSelectionState(
         cookie: String,
         semester: SelectedCourseSemester,
-        requestID: UUID
+        session: CourseSelectionSession
     ) async
     {
         do
@@ -612,13 +830,25 @@ struct ChooseCourseView: View
                 cookie: cookie,
                 semester: semester
             )
-            guard requestID == catalogRequestID else { return }
-            selectedCourses = current
-            selectedCourseOverview = catalogOverview.replacingSelectedCredit(with: selectedCreditTotal(in: current))
-            ChooseCourseDebug.info("目录已选状态回查成功：\(current.count) 门")
+            guard isCurrentCourseSession(session) else
+            {
+                ChooseCourseDebug.info("目录已选状态回查已过期，忽略旧账号或旧目录结果")
+                return
+            }
+            let merged = await enrichingSelectedCourses(
+                current,
+                cookie: cookie,
+                semester: semester
+            )
+            guard isCurrentCourseSession(session) else { return }
+            selectedCourses = merged.courses
+            unmatchedSelectedCourseSchedules = merged.unmatched
+            selectedCourseOverview = catalogOverview.replacingSelectedCredit(with: selectedCreditTotal(in: merged.courses))
+            ChooseCourseDebug.info("目录已选状态回查成功：\(merged.courses.count) 门")
         }
         catch
         {
+            guard isCurrentCourseSession(session) else { return }
             // 目录查询成功时，不让这项辅助读取把整页变成失败状态；点击选课前仍会强校验。
             ChooseCourseDebug.warning("目录已选状态回查失败：\(error.localizedDescription)")
         }
@@ -676,7 +906,7 @@ struct ChooseCourseView: View
             return
         }
 
-        let requestID = catalogRequestID
+        let session = currentCourseSession
         expandingCourseKey = key
         ChooseCourseDebug.info("用户展开课程，读取教学班详情：课程号=\(course.courseCode)")
         Task
@@ -689,7 +919,7 @@ struct ChooseCourseView: View
                 )
                 await MainActor.run
                 {
-                    guard requestID == catalogRequestID, expandedCourseKey == key else { return }
+                    guard isCurrentCourseSession(session), expandedCourseKey == key else { return }
                     expandedTeachingClasses[key] = classes
                     expandingCourseKey = nil
                     ChooseCourseDebug.info("教学班详情读取成功：课程号=\(course.courseCode)，教学班=\(classes.count)")
@@ -699,7 +929,7 @@ struct ChooseCourseView: View
             {
                 await MainActor.run
                 {
-                    guard requestID == catalogRequestID, expandedCourseKey == key else { return }
+                    guard isCurrentCourseSession(session), expandedCourseKey == key else { return }
                     expandingCourseKey = nil
                     expandedCourseError = userFacingMessage(for: error)
                     ChooseCourseDebug.error("教学班详情读取失败：\(error.localizedDescription)")
@@ -755,13 +985,21 @@ struct ChooseCourseView: View
             return
         }
 
+        let session = currentCourseSession
+        guard isCurrentCourseSession(session) else
+        {
+            ChooseCourseDebug.warning("选课被拦截：当前账号会话已变化，请刷新后重试")
+            return
+        }
+
         let currentSemester = semester
         if course.hasCurrentSelectionParameters
         {
             startSelectionPreparation(
                 for: course,
                 cookie: catalogCookie,
-                semester: currentSemester
+                semester: currentSemester,
+                session: session
             )
             return
         }
@@ -780,13 +1018,19 @@ struct ChooseCourseView: View
                 )
                 await MainActor.run
                 {
+                    guard isCurrentCourseSession(session) else
+                    {
+                        ChooseCourseDebug.info("主教学班补全结果已过期，忽略旧账号或旧目录结果")
+                        return
+                    }
                     isPreparingSelection = false
                     if parentClasses.count == 1, let parentClass = parentClasses.first
                     {
                         startSelectionPreparation(
                             for: parentClass,
                             cookie: catalogCookie,
-                            semester: currentSemester
+                            semester: currentSemester,
+                            session: session
                         )
                     }
                     else
@@ -796,7 +1040,8 @@ struct ChooseCourseView: View
                             course: course,
                             parentClasses: parentClasses,
                             cookie: catalogCookie,
-                            semester: currentSemester
+                            semester: currentSemester,
+                            session: session
                         )
                     }
                 }
@@ -805,6 +1050,7 @@ struct ChooseCourseView: View
             {
                 await MainActor.run
                 {
+                    guard isCurrentCourseSession(session) else { return }
                     isPreparingSelection = false
                     ChooseCourseDebug.error("准备选课失败：\(error.localizedDescription)")
                     showErrorFeedback(error)
@@ -818,9 +1064,15 @@ struct ChooseCourseView: View
     private func startSelectionPreparation(
         for course: CourseSearchResult,
         cookie: String,
-        semester: SelectedCourseSemester
+        semester: SelectedCourseSemester,
+        session: CourseSelectionSession
     )
     {
+        guard isCurrentCourseSession(session) else
+        {
+            ChooseCourseDebug.warning("选课准备被拦截：教学班参数不属于当前账号会话")
+            return
+        }
         guard !isPreparingSelection, !isMutatingCourse else
         {
             ChooseCourseDebug.warning("选课准备被忽略：当前仍有另一个准备或提交流程")
@@ -839,6 +1091,11 @@ struct ChooseCourseView: View
                 )
                 await MainActor.run
                 {
+                    guard isCurrentCourseSession(session) else
+                    {
+                        ChooseCourseDebug.info("子教学班准备结果已过期，忽略旧账号或旧目录结果")
+                        return
+                    }
                     isPreparingSelection = false
                     switch preparation
                     {
@@ -848,7 +1105,8 @@ struct ChooseCourseView: View
                             course: course,
                             childClass: teachingClass,
                             cookie: cookie,
-                            semester: semester
+                            semester: semester,
+                            session: session
                         )
                         Task { await submitSelection(pending) }
                     case let .needsChildSelection(childClasses):
@@ -857,7 +1115,8 @@ struct ChooseCourseView: View
                             course: course,
                             childClasses: childClasses,
                             cookie: cookie,
-                            semester: semester
+                            semester: semester,
+                            session: session
                         )
                     }
                 }
@@ -866,6 +1125,7 @@ struct ChooseCourseView: View
             {
                 await MainActor.run
                 {
+                    guard isCurrentCourseSession(session) else { return }
                     isPreparingSelection = false
                     ChooseCourseDebug.error("准备选课失败：\(error.localizedDescription)")
                     showErrorFeedback(error)
@@ -889,6 +1149,11 @@ struct ChooseCourseView: View
     @MainActor
     private func submitSelection(_ pending: PendingSelection) async
     {
+        guard isCurrentCourseSession(pending.session) else
+        {
+            ChooseCourseDebug.warning("选课提交被拦截：待提交教学班已不属于当前账号会话")
+            return
+        }
         guard !isMutatingCourse else
         {
             ChooseCourseDebug.warning("选课确认被忽略：已有写操作进行中")
@@ -904,6 +1169,14 @@ struct ChooseCourseView: View
                 cookie: pending.cookie,
                 semester: pending.semester
             )
+            // 选课请求本身不能取消；但账号或目录在等待期间变更时，绝不回写旧结果、
+            // 不复用旧 Cookie 刷新新账号的课程列表。
+            guard isCurrentCourseSession(pending.session) else
+            {
+                isMutatingCourse = false
+                ChooseCourseDebug.warning("选课请求已返回，但账号或目录已切换；忽略旧会话结果")
+                return
+            }
             isMutatingCourse = false
             showFeedback(for: result, successTitle: "选课结果")
             if result.succeeded
@@ -917,12 +1190,18 @@ struct ChooseCourseView: View
                 await refreshCatalogSelectionState(
                     cookie: pending.cookie,
                     semester: pending.semester,
-                    requestID: catalogRequestID
+                    session: pending.session
                 )
             }
         }
         catch
         {
+            guard isCurrentCourseSession(pending.session) else
+            {
+                isMutatingCourse = false
+                ChooseCourseDebug.warning("旧会话的选课请求失败，已忽略其界面反馈")
+                return
+            }
             isMutatingCourse = false
             ChooseCourseDebug.error("选课提交流程异常：\(error.localizedDescription)")
             showErrorFeedback(error)
@@ -932,6 +1211,12 @@ struct ChooseCourseView: View
     @MainActor
     private func submitDrop(_ course: SelectedCourse) async
     {
+        let session = currentCourseSession
+        guard isCurrentCourseSession(session) else
+        {
+            ChooseCourseDebug.warning("退选提交被拦截：当前账号会话已变化")
+            return
+        }
         guard !isMutatingCourse else
         {
             ChooseCourseDebug.warning("退选确认被忽略：已有写操作进行中")
@@ -939,14 +1224,27 @@ struct ChooseCourseView: View
         }
         isMutatingCourse = true
         ChooseCourseDebug.info("UI 开始执行一次性退选提交")
+        let requestedSemester = semester
         do
         {
             let cookie = try await loginForCourseSelection()
+            guard isCurrentCourseSession(session) else
+            {
+                isMutatingCourse = false
+                ChooseCourseDebug.warning("退选登录完成后账号已切换，本次不会提交旧账号的退选请求")
+                return
+            }
             let result = try await CourseEdit.shared.drop(
                 course: course,
                 cookie: cookie,
-                semester: semester
+                semester: requestedSemester
             )
+            guard isCurrentCourseSession(session) else
+            {
+                isMutatingCourse = false
+                ChooseCourseDebug.warning("退选请求已返回，但账号或目录已切换；忽略旧会话结果")
+                return
+            }
             isMutatingCourse = false
             showFeedback(for: result, successTitle: "退选结果")
             if result.succeeded
@@ -957,6 +1255,12 @@ struct ChooseCourseView: View
         }
         catch
         {
+            guard isCurrentCourseSession(session) else
+            {
+                isMutatingCourse = false
+                ChooseCourseDebug.warning("旧会话的退选请求失败，已忽略其界面反馈")
+                return
+            }
             isMutatingCourse = false
             ChooseCourseDebug.error("退选提交流程异常：\(error.localizedDescription)")
             showErrorFeedback(error)
@@ -967,7 +1271,10 @@ struct ChooseCourseView: View
     private func loginForCourseSelection() async throws -> String
     {
         ChooseCourseDebug.info("开始获取本次选课会话 Cookie")
-        let cookie = try await scheduleQuery.loginAndGetCookie(
+        // ScheduleQuery 内部保存 CAS / 教务 Cookie。每次登录都用一个新的容器，避免
+        // 在切换学号后把上一位同学的负载均衡 Cookie 带入本次选课页面。
+        let currentAccountQuery = ScheduleQuery()
+        let cookie = try await currentAccountQuery.loginAndGetCookie(
             username: userinfo.username,
             rsaPassword: userinfo.encryptedPasswordSchool,
             mfaCodeProvider: { phone in
@@ -1118,6 +1425,7 @@ private struct PendingSelection
     let childClass: CourseChildClass
     let cookie: String
     let semester: SelectedCourseSemester
+    let session: CourseSelectionSession
 }
 
 private struct PendingParentSelection
@@ -1125,6 +1433,7 @@ private struct PendingParentSelection
     let course: CourseSearchResult
     let cookie: String
     let semester: SelectedCourseSemester
+    let session: CourseSelectionSession
 }
 
 private struct ParentSelectionState: Identifiable
@@ -1134,6 +1443,7 @@ private struct ParentSelectionState: Identifiable
     let parentClasses: [CourseSearchResult]
     let cookie: String
     let semester: SelectedCourseSemester
+    let session: CourseSelectionSession
 }
 
 private struct ChildSelectionState: Identifiable
@@ -1143,6 +1453,15 @@ private struct ChildSelectionState: Identifiable
     let childClasses: [CourseChildClass]
     let cookie: String
     let semester: SelectedCourseSemester
+    let session: CourseSelectionSession
+}
+
+/// 只在内存中存在的“账号 + 目录版本”标识。它不包含 Cookie 或任何个人字段，
+/// 仅用于丢弃过期异步结果，防止切换账号后旧教学班数据回写到新页面。
+private struct CourseSelectionSession: Equatable
+{
+    let accountIdentifier: String
+    let catalogRequestID: UUID
 }
 
 private struct CourseActionConfirmation: Identifiable

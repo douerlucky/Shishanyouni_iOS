@@ -603,8 +603,24 @@ struct BottomButtonView: View
     /// 新数据加载完毕后调用（用于重置勾选状态）
     var onGradesLoaded: (() -> Void)? = nil
 
-    let years = ["2022", "2023", "2024", "2025"]
-    let terms = [("第一学期", "1"), ("第二学期", "2")]
+    /// 从账号入学年份推导可选学年，保留“所有成绩”入口，避免固定年份过期。
+    private var years: [String]
+    {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let enrollmentYear = Int(userinfo.username.prefix(4)) ?? max(2022, currentYear - 4)
+        let endYear = max(enrollmentYear, currentYear)
+        return (enrollmentYear...endYear).map(String.init)
+    }
+
+    /// xqm=0 是接口约定的全学年查询。
+    private let terms = [("全学年", "0"), ("第一学期", "1"), ("第二学期", "2")]
+
+    private var selectionTitle: String
+    {
+        let term = terms.first(where: { $0.1 == selectedTerm })?.0 ?? "全学年"
+        if selectedYear.isEmpty { return "所有成绩 · \(term)" }
+        return "\(formatYearAbbreviation(selectedYear)) · \(term)"
+    }
 
     var body: some View
     {
@@ -615,7 +631,7 @@ struct BottomButtonView: View
             {
                 HStack
                 {
-                    Text("\(formatYearAbbreviation(selectedYear)) \(selectedTerm == "1" ? "一" : "二")")
+                    Text(selectionTitle)
                         .font(.system(size: 14, weight: .bold))
                     Image(systemName: "chevron.up")
                         .font(.system(size: 10, weight: .bold))
@@ -658,6 +674,7 @@ struct BottomButtonView: View
                 {
                     Picker("年份", selection: $selectedYear)
                     {
+                        Text("所有成绩").tag("")
                         ForEach(years, id: \.self) { year in
                             if let y = Int(year)
                             {
@@ -684,6 +701,11 @@ struct BottomButtonView: View
                     .padding(.bottom)
             }
             .presentationDetents([.height(300)])
+        }
+        .onChange(of: selectedYear)
+        { year in
+            // 选择“所有成绩”时自动切换到全学年，确保请求的是全部学期。
+            if year.isEmpty { selectedTerm = "0" }
         }
         .sheet(isPresented: $showMFASheet)
         {

@@ -46,11 +46,9 @@ class GradeService
     private let baseURL = "https://lion.hzau.edu.cn/app/ios/score"
 
     /// xnm: 学年开始年份（如 "2025" 代表 2025-2026 学年）
-    /// xqm: 学期（"1" 第一学期，"2" 第二学期）
+    /// xqm: 学期（"1" 第一学期，"2" 第二学期，"0" 全学年）
     func fetchGrades(username: String, password: String, token: String = "", xnm: String, xqm: String) async throws -> [Grade]
     {
-        print("收到的rsa密钥:", password)
-
         guard let url = URL(string: baseURL) else
         {
             throw NSError(domain: "GradeService", code: -1,
@@ -63,7 +61,8 @@ class GradeService
             "xqm":  xqm,
             "yhm":  username,
             "mm":   password,
-            "type": 1
+            // 按 lion /app/ios/score 当前请求示例使用 type=0；xqm=0 可查询学年或全部学年成绩。
+            "type": 0
         ]
         if !token.isEmpty
         {

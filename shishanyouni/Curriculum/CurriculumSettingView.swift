@@ -350,14 +350,28 @@ struct CurriculumSettingView: View {
             Button {
                 saveSettings()
             } label: {
-                HStack {
-                    Spacer()
-                    Text("保存设置").fontWeight(.semibold)
-                    Spacer()
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title3)
+                    Text("保存设置")
+                        .font(.headline.weight(.semibold))
                 }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+                // 纯蓝色主操作，玻璃效果统一复用全局的 optionalLiquidGlass。
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(canSaveSettings ? Color.blue : Color.blue.opacity(0.35))
+                }
+                .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                .shadow(color: .blue.opacity(canSaveSettings ? 0.28 : 0), radius: 12, y: 6)
             }
+            .buttonStyle(LiquidGlassPrimaryButtonStyle(isEnabled: canSaveSettings))
             .disabled(!canSaveSettings)
             .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 12, trailing: 16))
         }
         .alert("设置已保存", isPresented: $showSaveConfirmation) {
             Button("确定", role: .cancel) { dismiss() }
@@ -761,6 +775,19 @@ struct CurriculumSettingView: View {
             backgroundImageFilename = ""
             WidgetSharedStore.clearBackgroundMeta()
         }
+    }
+}
+
+/// 让自定义主按钮保留系统按钮应有的按压反馈，而不退回 Form 的普通文字按钮外观。
+private struct LiquidGlassPrimaryButtonStyle: ButtonStyle {
+    let isEnabled: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && isEnabled ? 0.97 : 1)
+            .brightness(configuration.isPressed && isEnabled ? -0.06 : 0)
+            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
+            .opacity(isEnabled ? 1 : 0.58)
     }
 }
 

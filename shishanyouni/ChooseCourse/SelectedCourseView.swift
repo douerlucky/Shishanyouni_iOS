@@ -11,6 +11,7 @@ import SwiftUI
 struct SelectedCourseView: View
 {
     let courses: [SelectedCourse]
+    let unmatchedSchedules: [SelectedCourseScheduleEntry]
     let semester: SelectedCourseSemester
     let overview: CourseSelectionOverview
     let isLoading: Bool
@@ -46,6 +47,29 @@ struct SelectedCourseView: View
                     .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 8, trailing: 12))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+            }
+
+            if !unmatchedSchedules.isEmpty
+            {
+                Section
+                {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4)
+                        {
+                            Text("发现 \(unmatchedSchedules.count) 条课表补充安排")
+                                .font(.subheadline.weight(.semibold))
+                            Text("这些安排已计入空闲度概览；因教务系统未返回可精确对应的主教学班，不会显示为可退选课程。")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "flask.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(.vertical, 4)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
             }
 
             Section
@@ -286,12 +310,68 @@ private struct SelectedCourseRow: View
                     SelectedCourseMetaRow(icon: "mappin.and.ellipse", text: location)
                 }
             }
+
+            if !course.supplementalSchedules.isEmpty
+            {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 9)
+                {
+                    Label("课表补充安排", systemImage: "flask.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    ForEach(course.supplementalSchedules)
+                    { schedule in
+                        SelectedCourseSupplementalScheduleRow(schedule: schedule)
+                    }
+                }
+            }
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
         )
+    }
+}
+
+/// 实验、上机等子教学班只读地附在主课程下；退选仍只针对已选接口明确返回的主课程。
+private struct SelectedCourseSupplementalScheduleRow: View
+{
+    let schedule: SelectedCourseScheduleEntry
+
+    var body: some View
+    {
+        VStack(alignment: .leading, spacing: 5)
+        {
+            if let teachingClass = schedule.displayTeachingClassName
+            {
+                Text(teachingClass)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+            }
+            else if schedule.courseName != "课表安排"
+            {
+                Text(schedule.courseName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+            }
+
+            if let teacher = schedule.displayTeacher
+            {
+                SelectedCourseMetaRow(icon: "person.fill", text: teacher)
+            }
+            SelectedCourseMetaRow(icon: "calendar", text: schedule.classTime)
+            if let location = schedule.displayLocation
+            {
+                SelectedCourseMetaRow(icon: "mappin.and.ellipse", text: location)
+            }
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 }
 
@@ -330,6 +410,7 @@ private struct SelectedCourseMetaRow: View
 struct SelectedCourseListScreen: View
 {
     let courses: [SelectedCourse]
+    let unmatchedSchedules: [SelectedCourseScheduleEntry]
     let semester: SelectedCourseSemester
     let overview: CourseSelectionOverview
     let isLoading: Bool
@@ -349,6 +430,7 @@ struct SelectedCourseListScreen: View
             {
                 SelectedCourseView(
                     courses: courses,
+                    unmatchedSchedules: unmatchedSchedules,
                     semester: semester,
                     overview: overview,
                     isLoading: isLoading,
@@ -370,8 +452,23 @@ struct SelectedCourseListScreen: View
         .toolbar(.hidden, for: .tabBar)
         .toolbar
         {
-            ToolbarItem(placement: .topBarTrailing)
+            ToolbarItemGroup(placement: .topBarTrailing)
             {
+                NavigationLink
+                {
+                    CourseAvailabilityOverviewView(
+                        courses: courses,
+                        semester: semester,
+                        supplementarySchedules: unmatchedSchedules
+                    )
+                }
+                label:
+                {
+                    Image(systemName: "calendar.badge.clock")
+                }
+                .disabled(courses.isEmpty && unmatchedSchedules.isEmpty)
+                .accessibilityLabel("空闲度概览")
+
                 Button
                 {
                     Task { await onRefresh() }

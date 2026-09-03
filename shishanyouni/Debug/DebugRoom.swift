@@ -73,13 +73,12 @@ struct DebugRoom: View
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
 
-                    Button("执行 RSA 加密")
+                    Button("执行狮山有你 RSA 加密")
                     {
-                        userinfo.performSchoolEncryption()
+                        // 调试页使用与成绩、课表等狮山有你接口一致的 RSA 公钥。
+                        // CAS、南湖跑等旧链路仍在下方单独使用学校公钥。
                         userinfo.performShishanyouniEncryption()
-                        print("✅ 加密成功!")
-                        print(userinfo.encryptedPasswordSchool)
-                        print(userinfo.encryptedPasswordShishanyouni)
+                        print("✅ 狮山有你 RSA 加密成功（密文已生成，未输出明文）")
                     }
                     .buttonStyle(.bordered)
 
@@ -135,6 +134,8 @@ struct DebugRoom: View
 
                 Button("测试查询课表接口")
                 {
+                    // lion 课表接口要求使用狮山有你公钥生成的密文，不再直接提交明文密码。
+                    userinfo.performShishanyouniEncryption()
                     Task
                     {
                         do
@@ -142,7 +143,8 @@ struct DebugRoom: View
                             print("🚀 开始测试课表接口...")
                             let (courses, startDate) = try await CurriculumService.fetchCourses(
                                 username: userinfo.username,
-                                password: userinfo.plainPassword,
+                                password: userinfo.encryptedPasswordShishanyouni,
+                                token: userinfo.shishanyouniToken,
                                 year:     "2025",
                                 term:     "2"
                             )

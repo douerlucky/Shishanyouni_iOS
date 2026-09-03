@@ -98,6 +98,7 @@ enum ChooseCourseDebug
         if path.contains("xkJcInXksj") { return "退选规则检查" }
         if path.contains("tuikBc") { return "退选提交" }
         if path.contains("xkBcZypx") { return "志愿顺序同步" }
+        if path.contains("cxZkcZzxkYzb") { return "已选实验/子教学班" }
         if path.contains("ChoosedDisplay") { return "已选课程" }
         return url.lastPathComponent
     }

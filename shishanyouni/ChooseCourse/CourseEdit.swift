@@ -54,10 +54,11 @@ final class CourseEdit
         if course.requiresChildClass
         {
             ChooseCourseDebug.info("课程需要选择子教学班，开始读取子班列表")
+            let currentSemester = course.context.resolvedSemester(fallback: semester)
             let children = try await SearchCourse.shared.loadChildClasses(
                 for: course,
                 cookie: cookie,
-                semester: semester
+                semester: currentSemester
             )
             ChooseCourseDebug.info("子教学班准备完成：\(children.count) 个可选项，即将展示 Sheet")
             return .needsChildSelection(children)
@@ -81,10 +82,14 @@ final class CourseEdit
             throw CourseSelectionServiceError.missingCurrentParameters
         }
 
+        // 课程目录携带的 Index / Display 上下文优先于设备日期，防止不同账号的
+        // 选课开放学期不同却仍向错误学期读取或提交。
+        let currentSemester = course.context.resolvedSemester(fallback: semester)
+
         // 最终写入前重新读取一次已选课程，防止用户重复点击或状态已在网页端改变。
         let selectedBefore = try await SelectedCourseQuery.shared.fetchSelectedCourses(
             cookie: cookie,
-            semester: semester
+            semester: currentSemester
         )
         ChooseCourseDebug.info("选课前已选列表核验：当前 \(selectedBefore.count) 门")
         if contains(course: course, in: selectedBefore)
@@ -98,7 +103,7 @@ final class CourseEdit
             )
         }
 
-        var context = course.context.applying(semester)
+        var context = course.context.applying(currentSemester)
         // 这两个默认值来自当前正方前端的最终提交逻辑；页面若提供其它值则始终尊重页面值。
         if context.value("qz").isEmpty { context.values["qz"] = "0" }
         if context.value("sxbj").isEmpty { context.values["sxbj"] = "1" }
@@ -136,7 +141,7 @@ final class CourseEdit
         {
             let selectedAfter = try await SelectedCourseQuery.shared.fetchSelectedCourses(
                 cookie: cookie,
-                semester: semester
+                semester: currentSemester
             )
             if contains(course: course, in: selectedAfter)
             {
@@ -174,9 +179,10 @@ final class CourseEdit
     {
         ChooseCourseDebug.info("用户已确认退选：课程号=\(course.courseCode ?? course.courseID)")
         let pageContext = try await CourseSelectionPageLoader.load(cookie: cookie, semester: semester)
+        let currentSemester = pageContext.resolvedSemester(fallback: semester)
         let selectedCourses = try await SelectedCourseQuery.shared.fetchSelectedCourses(
             cookie: cookie,
-            semester: semester
+            semester: currentSemester
         )
         guard let current = selectedCourses.first(where: { matches($0, course) }) else
         {
@@ -204,7 +210,7 @@ final class CourseEdit
 
         let context = pageContext
             .merged(with: current.selectionContext)
-            .applying(semester)
+            .applying(currentSemester)
         let checkParameters = [
             ("xkkz_id", context.value("xkkz_id")),
             ("jxb_id", firstToken),
@@ -304,7 +310,7 @@ final class CourseEdit
         {
             let selectedAfter = try await SelectedCourseQuery.shared.fetchSelectedCourses(
                 cookie: cookie,
-                semester: semester
+                semester: currentSemester
             )
             if !selectedAfter.contains(where: { matches($0, current) })
             {
