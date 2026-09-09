@@ -1258,11 +1258,11 @@ struct TimeCurriculumView: View
 
     let classPeriods: [ClassPeriod] = [
         ClassPeriod(id: 1, periodNumber: 1, displayStartTime: "7:30", startTime: "8:00", endTime: "8:45"),
-        ClassPeriod(id: 2, periodNumber: 2, displayStartTime: "8:45", startTime: "9:00", endTime: "9:40"),
+        ClassPeriod(id: 2, periodNumber: 2, displayStartTime: "8:45", startTime: "8:55", endTime: "9:40"),
         ClassPeriod(id: 3, periodNumber: 3, displayStartTime: "9:40", startTime: "10:00", endTime: "10:45"),
         ClassPeriod(id: 4, periodNumber: 4, displayStartTime: "10:45", startTime: "10:55", endTime: "11:40"),
         ClassPeriod(id: 5, periodNumber: 5, displayStartTime: "14:00", startTime: "14:30", endTime: "15:15"),
-        ClassPeriod(id: 6, periodNumber: 6, displayStartTime: "15:15", startTime: "15:15", endTime: "16:10"),
+        ClassPeriod(id: 6, periodNumber: 6, displayStartTime: "15:15", startTime: "15:25", endTime: "16:10"),
         ClassPeriod(id: 7, periodNumber: 7, displayStartTime: "16:10", startTime: "16:30", endTime: "17:15"),
         ClassPeriod(id: 8, periodNumber: 8, displayStartTime: "17:15", startTime: "17:25", endTime: "18:10"),
         ClassPeriod(id: 9, periodNumber: 9, displayStartTime: "18:30", startTime: "19:00", endTime: "19:45"),
