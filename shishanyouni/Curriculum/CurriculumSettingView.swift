@@ -524,16 +524,21 @@ struct CurriculumSettingView: View {
         do {
             let result = try await fetchCoursesWithMFA()
 
-            importedCount = result.courses.count
+            // 狮山课表接口负责课程主数据，考核方式由教务课表接口补充。
+            // 补充链路失败时仍保留原有导入结果，避免辅助字段影响课表主流程。
+            let enrichedCourses = await attachAssessmentMethods(to: result.courses)
+            let enrichedResult = (courses: enrichedCourses, startDate: result.startDate)
+
+            importedCount = enrichedResult.courses.count
 
             // 若存在手动课程，先询问是否清除
             let hasManual = courses.contains { $0.isManual }
             if hasManual {
-                pendingImportResult = result
+                pendingImportResult = enrichedResult
                 showClearManualOnImportAlert = true
                 // isImporting 等弹窗回调里再置 false
             } else {
-                applyImport(result, keepManual: false)
+                applyImport(enrichedResult, keepManual: false)
             }
 
         } catch {
@@ -571,6 +576,59 @@ struct CurriculumSettingView: View {
         }
     }
 
+    /// 使用当前账号的 CAS 教务会话补齐课程考核方式。
+    ///
+    /// 这一步是“增强信息”而不是导入课表的前置条件：教务接口暂时不可用、
+    /// Cookie 失效或用户取消 MFA 时，仍返回没有考核方式的原课程数组。
+    private func attachAssessmentMethods(to importedCourses: [Course]) async -> [Course]
+    {
+        guard !importedCourses.isEmpty,
+              !userinfo.username.isEmpty,
+              !userinfo.encryptedPasswordSchool.isEmpty
+        else
+        {
+            print("ℹ️ 未补充考核方式：当前账号没有可用的教务认证信息")
+            return importedCourses
+        }
+
+        do
+        {
+            let query = ScheduleQuery()
+            let cookie = try await query.loginAndGetCookie(
+                username: userinfo.username,
+                rsaPassword: userinfo.encryptedPasswordSchool,
+                mfaCodeProvider: { maskedPhone in
+                    await self.requestCASMFACode(maskedPhone: maskedPhone)
+                }
+            )
+
+            let methods = try await CurriculumAssessmentService.fetchAssessmentMethods(
+                cookie: cookie,
+                year: selectedYear,
+                appTerm: selectedTerm
+            )
+
+            guard !methods.isEmpty else
+            {
+                print("ℹ️ 教务未返回可展示的考试/考查字段")
+                return importedCourses
+            }
+
+            return importedCourses.map
+            { course in
+                var enriched = course
+                // 手动添加的课程没有教务课程名，不会被误匹配。
+                enriched.assessmentMethod = methods[course.name]
+                return enriched
+            }
+        }
+        catch
+        {
+            print("⚠️ 考核方式补充失败：\(error.localizedDescription)，不影响课表导入")
+            return importedCourses
+        }
+    }
+
     private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
     {
         guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
@@ -584,6 +642,24 @@ struct CurriculumSettingView: View {
         await MainActor.run
         {
             userinfo.updateShishanyouniToken(token)
+        }
+    }
+
+    /// 为 CAS 教务登录提供验证码输入界面。
+    /// ScheduleQuery 会把当前会话的“发送验证码”动作放进 MFACodeContext，
+    /// 这里仅负责把它交给现有的 MFA Sheet，不重复实现发送协议。
+    @MainActor
+    private func requestCASMFACode(maskedPhone: String?) async -> String?
+    {
+        mfaMaskedPhone = maskedPhone ?? ""
+        mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
+        showMFASheet = true
+
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
         }
     }
 
@@ -651,7 +727,8 @@ struct CurriculumSettingView: View {
 
     private func clearAllCourses() {
         courses = []
-        WidgetSharedStore.clearCourses()
+        CurriculumWidgetSync.clearCourses()
+        NextCourseSync.clear()
         print("✅ 所有课程已清空")
     }
 
@@ -675,7 +752,7 @@ struct CurriculumSettingView: View {
             savedTimestamp = tempStartDate.timeIntervalSince1970
             CurriculumStore.shared.saveSemesterStartTimestamp(savedTimestamp)
         }
-        WidgetSharedStore.saveBackgroundMeta(filename: backgroundImageFilename, opacity: backgroundOpacity)
+        CurriculumWidgetSync.saveBackgroundMetadata(filename: backgroundImageFilename, opacity: backgroundOpacity)
         hasPendingImportedSchedule = false
         showSaveConfirmation = true
     }
@@ -752,11 +829,11 @@ struct CurriculumSettingView: View {
             backgroundImageFilename = filename
 
             // 同步保存到 App Group 容器，供 Widget 读取
-            if let sharedDir = WidgetSharedStore.sharedContainerURL() {
+            if let sharedDir = CurriculumWidgetSync.appGroupContainerURL() {
                 let sharedURL = sharedDir.appendingPathComponent(filename)
                 try? data.write(to: sharedURL)
             }
-            WidgetSharedStore.saveBackgroundMeta(filename: filename, opacity: backgroundOpacity)
+            CurriculumWidgetSync.saveBackgroundMetadata(filename: filename, opacity: backgroundOpacity)
         } catch {
             print("Failed to save background image: \(error)")
         }
@@ -768,12 +845,12 @@ struct CurriculumSettingView: View {
                 .appendingPathComponent(backgroundImageFilename)
             try? FileManager.default.removeItem(at: fileURL)
 
-            if let sharedDir = WidgetSharedStore.sharedContainerURL() {
+            if let sharedDir = CurriculumWidgetSync.appGroupContainerURL() {
                 let sharedURL = sharedDir.appendingPathComponent(backgroundImageFilename)
                 try? FileManager.default.removeItem(at: sharedURL)
             }
             backgroundImageFilename = ""
-            WidgetSharedStore.clearBackgroundMeta()
+            CurriculumWidgetSync.clearBackgroundMetadata()
         }
     }
 }

@@ -265,6 +265,27 @@ struct ProfileView: View
                     }
                 }
 
+                NavigationLink
+                {
+                    WidgetSettingView()
+                }
+                label:
+                {
+                    HStack(spacing: 15)
+                    {
+                        Image(systemName: "widget.large.badge.plus")
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.indigo)
+                            .cornerRadius(6)
+
+                        Text("小组件")
+                            .foregroundColor(.primary)
+
+                        Spacer()
+                    }
+                }
+
                 // 2. 显示日期与时钟
                 Toggle(isOn: $userinfo.showClock)
                 {

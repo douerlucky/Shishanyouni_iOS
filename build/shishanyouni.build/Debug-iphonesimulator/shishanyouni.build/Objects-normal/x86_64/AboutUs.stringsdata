@@ -52,7 +52,7 @@
       },
       {
         "comment": "",
-        "key": "版本 1.1.1",
+        "key": "版本 1.5.2",
         "location": {
           "startingColumn": 26,
           "startingLine": 40
@@ -76,7 +76,7 @@
       },
       {
         "comment": "",
-        "key": "沸点工作室移动 App 开发组 & Swift Coding Club HZAU 是一个专注于移动应用设计与开发的团队，持续进行 UI 交互设计、iOS 开发与相关技术实践。",
+        "key": "沸点工作室移动 App 开发组 & Swift Coding Club HZAU 是一个专注于移动应用设计与开发的团队，持续进行 UI 交互设计、iOS或鸿蒙开发与相关技术实践。",
         "location": {
           "startingColumn": 26,
           "startingLine": 64

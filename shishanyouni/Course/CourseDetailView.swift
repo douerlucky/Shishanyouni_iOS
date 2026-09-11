@@ -243,7 +243,8 @@ struct CourseDetailView: View
             term: "\(course.xnm)-\(course.xqm)",
             colorRandom: stableColorIndex(for: course.kcmc),
             customColorHex: nil,
-            isManual: true
+            isManual: true,
+            assessmentMethod: nil
         )
     }
 

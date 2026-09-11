@@ -96,14 +96,6 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
         let startComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStart)
         guard let firstMonday = cal.date(from: startComps) else { return 0 }
 
-        let classPeriods: [(start: String, end: String)] = [
-            ("8:00", "8:45"), ("8:55", "9:40"), ("10:00", "10:45"), ("10:55", "11:40"),
-            ("14:30", "15:15"), ("15:25", "16:10"), ("16:30", "17:15"), ("17:25", "18:10"),
-            ("19:00", "19:45"), ("19:50", "20:35"), ("20:40", "21:25"), ("21:30", "22:15"),
-        ]
-
-        guard course.start > 0 && course.start <= classPeriods.count else { return 0 }
-        let period = classPeriods[course.start - 1]
         var count = 0
 
         for week in course.weekList {
@@ -113,7 +105,18 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
 
             if classDate < Date() { continue }
 
-            guard let notifyDate = notificationDate(for: classDate, timeString: period.start) else { continue }
+            // 和系统日历导入共用同一份节次时间表，避免提醒时间与日历时间不一致。
+            guard let classRange = CurriculumClassSchedule.dateRange(
+                for: course,
+                on: classDate,
+                calendar: cal
+            ),
+            let notifyDate = cal.date(
+                byAdding: .minute,
+                value: -reminderMinutesBefore,
+                to: classRange.startDate
+            )
+            else { continue }
 
             let content = UNMutableNotificationContent()
             content.title = "📚 上课提醒"
@@ -137,19 +140,6 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
             count += 1
         }
         return count
-    }
-
-    private func notificationDate(for date: Date, timeString: String) -> Date? {
-        let parts = timeString.split(separator: ":")
-        guard parts.count == 2, let hour = Int(parts[0]), let minute = Int(parts[1]) else { return nil }
-
-        let calendar = Calendar.current
-        var comps = calendar.dateComponents([.year, .month, .day], from: date)
-        comps.hour = hour
-        comps.minute = minute
-        guard let classTime = calendar.date(from: comps) else { return nil }
-
-        return calendar.date(byAdding: .minute, value: -reminderMinutesBefore, to: classTime)
     }
 
     func pendingNotificationCount(completion: @escaping (Int) -> Void) {

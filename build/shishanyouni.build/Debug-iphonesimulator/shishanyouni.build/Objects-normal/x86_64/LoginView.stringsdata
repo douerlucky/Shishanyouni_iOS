@@ -7,15 +7,15 @@
         "key": "记住密码",
         "location": {
           "startingColumn": 24,
-          "startingLine": 105
+          "startingLine": 150
         }
       },
       {
         "comment": "",
-        "key": "确定要清除保存的绑定信息吗？",
+        "key": "确定要退出当前登录状态吗？",
         "location": {
           "startingColumn": 41,
-          "startingLine": 231
+          "startingLine": 314
         }
       },
       {
@@ -23,15 +23,15 @@
         "key": "绑定校园信息门户账号，即表示接受我们为你提供个性化校园服务。",
         "location": {
           "startingColumn": 26,
-          "startingLine": 43
+          "startingLine": 77
         }
       },
       {
         "comment": "",
-        "key": "请输入学号",
+        "key": "绑定方式",
         "location": {
-          "startingColumn": 35,
-          "startingLine": 68
+          "startingColumn": 28,
+          "startingLine": 86
         }
       },
       {
@@ -39,15 +39,7 @@
         "key": "学号",
         "location": {
           "startingColumn": 34,
-          "startingLine": 59
-        }
-      },
-      {
-        "comment": "",
-        "key": "请输入密码",
-        "location": {
-          "startingColumn": 37,
-          "startingLine": 94
+          "startingLine": 107
         }
       },
       {
@@ -55,7 +47,7 @@
         "key": "密码",
         "location": {
           "startingColumn": 34,
-          "startingLine": 85
+          "startingLine": 131
         }
       },
       {
@@ -63,23 +55,23 @@
         "key": "绑定",
         "location": {
           "startingColumn": 26,
-          "startingLine": 204
+          "startingLine": 281
         }
       },
       {
         "comment": "",
-        "key": "清除保存并退出",
+        "key": "退出登录",
         "location": {
           "startingColumn": 34,
-          "startingLine": 226
+          "startingLine": 309
         }
       },
       {
         "comment": "",
-        "key": "清除并退出",
+        "key": "退出登录",
         "location": {
           "startingColumn": 32,
-          "startingLine": 233
+          "startingLine": 316
         }
       },
       {
@@ -87,15 +79,15 @@
         "key": "取消",
         "location": {
           "startingColumn": 32,
-          "startingLine": 240
+          "startingLine": 323
         }
       },
       {
         "comment": "",
-        "key": "正在尝试绑定信息门户账号",
+        "key": "正在绑定\n%@",
         "location": {
           "startingColumn": 26,
-          "startingLine": 255
+          "startingLine": 338
         }
       },
       {
@@ -103,7 +95,7 @@
         "key": "确定",
         "location": {
           "startingColumn": 20,
-          "startingLine": 278
+          "startingLine": 364
         }
       }
     ]

@@ -7,7 +7,7 @@
         "key": "打开登录页（WKWebView）",
         "location": {
           "startingColumn": 24,
-          "startingLine": 34
+          "startingLine": 35
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "当前学号密码",
         "location": {
           "startingColumn": 24,
-          "startingLine": 94
+          "startingLine": 96
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "测试查询课表接口",
         "location": {
           "startingColumn": 24,
-          "startingLine": 132
+          "startingLine": 135
         }
       },
       {
@@ -31,7 +31,7 @@
         "key": "测试考试查询接口",
         "location": {
           "startingColumn": 24,
-          "startingLine": 157
+          "startingLine": 163
         }
       },
       {
@@ -39,7 +39,7 @@
         "key": "测试 CAS 登录接口（MFA）",
         "location": {
           "startingColumn": 24,
-          "startingLine": 185
+          "startingLine": 191
         }
       },
       {
@@ -47,7 +47,7 @@
         "key": "测试南湖跑查询接口",
         "location": {
           "startingColumn": 24,
-          "startingLine": 209
+          "startingLine": 215
         }
       },
       {
@@ -55,7 +55,7 @@
         "key": "测试电费查询接口",
         "location": {
           "startingColumn": 24,
-          "startingLine": 237
+          "startingLine": 243
         }
       },
       {
@@ -63,7 +63,7 @@
         "key": "粘贴 Cookie（JSESSIONID=xxx）",
         "location": {
           "startingColumn": 26,
-          "startingLine": 51
+          "startingLine": 52
         }
       },
       {
@@ -71,7 +71,7 @@
         "key": "🔐 RSA 加密实验室",
         "location": {
           "startingColumn": 26,
-          "startingLine": 66
+          "startingLine": 67
         }
       },
       {
@@ -79,7 +79,7 @@
         "key": "学号",
         "location": {
           "startingColumn": 31,
-          "startingLine": 61
+          "startingLine": 62
         }
       },
       {
@@ -87,15 +87,15 @@
         "key": "输入原始密码",
         "location": {
           "startingColumn": 31,
-          "startingLine": 70
+          "startingLine": 71
         }
       },
       {
         "comment": "",
-        "key": "执行 RSA 加密",
+        "key": "执行狮山有你 RSA 加密",
         "location": {
           "startingColumn": 28,
-          "startingLine": 75
+          "startingLine": 76
         }
       },
       {
@@ -103,7 +103,7 @@
         "key": "设定该学号密码",
         "location": {
           "startingColumn": 28,
-          "startingLine": 83
+          "startingLine": 85
         }
       },
       {
@@ -111,7 +111,7 @@
         "key": "当前 fpVisitorId: %@",
         "location": {
           "startingColumn": 26,
-          "startingLine": 106
+          "startingLine": 108
         }
       },
       {
@@ -119,7 +119,7 @@
         "key": "MFA 使用随机 fpVisitorId（更容易触发 need=true）",
         "location": {
           "startingColumn": 28,
-          "startingLine": 101
+          "startingLine": 103
         }
       },
       {
@@ -127,7 +127,7 @@
         "key": "重新生成 fpVisitorId",
         "location": {
           "startingColumn": 28,
-          "startingLine": 111
+          "startingLine": 113
         }
       },
       {
@@ -135,7 +135,7 @@
         "key": "预览验证码弹窗页面",
         "location": {
           "startingColumn": 28,
-          "startingLine": 118
+          "startingLine": 120
         }
       },
       {
@@ -143,7 +143,7 @@
         "key": "HZAU Login",
         "location": {
           "startingColumn": 50,
-          "startingLine": 267
+          "startingLine": 273
         }
       },
       {
@@ -151,7 +151,7 @@
         "key": "关闭",
         "location": {
           "startingColumn": 48,
-          "startingLine": 273
+          "startingLine": 279
         }
       }
     ]

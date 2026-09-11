@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 private let gradeQueryTimestampFormatter: DateFormatter = {
     let formatter = DateFormatter()
@@ -513,8 +514,40 @@ struct GradeInquiry: View
         {
             if !Grades.isEmpty
             {
-                ToolbarItem(placement: .topBarTrailing)
+                ToolbarItemGroup(placement: .topBarTrailing)
                 {
+                    Button(action: {
+                        if iapStore.hasActiveSubscription
+                        {
+                            // 下载已勾选的成绩视图，并根据保存结果反馈给用户。
+                            exportGrade(grades: includedGrades) { result in
+                                let feedback = UINotificationFeedbackGenerator()
+
+                                switch result
+                                {
+                                case .success:
+                                    feedback.notificationOccurred(.success)
+                                    alertTitle = "保存成功"
+                                    alertMessage = "已保存到相册"
+
+                                case .failure(let error):
+                                    feedback.notificationOccurred(.error)
+                                    alertTitle = "保存失败"
+                                    alertMessage = error.localizedDescription
+                                }
+
+                                // 导出提示不需要显示查询失败的“重试”按钮。
+                                errorRetryAction = nil
+                                showAlert = true
+                            }
+                        }
+                        else
+                        {
+                            navigateToSubscription = true
+                        }
+                    }, label: {
+                        Image(systemName: "square.and.arrow.down")
+                    })
                     Button(action: {
                         if iapStore.hasActiveSubscription
                         {
@@ -524,15 +557,15 @@ struct GradeInquiry: View
                         {
                             navigateToSubscription = true
                         }
-                    })
-                    {
+                    }, label: {
                         HStack(spacing: 4)
                         {
                             Image(systemName: "chart.bar.xaxis.ascending")
                             Text("分析")
                                 .font(.system(size: 14, weight: .semibold))
                         }
-                    }
+                    })
+
                 }
             }
         }

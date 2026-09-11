@@ -12,7 +12,9 @@ import SwiftUI
 struct ScheduleWidgetBundle: WidgetBundle {
     var body: some Widget {
         ScheduleWidget()
-        
+        PersonalScheduleWidget()
+        NextCourseWidget()
+        ScreenlockNextCourseWidget()
     }
 }
 

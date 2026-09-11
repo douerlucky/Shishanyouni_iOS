@@ -7,7 +7,15 @@
         "key": "课程详情",
         "location": {
           "startingColumn": 26,
-          "startingLine": 95
+          "startingLine": 122
+        }
+      },
+      {
+        "comment": "",
+        "key": "添加到课表",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 128
         }
       },
       {
@@ -15,7 +23,7 @@
         "key": "正在拉取教学班信息...",
         "location": {
           "startingColumn": 26,
-          "startingLine": 30
+          "startingLine": 37
         }
       },
       {
@@ -23,7 +31,7 @@
         "key": "无班级详情",
         "location": {
           "startingColumn": 30,
-          "startingLine": 42
+          "startingLine": 49
         }
       },
       {
@@ -31,7 +39,23 @@
         "key": "该课程在该学期可能暂无安排",
         "location": {
           "startingColumn": 30,
-          "startingLine": 44
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "好的",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 130
+        }
+      },
+      {
+        "comment": "",
+        "key": "添加到课表",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 496
         }
       },
       {
@@ -39,7 +63,7 @@
         "key": "%@ %@",
         "location": {
           "startingColumn": 34,
-          "startingLine": 216
+          "startingLine": 524
         }
       }
     ]

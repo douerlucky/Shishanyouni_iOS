@@ -26,7 +26,6 @@ struct CurriculumView: View
 {
     @EnvironmentObject var userinfo: userInfo
     @State private var showSettings = false
-    @State private var showWidgetSettings = false
     @State var nowDisplayMonth: Int = -1
     @State private var courses: [Course] = []
     @State var datesCurWeek: [Int] = [-1, -1, -1, -1, -1, -1, -1]
@@ -140,12 +139,6 @@ struct CurriculumView: View
             }
             ToolbarItemGroup(placement: .navigationBarTrailing)
             {
-                Button(action: { showWidgetSettings = true })
-                {
-                    Image(systemName: "widget.small.badge.plus")
-                        .fontWeight(.medium)
-                }
-
                 Button(action: {
                     exportCurriculumAsImage(
                         courses: courses,
@@ -173,13 +166,6 @@ struct CurriculumView: View
                 .environmentObject(userinfo)
                 // 课表设置只能通过左上角叉号退出，避免下滑时绕过导入后的保存确认。
                 .interactiveDismissDisabled()
-        }
-        .sheet(isPresented: $showWidgetSettings)
-        {
-            NavigationStack
-            {
-                CurriculumWidgetSettingView()
-            }
         }
         .sheet(item: $editCourseContext)
         { course in
@@ -518,7 +504,7 @@ struct CurriculumView: View
         }
         datesCurWeek = newDates
         weekDatesCurWeek = newWeekDates
-        WidgetSharedStore.saveCurrentWeek(nowDisplayWeek)
+        CurriculumWidgetSync.saveCurrentWeek(nowDisplayWeek)
     }
 
     func calculateCurrentWeek() -> Int
@@ -576,7 +562,8 @@ struct CurriculumView: View
                 term: target.term,
                 colorRandom: target.colorRandom,
                 customColorHex: target.customColorHex,
-                isManual: target.isManual
+                isManual: target.isManual,
+                assessmentMethod: target.assessmentMethod
             )
             courses[index] = updatedCourse
         }
@@ -1094,6 +1081,13 @@ struct CourseCardPreview: View
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary)
                 }
+                if let assessmentMethod = course.assessmentMethod,
+                   !assessmentMethod.isEmpty
+                {
+                    Label(assessmentMethod, systemImage: "checkmark.seal.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
                 if course.isManual
                 {
                     Label("手动添加", systemImage: "hand.tap.fill")
@@ -1158,6 +1152,14 @@ struct CourseCardPreview: View
                         {
                             Label(teacher, systemImage: "person.fill")
                                 .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+
+                        if let assessmentMethod = c.assessmentMethod,
+                           !assessmentMethod.isEmpty
+                        {
+                            Label(assessmentMethod, systemImage: "checkmark.seal.fill")
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.secondary)
                         }
 

@@ -103,7 +103,7 @@ struct ScheduleView: View
             return
         }
 
-        if let sharedURL = WidgetSharedStore.sharedContainerURL()?.appendingPathComponent(backgroundImageFilename),
+        if let sharedURL = CurriculumWidgetSync.appGroupContainerURL()?.appendingPathComponent(backgroundImageFilename),
            let data = try? Data(contentsOf: sharedURL),
            let image = UIImage(data: data)
         {

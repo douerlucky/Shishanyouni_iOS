@@ -7,7 +7,7 @@
         "key": "基本信息",
         "location": {
           "startingColumn": 25,
-          "startingLine": 76
+          "startingLine": 84
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "时间",
         "location": {
           "startingColumn": 29,
-          "startingLine": 86
+          "startingLine": 94
         }
       },
       {
@@ -23,7 +23,15 @@
         "key": "备注",
         "location": {
           "startingColumn": 25,
-          "startingLine": 95
+          "startingLine": 103
+        }
+      },
+      {
+        "comment": "",
+        "key": "行程属性",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 108
         }
       },
       {
@@ -31,7 +39,7 @@
         "key": "重复设置",
         "location": {
           "startingColumn": 25,
-          "startingLine": 100
+          "startingLine": 165
         }
       },
       {
@@ -39,7 +47,7 @@
         "key": "预览",
         "location": {
           "startingColumn": 25,
-          "startingLine": 122
+          "startingLine": 187
         }
       },
       {
@@ -47,7 +55,7 @@
         "key": "标题",
         "location": {
           "startingColumn": 31,
-          "startingLine": 77
+          "startingLine": 85
         }
       },
       {
@@ -55,7 +63,7 @@
         "key": "日期",
         "location": {
           "startingColumn": 32,
-          "startingLine": 79
+          "startingLine": 87
         }
       },
       {
@@ -63,7 +71,7 @@
         "key": "全天",
         "location": {
           "startingColumn": 28,
-          "startingLine": 82
+          "startingLine": 90
         }
       },
       {
@@ -71,7 +79,7 @@
         "key": "开始时间",
         "location": {
           "startingColumn": 36,
-          "startingLine": 87
+          "startingLine": 95
         }
       },
       {
@@ -79,7 +87,31 @@
         "key": "结束时间",
         "location": {
           "startingColumn": 36,
-          "startingLine": 90
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "地点（选填）",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "分类",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 126
+        }
+      },
+      {
+        "comment": "",
+        "key": "颜色",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 133
         }
       },
       {
@@ -87,7 +119,7 @@
         "key": "此日程将从选定日期开始重复，直到您手动删除",
         "location": {
           "startingColumn": 30,
-          "startingLine": 116
+          "startingLine": 181
         }
       },
       {
@@ -95,7 +127,7 @@
         "key": "重复",
         "location": {
           "startingColumn": 28,
-          "startingLine": 101
+          "startingLine": 166
         }
       },
       {
@@ -103,7 +135,7 @@
         "key": "频率",
         "location": {
           "startingColumn": 32,
-          "startingLine": 104
+          "startingLine": 169
         }
       },
       {
@@ -111,7 +143,7 @@
         "key": "间隔",
         "location": {
           "startingColumn": 34,
-          "startingLine": 111
+          "startingLine": 176
         }
       },
       {
@@ -119,23 +151,23 @@
         "key": "每 %lld %@",
         "location": {
           "startingColumn": 37,
-          "startingLine": 113
+          "startingLine": 178
         }
       },
       {
         "comment": "",
         "key": "全天",
         "location": {
-          "startingColumn": 34,
-          "startingLine": 132
+          "startingColumn": 38,
+          "startingLine": 206
         }
       },
       {
         "comment": "",
         "key": "%@ - %@",
         "location": {
-          "startingColumn": 34,
-          "startingLine": 139
+          "startingColumn": 38,
+          "startingLine": 213
         }
       },
       {
@@ -143,7 +175,7 @@
         "key": "取消",
         "location": {
           "startingColumn": 28,
-          "startingLine": 158
+          "startingLine": 254
         }
       }
     ]

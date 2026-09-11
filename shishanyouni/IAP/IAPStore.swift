@@ -159,7 +159,7 @@ final class IAPStore: ObservableObject
         activeExpirationDate = currentAccess?.expirationDate
         purchasedProductIDs = currentAccess.map { [$0.productID] } ?? []
 
-        WidgetSharedStore.saveSubscriptionStatus(
+        IAPWidgetSync.saveSubscriptionStatus(
             isActive: currentAccess != nil,
             productID: currentAccess?.productID,
             expiration: currentAccess?.expirationDate == .distantFuture ? nil : currentAccess?.expirationDate.timeIntervalSince1970

@@ -73,6 +73,40 @@ struct SubscriptionView: View
             Text("通行证选项")
                 .font(.title3.bold())
 
+            Button
+            {
+                // 直接调用 Apple 的系统优惠码兑换窗口。
+                SKPaymentQueue.default().presentCodeRedemptionSheet()
+            } label: {
+                HStack(spacing: 10)
+                {
+                    Image(systemName: "appstore")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(themePrimary)
+
+                    Text("兑换优惠码")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.secondary.opacity(0.7))
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.ultraThinMaterial)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(themePrimary.opacity(0.10), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
             NavigationLink
             {
                 ShareRewardRedeemView()
@@ -565,6 +599,7 @@ private extension SubscriptionView
             ComparisonRow(title: "桌面小组件", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "学期分析", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "GPA分析", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "选课", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "课程上课提醒", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "后续iOS版专属功能更新", normalUserAvailable: false, passUserAvailable: true),
         ]

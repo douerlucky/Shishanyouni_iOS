@@ -7,7 +7,7 @@
         "key": "首页",
         "location": {
           "startingColumn": 30,
-          "startingLine": 288
+          "startingLine": 297
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "完成编辑",
         "location": {
           "startingColumn": 62,
-          "startingLine": 324
+          "startingLine": 333
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "编辑常用功能",
         "location": {
           "startingColumn": 79,
-          "startingLine": 324
+          "startingLine": 333
         }
       },
       {
@@ -31,7 +31,7 @@
         "key": "在华农天数",
         "location": {
           "startingColumn": 42,
-          "startingLine": 397
+          "startingLine": 406
         }
       },
       {
@@ -39,7 +39,7 @@
         "key": "当前为游客模式",
         "location": {
           "startingColumn": 38,
-          "startingLine": 411
+          "startingLine": 420
         }
       },
       {
@@ -47,7 +47,7 @@
         "key": "欢迎使用狮山有你！\n来一起探索华中农业大学吧！",
         "location": {
           "startingColumn": 38,
-          "startingLine": 415
+          "startingLine": 424
         }
       },
       {
@@ -55,7 +55,7 @@
         "key": "游客模式下可使用公开信息与本地工具功能，登录后可解锁个性化校园服务。",
         "location": {
           "startingColumn": 38,
-          "startingLine": 419
+          "startingLine": 428
         }
       },
       {
@@ -63,7 +63,7 @@
         "key": "下一个安排",
         "location": {
           "startingColumn": 34,
-          "startingLine": 434
+          "startingLine": 443
         }
       },
       {
@@ -71,7 +71,7 @@
         "key": "%lld",
         "location": {
           "startingColumn": 22,
-          "startingLine": 691
+          "startingLine": 700
         }
       },
       {
@@ -79,7 +79,7 @@
         "key": "天",
         "location": {
           "startingColumn": 22,
-          "startingLine": 696
+          "startingLine": 705
         }
       }
     ]

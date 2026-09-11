@@ -14,8 +14,7 @@ import WidgetKit
 
 /// 所有用户偏好设置 key 集中定义在此处。
 /// 使用示例：
-///   UserDefaults.standard.set(true, forKey: PreferenceKey.isCurriculumPluginOn)
-///   WidgetSharedStore 等专用 Store 可继续直接调用 key 字符串或使用 PreferenceKey 常量
+///   UserDefaults.standard.set(true, forKey: PreferenceKey.prefShowClock)
 enum PreferenceKey
 {
     // ========== 账号相关 ==========
@@ -73,15 +72,13 @@ enum PreferenceKey
     static let scheduleCurrentWeek = "schedule_current_week"
 
     // ========== 课表桌面小组件相关（App Group 共享） ==========
-    /// 课表课程数据（JSON 编码） - WidgetSharedStore / Widget
+    /// 课表课程数据（JSON 编码） - CurriculumWidgetSync / Widget
     static let widgetSavedCourses = "saved_courses"
-    /// 课表小组件启用开关 - CurriculumWidgetSettingView / WidgetSharedStore / Widget
-    static let isCurriculumPluginOn = "isCurriculumPluginOn"
-    /// 校园通行证是否有效（App ↔ Widget 共享） - IAPStore / WidgetSharedStore / Widget
+    /// 校园通行证是否有效（App ↔ Widget 共享） - IAPStore / IAPWidgetSync / Widget
     static let iapCampusPassActive = "iap_campus_pass_active"
-    /// 当前生效的订阅商品 ID - IAPStore / WidgetSharedStore
+    /// 当前生效的订阅商品 ID - IAPStore / IAPWidgetSync
     static let iapCampusPassProductID = "iap_campus_pass_product_id"
-    /// 订阅到期时间戳 - IAPStore / WidgetSharedStore
+    /// 订阅到期时间戳 - IAPStore / IAPWidgetSync
     static let iapCampusPassExpiration = "iap_campus_pass_expiration"
 
     // ========== 个人日程 Event ==========

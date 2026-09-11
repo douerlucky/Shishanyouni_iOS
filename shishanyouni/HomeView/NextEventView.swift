@@ -162,7 +162,6 @@ class NextEventViewModel: ObservableObject
     }
 
     // MARK: - 个人日程
-
     private func userEvents(from events: [Event], now: Date, limit: Date) -> [NextEventItem]
     {
         var result: [NextEventItem] = []
@@ -208,7 +207,6 @@ class NextEventViewModel: ObservableObject
     }
 
     // MARK: - 校历
-
     private func schoolCalendarEvents(from events: [SchoolCalendarEvent], now: Date, limit: Date) -> [NextEventItem]
     {
         var result: [NextEventItem] = []

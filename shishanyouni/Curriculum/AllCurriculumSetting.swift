@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import EventKit
 
 struct AllCurriculumSetting: View
 {
@@ -19,6 +20,12 @@ struct AllCurriculumSetting: View
     @State private var semesterStartDate: Date = Date()
     @State private var reminderStates: [String: Bool] = [:]
     @State private var navigateToSubscription = false
+    @State private var showCalendarImportConfirmation = false // 确认导入弹窗
+    @State private var showCalendarDeleteConfirmation = false
+    @State private var isCalendarOperationInProgress = false
+    @State private var showCalendarAlert = false
+    @State private var calendarAlertTitle = ""
+    @State private var calendarAlertMessage = ""
     @State private var navigateToAdvancedStats = false
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
@@ -26,7 +33,6 @@ struct AllCurriculumSetting: View
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
 
     @EnvironmentObject var iapStore: IAPStore
-
 
     var body: some View
     {
@@ -45,13 +51,18 @@ struct AllCurriculumSetting: View
             {
                 // 学期统计卡片（和课程卡片统一风格）
                 Button(action: {
-                    if iapStore.hasActiveSubscription {
+                    if iapStore.hasActiveSubscription
+                    {
                         navigateToAdvancedStats = true
-                    } else {
+                    }
+                    else
+                    {
                         navigateToSubscription = true
                     }
-                }) {
-                    HStack(spacing: 12) {
+                })
+                {
+                    HStack(spacing: 12)
+                    {
                         Image(systemName: "chart.bar.xaxis.ascending")
                             .font(.title2)
                             .foregroundColor(.white)
@@ -59,7 +70,8 @@ struct AllCurriculumSetting: View
                             .background(Color.blue.opacity(0.25))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 4)
+                        {
                             Text("学期统计")
                                 .font(.title2)
                                 .fontWeight(.semibold)
@@ -122,8 +134,6 @@ struct AllCurriculumSetting: View
                                     Label("编辑", systemImage: "pencil")
                                 }
                                 .tint(.blue)
-
-
                             }
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -147,13 +157,54 @@ struct AllCurriculumSetting: View
         .toolbar(.hidden, for: .tabBar)
         .toolbar
         {
+            // 课程相关工具：导入属于 IAP 权益，删除由 App 创建的数据始终可用。
+            ToolbarItem(placement: .navigationBarTrailing)
+            {
+                Menu
+                {
+                    Button
+                    {
+                        if iapStore.hasActiveSubscription
+                        {
+                            showCalendarImportConfirmation = true
+                        }
+                        else
+                        {
+                            navigateToSubscription = true
+                        }
+                    }
+                    label:
+                    {
+                        Label("导入到系统日历", systemImage: "calendar.badge.plus")
+                    }
+
+                    Button(role: .destructive)
+                    {
+                        showCalendarDeleteConfirmation = true
+                    }
+                    label:
+                    {
+                        Label("删除已导入的课表日历", systemImage: "trash")
+                    }
+                }
+                label:
+                {
+                    Image(systemName: isCalendarOperationInProgress ? "hourglass" : "ellipsis.circle")
+                        .fontWeight(.medium)
+                }
+                .disabled(isCalendarOperationInProgress)
+            }
+
+            // 保留原来的新增课程按钮
             ToolbarItem(placement: .navigationBarTrailing)
             {
                 Button(action: { addCourseContext = AddCourseContext(day: 1, period: 1) })
-                { Image(systemName: "plus.circle").fontWeight(.medium) }
+                {
+                    Image(systemName: "plus.circle").fontWeight(.medium)
+                }
             }
         }
-        
+
         .onAppear
         {
             loadSavedCourses()
@@ -206,6 +257,54 @@ struct AllCurriculumSetting: View
         {
             SubscriptionView()
         }
+        .confirmationDialog(
+            "导入到系统日历",
+            isPresented: $showCalendarImportConfirmation,
+            titleVisibility: .visible
+        )
+        {
+            Button("继续导入")
+            {
+                importCoursesToSystemCalendar()
+            }
+
+            Button("取消", role: .cancel)
+            {
+            }
+        }
+        message:
+        {
+            Text("课程会写入“狮山有你”专属课表日历，不会添加系统提醒。")
+        }
+        .confirmationDialog(
+            "删除已导入的课表日历",
+            isPresented: $showCalendarDeleteConfirmation,
+            titleVisibility: .visible
+        )
+        {
+            Button("删除课表日历", role: .destructive)
+            {
+                deleteImportedSystemCalendar()
+            }
+
+            Button("取消", role: .cancel)
+            {
+            }
+        }
+        message:
+        {
+            Text("将删除“\(CurriculumToSystemCalendar.calendarTitle(for: semesterStartDate))”及其中的全部课程事件。此操作不会删除其他日历。")
+        }
+        .alert(calendarAlertTitle, isPresented: $showCalendarAlert)
+        {
+            Button("好的", role: .cancel)
+            {
+            }
+        }
+        message:
+        {
+            Text(calendarAlertMessage)
+        }
     }
 
     @ViewBuilder
@@ -214,7 +313,8 @@ struct AllCurriculumSetting: View
         let reminderOnBinding = Binding<Bool>(
             get: { self.reminderStates[course.id] ?? CurriculumNotificationManager.shared.isReminderEnabled(for: course.id) },
             set: { newValue in
-                if !self.iapStore.hasActiveSubscription {
+                if !self.iapStore.hasActiveSubscription
+                {
                     self.navigateToSubscription = true
                     return
                 }
@@ -225,7 +325,8 @@ struct AllCurriculumSetting: View
 
         VStack(alignment: .leading, spacing: 6)
         {
-            HStack {
+            HStack
+            {
                 Text(course.name)
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -234,7 +335,8 @@ struct AllCurriculumSetting: View
 
                 Spacer()
 
-                Button {
+                Button
+                {
                     reminderOnBinding.wrappedValue.toggle()
                 } label: {
                     Image(systemName: reminderOnBinding.wrappedValue ? "bell.fill" : "bell.slash")
@@ -264,6 +366,15 @@ struct AllCurriculumSetting: View
             Label(course.teacher ?? "未知老师", systemImage: "person")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.7))
+
+            // 仅对已从教务同步到的课程展示考核方式；手动课程不会显示占位文本。
+            if let assessmentMethod = course.assessmentMethod,
+               !assessmentMethod.isEmpty
+            {
+                Label(assessmentMethod, systemImage: "checkmark.seal.fill")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.9))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -271,8 +382,7 @@ struct AllCurriculumSetting: View
             RoundedRectangle(cornerRadius: 24)
                 .fill(courseColor(for: course).opacity(scheduleContentOpacity))
         )
-        .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:24)
-
+        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 24)
     }
 
     private func toWeekday(_ day: Int) -> String
@@ -418,18 +528,93 @@ struct AllCurriculumSetting: View
         }
     }
 
-    private func loadSemesterStartDate() {
-        if let date = CurriculumStore.shared.loadSemesterStartDate() {
+    private func loadSemesterStartDate()
+    {
+        if let date = CurriculumStore.shared.loadSemesterStartDate()
+        {
             semesterStartDate = date
-        } else {
+        }
+        else
+        {
             let ts = UserDefaults.standard.double(forKey: "semesterStartDateTimestamp")
-            if ts > 0 {
+            if ts > 0
+            {
                 semesterStartDate = Date(timeIntervalSince1970: ts)
             }
         }
     }
 
-    private func calculateCurrentWeek() -> Int {
+    // MARK: - 系统日历
+
+    /// 开始导入流程。IAP 拦截发生在工具栏按钮，这里只处理已经确认的会员操作。
+    private func importCoursesToSystemCalendar()
+    {
+        guard !isCalendarOperationInProgress else { return }
+
+        isCalendarOperationInProgress = true
+        let coursesSnapshot = courses
+        let semesterStartSnapshot = semesterStartDate
+
+        Task
+        { @MainActor in
+            defer { isCalendarOperationInProgress = false }
+
+            do
+            {
+                let count = try await CurriculumToSystemCalendar.importCourses(
+                    in: EKEventStore(),
+                    courses: coursesSnapshot,
+                    semesterStartDate: semesterStartSnapshot
+                )
+                showCalendarAlert(
+                    title: "导入成功",
+                    message: "已将 \(count) 次课程安排导入“\(CurriculumToSystemCalendar.calendarTitle(for: semesterStartSnapshot))”。"
+                )
+            }
+            catch
+            {
+                showCalendarAlert(title: "导入失败", message: error.localizedDescription)
+            }
+        }
+    }
+
+    /// 删除由 App 创建的当前学期专属日历；该操作不受 IAP 限制。
+    private func deleteImportedSystemCalendar()
+    {
+        guard !isCalendarOperationInProgress else { return }
+
+        isCalendarOperationInProgress = true
+        let semesterStartSnapshot = semesterStartDate
+
+        Task
+        { @MainActor in
+            defer { isCalendarOperationInProgress = false }
+
+            do
+            {
+                let title = try await CurriculumToSystemCalendar.deleteImportedCalendar(
+                    in: EKEventStore(),
+                    semesterStartDate: semesterStartSnapshot
+                )
+                showCalendarAlert(title: "删除成功", message: "已删除“\(title)”及其中的课程事件。")
+            }
+            catch
+            {
+                showCalendarAlert(title: "删除失败", message: error.localizedDescription)
+            }
+        }
+    }
+
+    /// 统一设置结果提示，避免导入和删除流程各自维护一套 Alert 状态。
+    private func showCalendarAlert(title: String, message: String)
+    {
+        calendarAlertTitle = title
+        calendarAlertMessage = message
+        showCalendarAlert = true
+    }
+
+    private func calculateCurrentWeek() -> Int
+    {
         var cal = Calendar.current
         cal.firstWeekday = 2
         let startComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStartDate)

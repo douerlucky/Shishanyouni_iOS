@@ -1,5 +1,5 @@
 {
-  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ScheduleWidget/ScheduleWidget.swift",
+  "source": "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ShishanyouniWidgets/ScheduleWidget.swift",
   "tables": {
     "Localizable": [
       {
@@ -7,7 +7,7 @@
         "key": "第 %lld 周",
         "location": {
           "startingColumn": 30,
-          "startingLine": 267
+          "startingLine": 254
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "%lld月",
         "location": {
           "startingColumn": 30,
-          "startingLine": 275
+          "startingLine": 262
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "%lld",
         "location": {
           "startingColumn": 38,
-          "startingLine": 289
+          "startingLine": 276
         }
       },
       {
@@ -31,7 +31,7 @@
         "key": "%lld",
         "location": {
           "startingColumn": 38,
-          "startingLine": 312
+          "startingLine": 299
         }
       },
       {
@@ -39,7 +39,7 @@
         "key": "课表",
         "location": {
           "startingColumn": 35,
-          "startingLine": 563
+          "startingLine": 574
         }
       },
       {
@@ -47,7 +47,7 @@
         "key": "完整显示当周课表",
         "location": {
           "startingColumn": 22,
-          "startingLine": 564
+          "startingLine": 575
         }
       }
     ]

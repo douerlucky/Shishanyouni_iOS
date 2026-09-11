@@ -209,12 +209,12 @@ struct BackgroundSettingView: View
             }
             backgroundImageFilename = filename
 
-            if let sharedDir = WidgetSharedStore.sharedContainerURL()
+            if let sharedDir = CurriculumWidgetSync.appGroupContainerURL()
             {
                 let sharedURL = sharedDir.appendingPathComponent(filename)
                 try? data.write(to: sharedURL)
             }
-            WidgetSharedStore.saveBackgroundMeta(filename: filename, opacity: backgroundOpacity)
+            CurriculumWidgetSync.saveBackgroundMetadata(filename: filename, opacity: backgroundOpacity)
         }
         catch { print("Failed to save background image: \(error)") }
     }
@@ -227,13 +227,13 @@ struct BackgroundSettingView: View
                 .appendingPathComponent(backgroundImageFilename)
             try? FileManager.default.removeItem(at: fileURL)
 
-            if let sharedDir = WidgetSharedStore.sharedContainerURL()
+            if let sharedDir = CurriculumWidgetSync.appGroupContainerURL()
             {
                 let sharedURL = sharedDir.appendingPathComponent(backgroundImageFilename)
                 try? FileManager.default.removeItem(at: sharedURL)
             }
             backgroundImageFilename = ""
-            WidgetSharedStore.clearBackgroundMeta()
+            CurriculumWidgetSync.clearBackgroundMetadata()
         }
     }
 }

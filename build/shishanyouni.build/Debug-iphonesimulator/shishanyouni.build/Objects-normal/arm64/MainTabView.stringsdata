@@ -4,10 +4,18 @@
     "Localizable": [
       {
         "comment": "",
+        "key": "日程与校历",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 39
+        }
+      },
+      {
+        "comment": "",
         "key": "课表",
         "location": {
           "startingColumn": 23,
-          "startingLine": 25
+          "startingLine": 49
         }
       },
       {
@@ -15,7 +23,7 @@
         "key": "首页",
         "location": {
           "startingColumn": 23,
-          "startingLine": 34
+          "startingLine": 60
         }
       },
       {
@@ -23,7 +31,7 @@
         "key": "我的",
         "location": {
           "startingColumn": 23,
-          "startingLine": 44
+          "startingLine": 71
         }
       }
     ]

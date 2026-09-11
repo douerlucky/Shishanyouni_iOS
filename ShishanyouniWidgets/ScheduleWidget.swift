@@ -9,40 +9,7 @@ import WidgetKit
 import SwiftUI
 import UIKit
 
-private enum WidgetShared
-{
-    static let appGroupID = "group.cn.edu.hzau.shishanyouni"
-    static let savedCoursesKey = "saved_courses"
-    static let currentWeekKey = "schedule_current_week"
-    static let backgroundImageFilenameKey = "scheduleBackgroundImageFilename"
-    static let backgroundOpacityKey = "scheduleBackgroundOpacity"
-    static let semesterStartTimestampKey = "semesterStartDateTimestamp"
-    static let curriculumPluginEnabledKey = "isCurriculumPluginOn"
-    
-    static let campusPassActiveKey = "iap_campus_pass_active" // 当前校园通行证是否有效
-    static let campusPassProductIDKey = "iap_campus_pass_product_id" // 当前生效的是哪个订阅商品
-    static let campusPassExpirationKey = "iap_campus_pass_expiration" // 订阅到期时间
-}
-
-struct WidgetCourse: Codable, Identifiable
-{
-    let id: String
-    let name: String
-    let day: Int
-    let start: Int
-    let step: Int
-    let room: String?
-    let teacher: String?
-    let weekList: [Int]
-    let weeks: String?
-    let term: String?
-    let colorRandom: Int
-    let customColorHex: String?
-    let isManual: Bool
-
-    var endPeriod: Int { start + step - 1 }
-}
-
+//保存某个时间点要显示的数据
 struct SimpleEntry: TimelineEntry
 {
     let date: Date
@@ -54,10 +21,10 @@ struct SimpleEntry: TimelineEntry
     let weeklyCourses: [WidgetCourse]
     let backgroundFilename: String
     let backgroundOpacity: Double
-    let isCurriculumPluginOn: Bool
     let isCampusPassActive: Bool
 }
 
+//告诉系统什么时候生成数据
 struct Provider: TimelineProvider
 {
     func placeholder(in context: Context) -> SimpleEntry
@@ -72,7 +39,6 @@ struct Provider: TimelineProvider
             weeklyCourses: [],
             backgroundFilename: "",
             backgroundOpacity: 0.2,
-            isCurriculumPluginOn: false,
             isCampusPassActive: false
         )
     }
@@ -104,7 +70,6 @@ struct Provider: TimelineProvider
         let today = weekdayIndex(from: date)
         let period = currentPeriodNumber(for: date)
         let (bgName, bgOpacity) = loadBackgroundMeta()
-        let isCurriculumPluginOn = loadCurriculumPluginEnabled()
         let isCampusPassActive = loadCampusPassActive()
 
         let weeklyCourses = courses
@@ -125,73 +90,34 @@ struct Provider: TimelineProvider
             weeklyCourses: weeklyCourses,
             backgroundFilename: bgName,
             backgroundOpacity: bgOpacity,
-            isCurriculumPluginOn: isCurriculumPluginOn,
             isCampusPassActive: isCampusPassActive
         )
     }
 
     private func loadSharedCourses() -> [WidgetCourse]
     {
-        guard let shared = UserDefaults(suiteName: WidgetShared.appGroupID),
-              let data = shared.data(forKey: WidgetShared.savedCoursesKey)
-        else
-        {
-            return []
-        }
-        return (try? JSONDecoder().decode([WidgetCourse].self, from: data)) ?? []
+        CurriculumWidgetShared.loadCourses()
     }
 
     private func loadCurrentWeek() -> Int
     {
-        guard let shared = UserDefaults(suiteName: WidgetShared.appGroupID) else { return 1 }
-        let value = shared.integer(forKey: WidgetShared.currentWeekKey)
-        return max(value, 1)
-    }
-
-    private func loadCurriculumPluginEnabled() -> Bool
-    {
-        let shared = UserDefaults(suiteName: WidgetShared.appGroupID)
-        return shared?.bool(forKey: WidgetShared.curriculumPluginEnabledKey) ?? false
+        CurriculumWidgetShared.currentWeek()
     }
 
     private func loadCampusPassActive() -> Bool
     {
-        let shared = UserDefaults(suiteName: WidgetShared.appGroupID)
-        return shared?.bool(forKey: WidgetShared.campusPassActiveKey) ?? false
+        IAPWidgetShared.loadStatus().isActive
     }
 
     private func calculateCurrentWeek(at date: Date) -> Int?
     {
-        guard let shared = UserDefaults(suiteName: WidgetShared.appGroupID),
-              let timestamp = shared.object(forKey: WidgetShared.semesterStartTimestampKey) as? Double,
-              timestamp > 0
-        else
-        {
-            return nil
-        }
-
-        let semesterStartDate = Date(timeIntervalSince1970: timestamp)
-        var cal = Calendar.current
-        cal.firstWeekday = 2
-        let startComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: semesterStartDate)
-        let nowComps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        guard let startMonday = cal.date(from: startComps),
-              let currentMonday = cal.date(from: nowComps)
-        else
-        {
-            return nil
-        }
-
-        let diff = cal.dateComponents([.weekOfYear], from: startMonday, to: currentMonday)
-        return max((diff.weekOfYear ?? 0) + 1, 1)
+        CurriculumWidgetShared.calculatedWeek(at: date)
     }
 
     private func loadBackgroundMeta() -> (String, Double)
     {
-        guard let shared = UserDefaults(suiteName: WidgetShared.appGroupID) else { return ("", 0.2) }
-        let name = shared.string(forKey: WidgetShared.backgroundImageFilenameKey) ?? ""
-        let opacity = shared.object(forKey: WidgetShared.backgroundOpacityKey) as? Double ?? 0.2
-        return (name, opacity)
+        let metadata = CurriculumWidgetShared.backgroundMetadata()
+        return (metadata.filename, metadata.opacity)
     }
 
     private func computeWeekDates(from date: Date) -> (Int, [Int])
@@ -428,7 +354,7 @@ struct ScheduleWidgetEntryView: View
     private func loadSharedBackgroundImage(filename: String) -> UIImage?
     {
         guard !filename.isEmpty,
-              let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetShared.appGroupID)
+              let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetAppGroup.identifier)
         else
         {
             return nil
@@ -594,7 +520,7 @@ struct ScheduleWidgetEntryView: View
 
 struct ScheduleWidget: Widget
 {
-    let kind: String = "ScheduleWidget"
+    let kind: String = WidgetAppGroup.Kind.curriculum
 
     var body: some WidgetConfiguration
     {
@@ -602,7 +528,7 @@ struct ScheduleWidget: Widget
         { entry in
             if #available(iOS 17.0, *)
             {
-                if entry.isCurriculumPluginOn, entry.isCampusPassActive
+                if entry.isCampusPassActive
                 {
                     ScheduleWidgetEntryView(entry: entry)
                         .containerBackground(.clear, for: .widget)
@@ -610,8 +536,8 @@ struct ScheduleWidget: Widget
                 else
                 {
                     ScheduleWidgetUnavailableView(
-                        title: entry.isCurriculumPluginOn ? "校园通行证未生效" : "课表小组件未启用",
-                        subtitle: entry.isCurriculumPluginOn ? "请在 App 内同步购买记录后刷新小组件。" : "请在课表页右上角进入小组件设置并启用。"
+                        title: "校园通行证未生效",
+                        subtitle: "开通校园通行证后显示当前周课表。"
                     )
                     .containerBackground(.clear, for: .widget)
                 }
@@ -619,7 +545,7 @@ struct ScheduleWidget: Widget
             }
             else
             {
-                if entry.isCurriculumPluginOn, entry.isCampusPassActive
+                if entry.isCampusPassActive
                 {
                     ScheduleWidgetEntryView(entry: entry)
                         .padding()
@@ -628,8 +554,8 @@ struct ScheduleWidget: Widget
                 else
                 {
                     ScheduleWidgetUnavailableView(
-                        title: entry.isCurriculumPluginOn ? "校园通行证未生效" : "课表小组件未启用",
-                        subtitle: entry.isCurriculumPluginOn ? "请在 App 内同步购买记录后刷新小组件。" : "请在课表页设置中启用。"
+                        title: "校园通行证未生效",
+                        subtitle: "开通校园通行证后显示当前周课表。"
                     )
                     .padding()
                     .background()
@@ -705,12 +631,11 @@ private extension Array
         todayIndex: 4,
         currentPeriod: 9,
         weeklyCourses: [
-            WidgetCourse(id: "1", name: "编译原理", day: 2, start: 3, step: 2, room: nil, teacher: nil, weekList: [8], weeks: nil, term: nil, colorRandom: 1, customColorHex: nil, isManual: false),
-            WidgetCourse(id: "2", name: "智慧农业", day: 5, start: 9, step: 2, room: nil, teacher: nil, weekList: [8], weeks: nil, term: nil, colorRandom: 3, customColorHex: nil, isManual: false),
+            WidgetCourse(id: "1", name: "编译原理", day: 2, start: 3, step: 2, room: nil, weekList: [8], colorRandom: 1, customColorHex: nil, isManual: false),
+            WidgetCourse(id: "2", name: "智慧农业", day: 5, start: 9, step: 2, room: nil, weekList: [8], colorRandom: 3, customColorHex: nil, isManual: false),
         ],
         backgroundFilename: "",
         backgroundOpacity: 0.2,
-        isCurriculumPluginOn: true,
         isCampusPassActive: true
     )
 }

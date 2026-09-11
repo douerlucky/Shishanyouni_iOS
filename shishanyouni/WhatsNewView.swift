@@ -6,22 +6,34 @@ struct WhatsNewView: View
 
     private let features: [WhatsNewFeature] = [
         WhatsNewFeature(
-            title: "选课功能上线",
-            message: "支持查看课程、教学班和子教学班，并直接提交选课。",
-            icon: "list.bullet.clipboard.fill",
-            color: .blue
-        ),
-        WhatsNewFeature(
-            title: "校历更新",
-            message: "校历活动从教务系统获取，已更新至 2026–2027 学年。",
-            icon: "arrow.triangle.2.circlepath.circle.fill",
+            title: "期末考核类型",
+            message: "所有课程现在都能查看期末考核是考试还是考查。",
+            icon: "checkmark.seal.fill",
             color: .teal
         ),
         WhatsNewFeature(
-            title: "课程查询更方便",
-            message: "选课和全校课程查询支持系统搜索，滑到底部会自动加载更多课程。",
-            icon: "magnifyingglass.circle.fill",
+            title: "成绩长图下载",
+            message: "成绩查询现在支持一键下载长图。校园通行证用户专属。",
+            icon: "arrow.down.doc.fill",
+            color: .blue
+        ),
+        WhatsNewFeature(
+            title: "全新小组件",
+            message: "全新设计，现有大、中、小三种样式可选。校园通行证用户专属。",
+            icon: "widget.large.badge.plus",
             color: .purple
+        ),
+        WhatsNewFeature(
+            title: "锁屏下节课",
+            message: "锁定屏幕也能添加小组件，显示下一节课。校园通行证用户专属。",
+            icon: "lock.fill",
+            color: .indigo
+        ),
+        WhatsNewFeature(
+            title: "课程导入系统日历",
+            message: "支持一键导入所有课程，也可一键删除；不会删除你自己创建的日程。校园通行证用户专属。",
+            icon: "calendar.badge.plus",
+            color: .orange
         ),
     ]
 
@@ -48,7 +60,7 @@ struct WhatsNewView: View
                         Text("狮山有你更新啦")
                             .font(.system(size: 28, weight: .black, design: .rounded))
 
-                        Text("选课上线，校历与课程查询更新")
+                        Text("课程、成绩、小组件与日历功能更新")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)

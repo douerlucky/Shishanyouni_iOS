@@ -27,6 +27,13 @@
 			remoteGlobalIDString = FE4D98152F330FB40087BCAE;
 			remoteInfo = shishanyouni;
 		};
+		FE4ECCF6305322970041A2E6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FE4D980E2F330FB40087BCAE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FE406C1D2F9A4C4E007039C2;
+			remoteInfo = ScheduleWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -89,7 +96,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		FE406C322F9A4C53007039C2 /* Exceptions for "ScheduleWidget" folder in "ScheduleWidgetExtension" target */ = {
+		FE406C322F9A4C53007039C2 /* Exceptions for "ShishanyouniWidgets" folder in "ScheduleWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -106,12 +113,17 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		FE406C242F9A4C4F007039C2 /* ScheduleWidget */ = {
+		FE1397703053BB030075B096 /* SharedWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharedWidget;
+			sourceTree = "<group>";
+		};
+		FE406C242F9A4C4F007039C2 /* ShishanyouniWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				FE406C322F9A4C53007039C2 /* Exceptions for "ScheduleWidget" folder in "ScheduleWidgetExtension" target */,
+				FE406C322F9A4C53007039C2 /* Exceptions for "ShishanyouniWidgets" folder in "ScheduleWidgetExtension" target */,
 			);
-			path = ScheduleWidget;
+			path = ShishanyouniWidgets;
 			sourceTree = "<group>";
 		};
 		FE4D98182F330FB40087BCAE /* shishanyouni */ = {
@@ -331,9 +343,10 @@
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
 				FE4D98262F330FB60087BCAE /* shishanyouniTests */,
 				FE4D98302F330FB60087BCAE /* shishanyouniUITests */,
-				FE406C242F9A4C4F007039C2 /* ScheduleWidget */,
+				FE406C242F9A4C4F007039C2 /* ShishanyouniWidgets */,
 				FE406C1F2F9A4C4F007039C2 /* Frameworks */,
 				FE4D98172F330FB40087BCAE /* Products */,
+				FE1397703053BB030075B096 /* SharedWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -462,7 +475,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				FE406C242F9A4C4F007039C2 /* ScheduleWidget */,
+				FE1397703053BB030075B096 /* SharedWidget */,
+				FE406C242F9A4C4F007039C2 /* ShishanyouniWidgets */,
 			);
 			name = ScheduleWidgetExtension;
 			packageProductDependencies = (
@@ -483,8 +497,10 @@
 			buildRules = (
 			);
 			dependencies = (
+				FE4ECCF7305322970041A2E6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				FE1397703053BB030075B096 /* SharedWidget */,
 				FE4D98182F330FB40087BCAE /* shishanyouni */,
 			);
 			name = shishanyouni;
@@ -801,6 +817,11 @@
 			target = FE4D98152F330FB40087BCAE /* shishanyouni */;
 			targetProxy = FE4D982E2F330FB60087BCAE /* PBXContainerItemProxy */;
 		};
+		FE4ECCF7305322970041A2E6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FE406C1D2F9A4C4E007039C2 /* ScheduleWidgetExtension */;
+			targetProxy = FE4ECCF6305322970041A2E6 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -815,7 +836,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_FILE = ShishanyouniWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -824,7 +845,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.4;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni.ScheduleWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -848,7 +869,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Z76985BH76;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_FILE = ShishanyouniWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ScheduleWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -857,7 +878,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.4;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni.ScheduleWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1019,7 +1040,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1055,7 +1076,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

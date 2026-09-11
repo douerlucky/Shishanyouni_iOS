@@ -6,7 +6,57 @@
     "pch" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetExtension-primary-Bridging-header.pch",
     "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetExtension-primary.swiftdeps"
   },
-  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ScheduleWidget/ScheduleWidget.swift" : {
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/SharedWidget/CurriculumSharedWidget.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.dia",
+    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.o",
+    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.bc",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget.swiftdeps",
+    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/CurriculumSharedWidget~partial.swiftmodule"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/SharedWidget/IAPWidgetShared.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.dia",
+    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.o",
+    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.bc",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared.swiftdeps",
+    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/IAPWidgetShared~partial.swiftmodule"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/SharedWidget/PersonalScheduleSharedWidget.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.dia",
+    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.o",
+    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.bc",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget.swiftdeps",
+    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleSharedWidget~partial.swiftmodule"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/SharedWidget/WidgetAppGroup.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.dia",
+    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.o",
+    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.bc",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup.swiftdeps",
+    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetAppGroup~partial.swiftmodule"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ShishanyouniWidgets/PersonalScheduleWidget.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.dia",
+    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.o",
+    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.bc",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget.swiftdeps",
+    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/PersonalScheduleWidget~partial.swiftmodule"
+  },
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ShishanyouniWidgets/ScheduleWidget.swift" : {
     "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidget.swiftconstvalues",
     "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidget.d",
     "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidget.dia",
@@ -16,15 +66,15 @@
     "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidget.swiftdeps",
     "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidget~partial.swiftmodule"
   },
-  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ScheduleWidget/ScheduleWidgetBundle.swift" : {
-    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.swiftconstvalues",
-    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.d",
-    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.dia",
-    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.o",
-    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.bc",
-    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.o",
-    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.swiftdeps",
-    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle~partial.swiftmodule"
+  "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/ShishanyouniWidgets/WidgetBundle.swift" : {
+    "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.swiftconstvalues",
+    "dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.d",
+    "diagnostics" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.dia",
+    "index-unit-output-path" : "/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.o",
+    "llvm-bc" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.bc",
+    "object" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.o",
+    "swift-dependencies" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle.swiftdeps",
+    "swiftmodule" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetBundle~partial.swiftmodule"
   },
   "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
     "const-values" : "/Users/douer_lucky/Documents/Projects/Shishanyouni_iOS/build/shishanyouni.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",

@@ -7,7 +7,7 @@
         "key": "电费查询",
         "location": {
           "startingColumn": 26,
-          "startingLine": 67
+          "startingLine": 71
         }
       },
       {
@@ -15,15 +15,23 @@
         "key": "正在同步...",
         "location": {
           "startingColumn": 30,
-          "startingLine": 60
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "重试",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 90
         }
       },
       {
         "comment": "",
         "key": "好",
         "location": {
-          "startingColumn": 102,
-          "startingLine": 83
+          "startingColumn": 47,
+          "startingLine": 91
         }
       },
       {
@@ -31,7 +39,7 @@
         "key": "当前余额 (元)",
         "location": {
           "startingColumn": 38,
-          "startingLine": 112
+          "startingLine": 122
         }
       },
       {
@@ -39,7 +47,7 @@
         "key": "电表读数 (度)",
         "location": {
           "startingColumn": 38,
-          "startingLine": 151
+          "startingLine": 161
         }
       },
       {
@@ -47,7 +55,7 @@
         "key": "%.2f",
         "location": {
           "startingColumn": 38,
-          "startingLine": 154
+          "startingLine": 164
         }
       },
       {
@@ -55,7 +63,7 @@
         "key": "尚未绑定房间",
         "location": {
           "startingColumn": 22,
-          "startingLine": 201
+          "startingLine": 211
         }
       },
       {
@@ -63,7 +71,7 @@
         "key": "绑定后可随时查看宿舍剩余电费",
         "location": {
           "startingColumn": 22,
-          "startingLine": 203
+          "startingLine": 213
         }
       },
       {
@@ -71,7 +79,7 @@
         "key": "绑定房间",
         "location": {
           "startingColumn": 30,
-          "startingLine": 274
+          "startingLine": 284
         }
       },
       {
@@ -79,7 +87,7 @@
         "key": "请选择宿舍房间号",
         "location": {
           "startingColumn": 22,
-          "startingLine": 220
+          "startingLine": 230
         }
       },
       {
@@ -87,7 +95,7 @@
         "key": "楼栋",
         "location": {
           "startingColumn": 28,
-          "startingLine": 226
+          "startingLine": 236
         }
       },
       {
@@ -95,7 +103,7 @@
         "key": "楼层",
         "location": {
           "startingColumn": 28,
-          "startingLine": 237
+          "startingLine": 247
         }
       },
       {
@@ -103,7 +111,7 @@
         "key": "房间",
         "location": {
           "startingColumn": 28,
-          "startingLine": 249
+          "startingLine": 259
         }
       },
       {
@@ -111,7 +119,7 @@
         "key": "-",
         "location": {
           "startingColumn": 50,
-          "startingLine": 239
+          "startingLine": 249
         }
       },
       {
@@ -119,7 +127,7 @@
         "key": "-",
         "location": {
           "startingColumn": 49,
-          "startingLine": 251
+          "startingLine": 261
         }
       },
       {
@@ -127,7 +135,7 @@
         "key": "当前选择",
         "location": {
           "startingColumn": 26,
-          "startingLine": 261
+          "startingLine": 271
         }
       },
       {
@@ -135,7 +143,7 @@
         "key": "取消",
         "location": {
           "startingColumn": 70,
-          "startingLine": 278
+          "startingLine": 288
         }
       },
       {
@@ -143,7 +151,7 @@
         "key": "完成",
         "location": {
           "startingColumn": 28,
-          "startingLine": 281
+          "startingLine": 291
         }
       },
       {
@@ -151,7 +159,7 @@
         "key": "重新绑定",
         "location": {
           "startingColumn": 26,
-          "startingLine": 519
+          "startingLine": 585
         }
       },
       {
@@ -159,7 +167,7 @@
         "key": "绑定房间",
         "location": {
           "startingColumn": 26,
-          "startingLine": 529
+          "startingLine": 595
         }
       }
     ]

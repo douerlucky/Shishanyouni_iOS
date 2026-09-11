@@ -47,6 +47,18 @@ struct shishanyouniApp: App
             MainTabView()
                 .environmentObject(userinfo)
                 .environmentObject(iapStore)
+                // 首次安装前没有历史写入时，以及 Widget 被系统延后刷新时，主动补一次。
+                .onAppear
+                {
+                    PersonalScheduleWidgetSync.sync()
+                    NextCourseSync.sync()
+                }
+                .onChange(of: scenePhase)
+                { newPhase in
+                    guard newPhase == .active else { return }
+                    PersonalScheduleWidgetSync.sync()
+                    NextCourseSync.sync()
+                }
         }
     }
 }

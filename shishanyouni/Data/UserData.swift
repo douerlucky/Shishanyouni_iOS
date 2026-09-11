@@ -160,10 +160,13 @@ struct TimetableModel: Decodable
     let colorRandom: Int
     let weeks: String?
     let time: String?
+    /// 教务课表接口可能直接返回的考核方式（考试/考查/未安排）。
+    /// 狮山有你接口没有返回时，会在导入流程中通过教务课表接口补齐。
+    let assessmentMethod: String?
 
     private enum CodingKeys: String, CodingKey {
         case name, room, teacher, weekList, weeks, week
-        case start, period, step, length, day, term, colorRandom, time
+        case start, period, step, length, day, term, colorRandom, time, khfsmc
     }
 
     init(from decoder: Decoder) throws {
@@ -181,6 +184,7 @@ struct TimetableModel: Decodable
         colorRandom = try c.decodeIfPresent(Int.self, forKey: .colorRandom) ?? abs(name.hashValue % 32)
         weeks = try c.decodeIfPresent(String.self, forKey: .week)
         time = try c.decodeIfPresent(String.self, forKey: .time)
+        assessmentMethod = try c.decodeIfPresent(String.self, forKey: .khfsmc)
     }
 }
 
@@ -214,7 +218,7 @@ struct TimetableResponse: Decodable
 }
 
 
-/// 用于：CurriculumView、AllCurriculumSetting、WidgetSharedStore、ManualCourseEditorView
+/// 用于：CurriculumView、AllCurriculumSetting、CurriculumWidgetSync、ManualCourseEditorView
 
 struct Course: Identifiable, Codable
 {
@@ -231,6 +235,9 @@ struct Course: Identifiable, Codable
     var colorRandom: Int // 颜色索引（来自服务端 colorRandom，手动课程随机分配）
     var customColorHex: String? // 用户自定义颜色（十六进制，如 "#FF6B6B"），nil = 使用 colorRandom
     var isManual: Bool // true = 用户手动添加，false = 服务端导入
+    /// 考核方式：考试、考查；未安排或尚未同步时为 nil。
+    /// 使用可选值兼容旧版本已经保存的课表数据。
+    var assessmentMethod: String? = nil
 
     var endPeriod: Int { start + step - 1 } // 计算结束节次
     var parsedWeeks: Set<Int> { Set(weekList) } // 本课程上课的周次集合（供 CurriculumView 过滤使用）
@@ -266,7 +273,8 @@ extension Course
             term: model.term,
             colorRandom: model.colorRandom,
             customColorHex: nil,
-            isManual: false
+            isManual: false,
+            assessmentMethod: model.assessmentMethod
         )
     }
 }
@@ -342,29 +350,34 @@ class CurriculumStore
 
     func saveCourses(_ courses: [Course], semesterStart: Date?)
     {
-        WidgetSharedStore.saveCourses(courses)
+        CurriculumWidgetSync.saveCourses(courses)
         if let semesterStart
         {
-            WidgetSharedStore.saveSemesterStartTimestamp(semesterStart.timeIntervalSince1970)
+            CurriculumWidgetSync.saveSemesterStartTimestamp(semesterStart.timeIntervalSince1970)
         }
+        NextCourseSync.sync(
+            courses: courses,
+            semesterStart: semesterStart ?? loadSemesterStartDate()
+        )
         UserDefaults.standard.set(Date(), forKey: lastUpdatedKey)
         NotificationCenter.default.post(name: .homeNextEventsDidChange, object: nil)
     }
 
     func loadCourses() -> [Course]
     {
-        WidgetSharedStore.loadCourses()
+        CurriculumWidgetSync.loadCourses()
     }
 
     func loadSemesterStartDate() -> Date?
     {
-        guard let timestamp = WidgetSharedStore.loadSemesterStartTimestamp(), timestamp > 0 else { return nil }
+        guard let timestamp = CurriculumWidgetSync.loadSemesterStartTimestamp(), timestamp > 0 else { return nil }
         return Date(timeIntervalSince1970: timestamp)
     }
 
     func saveSemesterStartTimestamp(_ timestamp: Double)
     {
-        WidgetSharedStore.saveSemesterStartTimestamp(timestamp)
+        CurriculumWidgetSync.saveSemesterStartTimestamp(timestamp)
+        NextCourseSync.sync()
         UserDefaults.standard.set(Date(), forKey: lastUpdatedKey)
         NotificationCenter.default.post(name: .homeNextEventsDidChange, object: nil)
     }
@@ -540,16 +553,17 @@ struct RepeatRule: Codable, Equatable {
     }
 }
 
+//用户自己创建的一条日程
 struct Event: Identifiable, Codable, Equatable {
     let id: UUID
-    var title: String
-    var date: Date
+    var title: String //标题
+    var date: Date //日期
     var isAllDay: Bool
-    var startTime: Date?
-    var endTime: Date?
+    var startTime: Date? //开始时间
+    var endTime: Date? //结束时间
     var note: String?
-    var location: String?
-    var category: EventCategory
+    var location: String? //地点
+    var category: EventCategory //分类
     var colorIndex: Int?
     var isCompleted: Bool
     var repeatRule: RepeatRule?
@@ -598,6 +612,7 @@ struct Event: Identifiable, Codable, Equatable {
 }
 
 // MARK: - 数据持久化
+//Event 保存和读取日程的仓库
 class EventStore {
     private let userDefaultsKey = "saved_events"
     private let completionKey = "event_completions"
@@ -610,6 +625,8 @@ class EventStore {
         do {
             let data = try JSONEncoder().encode(events)
             UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            // Widget 不直接读取 App 的 Event，保存成功后同步一份展示专用 WidgetScheduleItem 列表。
+            PersonalScheduleWidgetSync.sync()
             NotificationCenter.default.post(name: .homeNextEventsDidChange, object: nil)
         } catch {
             print("❌ 日程保存失败: \(error)")
@@ -639,6 +656,7 @@ class EventStore {
         var completions = UserDefaults.standard.dictionary(forKey: completionKey) as? [String: Bool] ?? [:]
         completions[completionKey(for: eventId, date: date)] = completed
         UserDefaults.standard.set(completions, forKey: completionKey)
+        PersonalScheduleWidgetSync.sync()
         NotificationCenter.default.post(name: .homeNextEventsDidChange, object: nil)
     }
     
@@ -654,6 +672,7 @@ class EventStore {
             completions.removeValue(forKey: key)
         }
         UserDefaults.standard.set(completions, forKey: completionKey)
+        PersonalScheduleWidgetSync.sync()
         NotificationCenter.default.post(name: .homeNextEventsDidChange, object: nil)
     }
     
@@ -693,11 +712,12 @@ enum SchoolEventType: String, Codable, CaseIterable {
     }
 }
 
+// 校历事件
 struct SchoolCalendarEvent: Identifiable, Codable {
     let id: UUID
-    var title: String
-    var startDate: Date
-    var endDate: Date?
+    var title: String //事件名
+    var startDate: Date //开始日期
+    var endDate: Date? //结束日期
     var type: SchoolEventType
     var description: String?
     
@@ -751,6 +771,8 @@ struct SchoolCalendarStore {
         do {
             let data = try JSONEncoder().encode(events)
             UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            // 校历同步完成后，日程 Widget 也要重新挑选下一条安排。
+            PersonalScheduleWidgetSync.sync()
             NotificationCenter.default.post(name: .homeNextEventsDidChange, object: nil)
         } catch {
             print("❌ 校历保存失败: \(error)")

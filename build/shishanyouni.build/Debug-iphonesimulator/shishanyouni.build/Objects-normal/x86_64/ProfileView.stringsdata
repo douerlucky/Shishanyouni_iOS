@@ -7,15 +7,23 @@
         "key": "我的",
         "location": {
           "startingColumn": 26,
-          "startingLine": 207
+          "startingLine": 391
         }
       },
       {
         "comment": "",
-        "key": "账号设置",
+        "key": "新功能",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 203
+        }
+      },
+      {
+        "comment": "",
+        "key": "个性化设置",
         "location": {
           "startingColumn": 34,
-          "startingLine": 109
+          "startingLine": 238
         }
       },
       {
@@ -23,7 +31,7 @@
         "key": "个性化设置",
         "location": {
           "startingColumn": 20,
-          "startingLine": 191
+          "startingLine": 375
         }
       },
       {
@@ -31,7 +39,7 @@
         "key": "%@，%@",
         "location": {
           "startingColumn": 26,
-          "startingLine": 57
+          "startingLine": 64
         }
       },
       {
@@ -39,7 +47,7 @@
         "key": "%@，%@",
         "location": {
           "startingColumn": 26,
-          "startingLine": 63
+          "startingLine": 70
         }
       },
       {
@@ -47,7 +55,7 @@
         "key": "当前为游客模式",
         "location": {
           "startingColumn": 30,
-          "startingLine": 42
+          "startingLine": 49
         }
       },
       {
@@ -55,7 +63,7 @@
         "key": "公开信息与本地工具功能均可正常使用",
         "location": {
           "startingColumn": 30,
-          "startingLine": 46
+          "startingLine": 53
         }
       },
       {
@@ -63,7 +71,7 @@
         "key": "绑定信息门户后可使用成绩、考试、体测等个性化校园服务",
         "location": {
           "startingColumn": 30,
-          "startingLine": 50
+          "startingLine": 57
         }
       },
       {
@@ -71,7 +79,7 @@
         "key": "账号设置",
         "location": {
           "startingColumn": 34,
-          "startingLine": 89
+          "startingLine": 96
         }
       },
       {
@@ -79,15 +87,95 @@
         "key": "点击绑定信息门户账号",
         "location": {
           "startingColumn": 38,
-          "startingLine": 93
+          "startingLine": 100
         }
       },
       {
         "comment": "",
-        "key": "已绑定信息门户账号",
+        "key": "已绑定学校账号",
         "location": {
           "startingColumn": 38,
-          "startingLine": 99
+          "startingLine": 106
+        }
+      },
+      {
+        "comment": "",
+        "key": "CAS已绑定，狮山有你未绑定",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 112
+        }
+      },
+      {
+        "comment": "",
+        "key": "狮山有你已绑定，CAS未绑定",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "未成功绑定狮山有你、CAS账号",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 124
+        }
+      },
+      {
+        "comment": "",
+        "key": "已开通",
+        "location": {
+          "startingColumn": 63,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "立即开通",
+        "location": {
+          "startingColumn": 77,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "校园通行证",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 156
+        }
+      },
+      {
+        "comment": "",
+        "key": "狮山有你iOS校园通行证用户，可使用狮山有你全部功能",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "订阅狮山有你iOS校园通行证，畅享所有功能",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 163
+        }
+      },
+      {
+        "comment": "",
+        "key": "查看新功能",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 219
+        }
+      },
+      {
+        "comment": "",
+        "key": "看看这次更新了什么",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 221
         }
       },
       {
@@ -95,7 +183,7 @@
         "key": "昵称设置",
         "location": {
           "startingColumn": 30,
-          "startingLine": 127
+          "startingLine": 256
         }
       },
       {
@@ -103,7 +191,7 @@
         "key": "显示日期与时钟",
         "location": {
           "startingColumn": 30,
-          "startingLine": 150
+          "startingLine": 279
         }
       },
       {
@@ -111,7 +199,55 @@
         "key": "显示入校天数",
         "location": {
           "startingColumn": 30,
-          "startingLine": 168
+          "startingLine": 297
+        }
+      },
+      {
+        "comment": "",
+        "key": "显示下一个安排",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 315
+        }
+      },
+      {
+        "comment": "",
+        "key": "背景图片设置",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 332
+        }
+      },
+      {
+        "comment": "",
+        "key": "日程",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 340
+        }
+      },
+      {
+        "comment": "",
+        "key": "课表",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 341
+        }
+      },
+      {
+        "comment": "",
+        "key": "首页",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 342
+        }
+      },
+      {
+        "comment": "",
+        "key": "默认启动页面",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 353
         }
       },
       {
@@ -119,7 +255,7 @@
         "key": "关于狮山有你iOS",
         "location": {
           "startingColumn": 30,
-          "startingLine": 185
+          "startingLine": 369
         }
       },
       {
@@ -127,7 +263,7 @@
         "key": "输入你的昵称",
         "location": {
           "startingColumn": 27,
-          "startingLine": 193
+          "startingLine": 377
         }
       },
       {
@@ -135,7 +271,7 @@
         "key": "取消",
         "location": {
           "startingColumn": 24,
-          "startingLine": 196
+          "startingLine": 380
         }
       },
       {
@@ -143,7 +279,7 @@
         "key": "确定",
         "location": {
           "startingColumn": 24,
-          "startingLine": 197
+          "startingLine": 381
         }
       },
       {
@@ -151,7 +287,15 @@
         "key": "请输入你想使用的昵称",
         "location": {
           "startingColumn": 22,
-          "startingLine": 203
+          "startingLine": 387
+        }
+      },
+      {
+        "comment": "",
+        "key": "新功能介绍需要 iOS 17 或更高版本",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 409
         }
       }
     ]

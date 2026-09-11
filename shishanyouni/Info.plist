@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>用于将考试安排添加到系统日历并设置提醒。</string>
+	<string>用于将课程和考试安排添加到系统日历。</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>用于将考试安排添加到系统日历并设置提醒。</string>
+	<string>用于将课程和考试安排添加到系统日历。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>用于将成绩长图保存到相册。</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>

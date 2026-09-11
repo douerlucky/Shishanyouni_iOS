@@ -397,7 +397,8 @@ struct ManualCourseEditorView: View
             term: editing.term,
             colorRandom: editing.colorRandom,
             customColorHex: newColorHex,
-            isManual: editing.isManual
+            isManual: editing.isManual,
+            assessmentMethod: editing.assessmentMethod
         )
         courses[index] = updated
 

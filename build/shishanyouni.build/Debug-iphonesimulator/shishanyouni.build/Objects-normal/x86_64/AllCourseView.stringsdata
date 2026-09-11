@@ -7,7 +7,15 @@
         "key": "课程搜索",
         "location": {
           "startingColumn": 30,
-          "startingLine": 155
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "正在查询课程…",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 95
         }
       },
       {
@@ -15,7 +23,7 @@
         "key": "全校课程查询",
         "location": {
           "startingColumn": 59,
-          "startingLine": 55
+          "startingLine": 59
         }
       },
       {
@@ -23,39 +31,23 @@
         "key": "未找到相关课程",
         "location": {
           "startingColumn": 82,
-          "startingLine": 55
-        }
-      },
-      {
-        "comment": "",
-        "key": "在下方输入框开始查询",
-        "location": {
-          "startingColumn": 59,
           "startingLine": 59
         }
       },
       {
         "comment": "",
-        "key": "换个关键词，或者切换学期试试看吧",
+        "key": "选择查询学期：%@ %@",
         "location": {
-          "startingColumn": 94,
-          "startingLine": 59
+          "startingColumn": 45,
+          "startingLine": 133
         }
       },
       {
         "comment": "",
-        "key": "%@ %@",
+        "key": "切换课程数据源，当前为%@",
         "location": {
-          "startingColumn": 34,
-          "startingLine": 103
-        }
-      },
-      {
-        "comment": "",
-        "key": "输入课程名称或代码",
-        "location": {
-          "startingColumn": 35,
-          "startingLine": 124
+          "startingColumn": 41,
+          "startingLine": 157
         }
       },
       {
@@ -63,7 +55,7 @@
         "key": "选择查询学期",
         "location": {
           "startingColumn": 26,
-          "startingLine": 167
+          "startingLine": 169
         }
       },
       {
@@ -71,7 +63,7 @@
         "key": "年份",
         "location": {
           "startingColumn": 32,
-          "startingLine": 172
+          "startingLine": 174
         }
       },
       {
@@ -79,7 +71,7 @@
         "key": "学期",
         "location": {
           "startingColumn": 32,
-          "startingLine": 185
+          "startingLine": 187
         }
       },
       {
@@ -87,7 +79,7 @@
         "key": "%@-%@学年",
         "location": {
           "startingColumn": 42,
-          "startingLine": 178
+          "startingLine": 180
         }
       },
       {
@@ -95,7 +87,7 @@
         "key": "确定",
         "location": {
           "startingColumn": 30,
-          "startingLine": 198
+          "startingLine": 200
         }
       }
     ]

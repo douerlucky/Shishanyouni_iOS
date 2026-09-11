@@ -7,7 +7,7 @@
         "key": "平均学分绩点",
         "location": {
           "startingColumn": 26,
-          "startingLine": 96
+          "startingLine": 97
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "成绩",
         "location": {
           "startingColumn": 26,
-          "startingLine": 156
+          "startingLine": 157
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "学分",
         "location": {
           "startingColumn": 26,
-          "startingLine": 168
+          "startingLine": 169
         }
       },
       {
@@ -31,7 +31,7 @@
         "key": "—",
         "location": {
           "startingColumn": 30,
-          "startingLine": 265
+          "startingLine": 266
         }
       },
       {
@@ -39,7 +39,7 @@
         "key": "平均分",
         "location": {
           "startingColumn": 26,
-          "startingLine": 269
+          "startingLine": 270
         }
       },
       {
@@ -47,7 +47,7 @@
         "key": "—",
         "location": {
           "startingColumn": 30,
-          "startingLine": 290
+          "startingLine": 291
         }
       },
       {
@@ -55,7 +55,7 @@
         "key": "加权平均分",
         "location": {
           "startingColumn": 26,
-          "startingLine": 294
+          "startingLine": 295
         }
       },
       {
@@ -63,7 +63,7 @@
         "key": "%lld 门",
         "location": {
           "startingColumn": 26,
-          "startingLine": 307
+          "startingLine": 308
         }
       },
       {
@@ -71,7 +71,7 @@
         "key": "记录课程",
         "location": {
           "startingColumn": 26,
-          "startingLine": 310
+          "startingLine": 311
         }
       },
       {
@@ -79,7 +79,7 @@
         "key": "总学分",
         "location": {
           "startingColumn": 26,
-          "startingLine": 326
+          "startingLine": 327
         }
       },
       {
@@ -87,7 +87,7 @@
         "key": "成绩查询",
         "location": {
           "startingColumn": 26,
-          "startingLine": 509
+          "startingLine": 510
         }
       },
       {
@@ -95,7 +95,7 @@
         "key": "暂无成绩数据",
         "location": {
           "startingColumn": 30,
-          "startingLine": 408
+          "startingLine": 409
         }
       },
       {
@@ -103,7 +103,7 @@
         "key": "选择学期后点击查询",
         "location": {
           "startingColumn": 30,
-          "startingLine": 411
+          "startingLine": 412
         }
       },
       {
@@ -111,7 +111,7 @@
         "key": "总成绩",
         "location": {
           "startingColumn": 34,
-          "startingLine": 432
+          "startingLine": 433
         }
       },
       {
@@ -119,7 +119,7 @@
         "key": "单科成绩",
         "location": {
           "startingColumn": 38,
-          "startingLine": 445
+          "startingLine": 446
         }
       },
       {
@@ -127,7 +127,7 @@
         "key": "正在查询成绩",
         "location": {
           "startingColumn": 30,
-          "startingLine": 484
+          "startingLine": 485
         }
       },
       {
@@ -135,7 +135,7 @@
         "key": "分析",
         "location": {
           "startingColumn": 34,
-          "startingLine": 532
+          "startingLine": 564
         }
       },
       {
@@ -143,7 +143,7 @@
         "key": "重试",
         "location": {
           "startingColumn": 24,
-          "startingLine": 551
+          "startingLine": 584
         }
       },
       {
@@ -151,15 +151,7 @@
         "key": "好的",
         "location": {
           "startingColumn": 20,
-          "startingLine": 553
-        }
-      },
-      {
-        "comment": "",
-        "key": "%@ %@",
-        "location": {
-          "startingColumn": 26,
-          "startingLine": 618
+          "startingLine": 586
         }
       },
       {
@@ -167,7 +159,7 @@
         "key": "查询",
         "location": {
           "startingColumn": 22,
-          "startingLine": 633
+          "startingLine": 682
         }
       },
       {
@@ -175,7 +167,7 @@
         "key": "选择学期",
         "location": {
           "startingColumn": 22,
-          "startingLine": 653
+          "startingLine": 702
         }
       },
       {
@@ -183,7 +175,7 @@
         "key": "确定",
         "location": {
           "startingColumn": 24,
-          "startingLine": 681
+          "startingLine": 731
         }
       },
       {
@@ -191,7 +183,7 @@
         "key": "年份",
         "location": {
           "startingColumn": 28,
-          "startingLine": 659
+          "startingLine": 708
         }
       },
       {
@@ -199,7 +191,15 @@
         "key": "学期",
         "location": {
           "startingColumn": 28,
-          "startingLine": 674
+          "startingLine": 724
+        }
+      },
+      {
+        "comment": "",
+        "key": "所有成绩",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 710
         }
       },
       {
@@ -207,7 +207,7 @@
         "key": "%@学年",
         "location": {
           "startingColumn": 38,
-          "startingLine": 668
+          "startingLine": 718
         }
       },
       {
@@ -215,7 +215,7 @@
         "key": "%@-%@学年",
         "location": {
           "startingColumn": 38,
-          "startingLine": 664
+          "startingLine": 714
         }
       }
     ]
