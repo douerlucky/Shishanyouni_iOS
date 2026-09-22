@@ -10,6 +10,50 @@
 import Foundation
 import WidgetKit
 
+/// App 的整体展示模式。
+///
+/// “全部”和“无通行证内容”是锁定预设；只有“自定义”允许逐项调整。
+enum AppDisplayMode: String, CaseIterable, Identifiable
+{
+    case all = "all"
+    case noCampusPassContent = "noCampusPassContent"
+    case custom = "custom"
+
+    var id: String { rawValue }
+
+    var title: String
+    {
+        switch self
+        {
+        case .all: return "全部"
+        case .noCampusPassContent: return "无通行证内容"
+        case .custom: return "自定义"
+        }
+    }
+
+    var description: String
+    {
+        switch self
+        {
+        case .all: return "显示全部页面、首页内容和通行证功能。"
+        case .noCampusPassContent: return "关闭日程，保留首页全部内容，并隐藏通行证功能。"
+        case .custom: return "按你的偏好调整每项内容。"
+        }
+    }
+
+    /// 兼容 1.4.x 曾经使用过的存储值，避免升级后模式丢失。
+    static func fromStoredValue(_ rawValue: String) -> Self
+    {
+        switch rawValue
+        {
+        case "simple": return .noCampusPassContent
+        case "complete": return .all
+        default: return Self(rawValue: rawValue) ?? .all
+        }
+    }
+
+}
+
 // MARK: - 所有偏好 Key 常量
 
 /// 所有用户偏好设置 key 集中定义在此处。
@@ -38,6 +82,16 @@ enum PreferenceKey
     static let prefShowNextEvent = "pref_showNextEvent"
     /// 默认启动 Tab - MainTabView
     static let prefDefaultTab = "pref_defaultTab"
+    /// 功能显示预设 - AppModeSettingView
+    static let appDisplayMode = "app_display_mode"
+    /// 是否显示“日程与校历”Tab - AppModeSettingView / MainTabView
+    static let showScheduleTab = "show_schedule_tab"
+    /// 是否显示个人日程；关闭时“日程与校历”Tab 仅显示校历。
+    static let showPersonalSchedule = "show_personal_schedule"
+    /// 是否显示校园通行证与全部需要通行证的功能入口。
+    static let showCampusPassFeatures = "show_campus_pass_features"
+    /// 是否显示“我的”页顶部的校园通行证卡片。
+    static let showCampusPassCard = "show_campus_pass_card"
     /// 已展示的新功能版本标记 - MainTabView
     static let lastShownWhatsNewVersion = "last_shown_whats_new_version"
     /// 已应用本次默认开启迁移 - App/UserInfo
@@ -50,6 +104,8 @@ enum PreferenceKey
     static let semesterStartDateTimestamp = "semesterStartDateTimestamp"
     /// 课表背景图片文件名 - CurriculumView / CurriculumSettingView / AllCurriculumSetting / Widget
     static let scheduleBackgroundImageFilename = "scheduleBackgroundImageFilename"
+    /// 课表显示字体缩放比例 - CurriculumFontSettingView / CurriculumView
+    static let curriculumFontScale = "curriculumFontScale"
     /// 课表背景不透明度（0.0 ~ 1.0） - CurriculumView / CurriculumSettingView / AllCurriculumSetting
     static let scheduleBackgroundOpacity = "scheduleBackgroundOpacity"
     /// 课表内容不透明度（0.0 ~ 1.0） - CurriculumView / CurriculumSettingView / AllCurriculumSetting
@@ -116,6 +172,11 @@ enum PreferenceDefaults
             PreferenceKey.prefShowClock: true,
             PreferenceKey.prefShowEnrollmentDays: true,
             PreferenceKey.prefShowNextEvent: true,
+            PreferenceKey.appDisplayMode: AppDisplayMode.all.rawValue,
+            PreferenceKey.showScheduleTab: true,
+            PreferenceKey.showPersonalSchedule: true,
+            PreferenceKey.showCampusPassFeatures: true,
+            PreferenceKey.showCampusPassCard: true,
             PreferenceKey.enableLiquidGlassEffect: true,
         ])
     }

@@ -14,6 +14,8 @@ struct NextCourseEntry: TimelineEntry
 {
     let date: Date
     let nextCourse: WidgetNextCourse?
+    /// 中号桌面组件显示的未来课程；锁屏和小号不会读取这个字段。
+    let upcomingCourses: [WidgetNextCourse]
     let isCampusPassActive: Bool
 }
 
@@ -23,14 +25,22 @@ struct NextCourseProvider: TimelineProvider
 {
     func placeholder(in _: Context) -> NextCourseEntry
     {
-        NextCourseEntry(date: .now, nextCourse: nil, isCampusPassActive: false)
+        NextCourseEntry(
+            date: .now,
+            nextCourse: nil,
+            upcomingCourses: [],
+            isCampusPassActive: false
+        )
     }
 
     private func currentEntry(at date: Date = .now) -> NextCourseEntry
     {
-        NextCourseEntry(
+        let nextCourse = NextCourseWidgetShared.currentOrNextCourse(at: date)
+        return NextCourseEntry(
             date: date,
-            nextCourse: NextCourseWidgetShared.currentOrNextCourse(at: date),
+            nextCourse: nextCourse,
+            // 中号固定展示“今天”的日期卡，右侧单独读取未来将要上的课程。
+            upcomingCourses: NextCourseWidgetShared.upcomingCourses(at: date),
             isCampusPassActive: IAPWidgetShared.loadStatus(at: date).isActive
         )
     }
@@ -61,9 +71,12 @@ struct NextCourseProvider: TimelineProvider
         let entry = currentEntry()
         let transitionDate = NextCourseWidgetShared.nextRefreshDate(after: entry.date)
         let subscriptionExpiration = IAPWidgetShared.nextExpirationDate(after: entry.date)
+        let countdownRefresh = NextCourseWidgetShared.nextCountdownRefreshDate(after: entry.date)
 
         // 订阅先到期时，在到期点重新读取状态，届时两个组件都会切到锁定页。
-        if let subscriptionExpiration, subscriptionExpiration <= transitionDate
+        if let subscriptionExpiration,
+           subscriptionExpiration <= transitionDate,
+           (countdownRefresh == nil || subscriptionExpiration <= countdownRefresh!)
         {
             completion(Timeline(entries: [entry], policy: .after(subscriptionExpiration)))
             return
@@ -74,6 +87,7 @@ struct NextCourseProvider: TimelineProvider
         let refreshDate = [
             NextCourseWidgetShared.nextRefreshDate(after: transitionEntry.date),
             subscriptionExpiration,
+            countdownRefresh,
         ]
         .compactMap { $0 }
         .min() ?? NextCourseWidgetShared.nextRefreshDate(after: transitionEntry.date)
@@ -96,6 +110,35 @@ struct NextCourseProvider: TimelineProvider
                 teacher: "张老师",
                 periodText: "第 3-4 节"
             ),
+            upcomingCourses: [
+                WidgetNextCourse(
+                    id: "demo-next-course",
+                    name: "编译原理",
+                    startDate: startDate,
+                    endDate: endDate,
+                    room: "逸夫楼 C302",
+                    teacher: "张老师",
+                    periodText: "第 3-4 节"
+                ),
+                WidgetNextCourse(
+                    id: "demo-second-course",
+                    name: "软件工程",
+                    startDate: endDate.addingTimeInterval(60 * 60),
+                    endDate: endDate.addingTimeInterval(2.5 * 60 * 60),
+                    room: "三教 A303",
+                    teacher: "李老师",
+                    periodText: "第 5-6 节"
+                ),
+                WidgetNextCourse(
+                    id: "demo-third-course",
+                    name: "数据结构",
+                    startDate: endDate.addingTimeInterval(4 * 60 * 60),
+                    endDate: endDate.addingTimeInterval(5.5 * 60 * 60),
+                    room: "主楼 B201",
+                    teacher: "王老师",
+                    periodText: "第 7-8 节"
+                ),
+            ],
             isCampusPassActive: true
         )
     }

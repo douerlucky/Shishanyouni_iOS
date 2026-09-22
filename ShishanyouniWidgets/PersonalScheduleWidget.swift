@@ -2,7 +2,7 @@
 //  PersonalScheduleWidget.swift
 //  ScheduleWidgetExtension
 //
-//  Created by douer_lucky on 2026/9/11.
+//  中号“近期日程”桌面组件。
 //
 
 import Foundation
@@ -10,93 +10,105 @@ import SwiftUI
 import WidgetKit
 import UIKit
 
-//定义 Widget 的时间线数据。
+/// WidgetKit 在某个时刻要渲染的日程快照。
+/// Provider 已经完成排序和数量统计，SwiftUI View 只负责排版，避免两处各自筛选。
 struct PersonalScheduleEntry: TimelineEntry
 {
-    let date: Date // 这张 Widget 快照从何时开始生效
-    let nextEvent: WidgetScheduleItem? // 要显示的下一条事件
-    /// 在生成这张快照时，校园通行证是否有效。
+    let date: Date
+    let events: [WidgetScheduleItem]
+    let remainingEventCount: Int
     let isCampusPassActive: Bool
 }
 
-// 只供 Canvas 与开发版使用的演示数据。
-// 正式版不会把这条假日程展示给用户。
+/// 只用于 Canvas 与组件库；真实组件绝不会将它写回 App Group。
 private enum ScheduleWidgetPreviewData
 {
     static func entry(at date: Date = .now) -> PersonalScheduleEntry
     {
-        let event = WidgetScheduleItem(
-            id: "demo",
-            title: "项目组会议",
-            startDate: date.addingTimeInterval(60 * 60),
-            endDate: nil,
-            location: "逸夫楼 C302",
-            detail: "预览日程",
-            source: .personalSchedule,
-            isAllDay: false
-        )
+        let events = [
+            WidgetScheduleItem(
+                id: "demo-meeting",
+                title: "项目组会议",
+                startDate: date.addingTimeInterval(60 * 60),
+                endDate: date.addingTimeInterval(90 * 60),
+                location: "逸夫楼 C302",
+                detail: nil,
+                source: .personalSchedule,
+                isAllDay: false
+            ),
+            WidgetScheduleItem(
+                id: "demo-review",
+                title: "复习编译原理",
+                startDate: date.addingTimeInterval(26 * 60 * 60),
+                endDate: nil,
+                location: nil,
+                detail: nil,
+                source: .personalSchedule,
+                isAllDay: false
+            ),
+            WidgetScheduleItem(
+                id: "demo-assignment",
+                title: "提交课程作业",
+                startDate: date.addingTimeInterval(50 * 60 * 60),
+                endDate: nil,
+                location: nil,
+                detail: nil,
+                source: .personalSchedule,
+                isAllDay: false
+            ),
+        ]
 
         return PersonalScheduleEntry(
             date: date,
-            nextEvent: event,
-            // Canvas 和组件库的演示数据不应被真实订阅状态遮住。
+            events: events,
+            remainingEventCount: 2,
             isCampusPassActive: true
         )
     }
 }
 
+/// 只负责时间线，日程筛选规则统一放在 SharedWidget，供 App 与 Extension 复用。
 struct PersonalScheduleProvider: TimelineProvider
 {
-    // Widget 还没有拿到真实数据时，系统在组件库中展示的锁定状态。
-    // 组件库不能可靠代表当前账户权益，因此不展示假日程，避免造成“未购买也能用”的误解。
     func placeholder(in _: Context) -> PersonalScheduleEntry
     {
         PersonalScheduleEntry(
             date: .now,
-            nextEvent: nil,
+            events: [],
+            remainingEventCount: 0,
             isCampusPassActive: false
         )
     }
 
-    // 正式 Widget 永远从 App Group 读取，Debug 与 Release 走同一条真实数据链路。
     private func currentEntry(at date: Date = .now) -> PersonalScheduleEntry
     {
-        let subscriptionStatus = IAPWidgetShared.loadStatus(at: date)
+        let presentation = PersonalScheduleWidgetShared.recentPresentation(at: date)
         return PersonalScheduleEntry(
             date: date,
-            nextEvent: PersonalScheduleWidgetShared.nextItem(at: date),
-            isCampusPassActive: subscriptionStatus.isActive
+            events: presentation?.items ?? [],
+            remainingEventCount: presentation?.remainingItemCount ?? 0,
+            isCampusPassActive: IAPWidgetShared.loadStatus(at: date).isActive
         )
     }
 
-    // Canvas 和系统快照使用的快速数据请求。
     func getSnapshot(
         in context: Context,
         completion: @escaping (PersonalScheduleEntry) -> Void
     )
     {
         let entry = currentEntry()
-        // Xcode Canvas / Widget Gallery 在没有 App Group 数据时仍展示设计稿，
-        // 真正放到桌面上的 Widget 则显示空状态而不是虚构日程。
-        if context.isPreview, entry.nextEvent == nil
-        {
-            completion(ScheduleWidgetPreviewData.entry(at: entry.date))
-        }
-        else
-        {
-            completion(entry)
-        }
+        completion(context.isPreview && entry.events.isEmpty
+            ? ScheduleWidgetPreviewData.entry(at: entry.date)
+            : entry)
     }
 
-    // Widget 正式运行时向系统交付的数据快照。
-    // 到下一条事项的开始/结束或订阅到期时，让系统重新向 App Group 读取数据。
     func getTimeline(
         in _: Context,
         completion: @escaping (Timeline<PersonalScheduleEntry>) -> Void
     )
     {
         let entry = currentEntry()
-        // 日程没有变化时也要在订阅到期点重新生成，避免过期后仍显示权益内容。
+        // 任一日程的开始／结束以及订阅到期，都可能改变组件内容。
         let scheduleRefreshDate = PersonalScheduleWidgetShared.nextRefreshDate(after: entry.date)
         let refreshDate = [
             scheduleRefreshDate,
@@ -113,122 +125,46 @@ struct PersonalScheduleWidgetEntryView: View
 {
     let entry: PersonalScheduleEntry
 
-    private var accentColor: Color
-    {
-        entry.nextEvent?.source == .schoolCalendar ? .green : .orange
-    }
-
     var body: some View
     {
         Group
         {
             if entry.isCampusPassActive
             {
-                VStack(alignment: .leading, spacing: 12)
+                VStack(alignment: .leading, spacing: 7)
                 {
                     HStack
                     {
-                        Label("下一条安排", systemImage: "calendar.badge.clock")
+                        Label("近期日程", systemImage: "calendar.badge.clock")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.secondary)
 
                         Spacer()
 
-                        if let event = entry.nextEvent
-                        {
-                            Text(event.source.displayName)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(accentColor)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(accentColor.opacity(0.12), in: Capsule())
-                        }
+                        Text("未来 7 天")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
                     }
 
-                    if let event = entry.nextEvent
+                    if entry.events.isEmpty
                     {
-                        HStack(alignment: .top, spacing: 12)
-                        {
-                            Image(systemName: event.source == .schoolCalendar ? "calendar" : "checklist")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundColor(accentColor)
-                                .frame(width: 44, height: 44)
-                                .background(accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
-
-                            VStack(alignment: .leading, spacing: 6)
-                            {
-                                Text(event.title)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .lineLimit(2)
-
-                                if event.isAllDay
-                                {
-                                    Label("全天", systemImage: "sun.max")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.secondary)
-                                }
-                                else
-                                {
-                                    HStack(spacing: 8)
-                                    {
-                                        Label
-                                        {
-                                            Text(event.startDate, style: .time)
-                                        }
-                                        icon:
-                                        {
-                                            Image(systemName: "clock")
-                                        }
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.secondary)
-
-                                        Text(event.startDate, style: .relative)
-                                            .font(.system(size: 12, weight: .medium))
-                                            .foregroundColor(accentColor)
-                                    }
-                                }
-
-                                if let location = event.location,
-                                   !location.isEmpty
-                                {
-                                    Label(location, systemImage: "mappin.and.ellipse")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
-                                }
-
-                                if let detail = event.detail,
-                                   !detail.isEmpty
-                                {
-                                    Text(detail)
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
-                                }
-                            }
-
-                            Spacer(minLength: 0)
-                        }
+                        PersonalScheduleWidgetEmptyView()
                     }
-
                     else
                     {
-                        VStack(alignment: .leading, spacing: 8)
+                        ForEach(entry.events)
+                        { event in
+                            PersonalScheduleWidgetEventRow(event: event)
+                        }
+
+                        if entry.remainingEventCount > 0
                         {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(.green)
-
-                            Text("接下来暂无安排")
-                                .font(.system(size: 18, weight: .semibold))
-
-                            Text("新增日程或同步校历后会显示在这里")
-                                .font(.system(size: 12))
+                            Text("未来一星期内还有 \(entry.remainingEventCount) 条")
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                     }
-
-                    Spacer(minLength: 0)
                 }
             }
             else
@@ -236,15 +172,108 @@ struct PersonalScheduleWidgetEntryView: View
                 PersonalScheduleWidgetLockedView()
             }
         }
-        .padding(16)
+        .padding(13)
         .containerBackground(for: .widget)
         {
             Color(uiColor: .secondarySystemGroupedBackground)
         }
     }
+
 }
 
-/// 日程内容属于校园通行证权益；未订阅时不渲染展示字段，只显示引导页。
+/// 单条事项最多两行，并在第二行标明日期，支持跨天展示未来七天内的三条日程。
+private struct PersonalScheduleWidgetEventRow: View
+{
+    let event: WidgetScheduleItem
+
+    private var accentColor: Color
+    {
+        event.source == .schoolCalendar ? .green : .orange
+    }
+
+    private var dateAndTimeText: String
+    {
+        let calendar = Calendar.current
+        let dateText: String
+
+        if calendar.isDateInToday(event.startDate)
+        {
+            dateText = "今天"
+        }
+        else if calendar.isDateInTomorrow(event.startDate)
+        {
+            dateText = "明天"
+        }
+        else
+        {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "zh_CN")
+            formatter.dateFormat = "M月d日 E"
+            dateText = formatter.string(from: event.startDate)
+        }
+
+        let timeText = event.isAllDay
+            ? "全天"
+            : event.startDate.formatted(date: .omitted, time: .shortened)
+        return "\(dateText) · \(timeText)"
+    }
+
+    var body: some View
+    {
+        HStack(spacing: 8)
+        {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(accentColor)
+                .frame(width: 3, height: 30)
+
+            VStack(alignment: .leading, spacing: 2)
+            {
+                Text(event.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+
+                HStack(spacing: 5)
+                {
+                    Image(systemName: event.isAllDay ? "sun.max" : "clock")
+                    Text(dateAndTimeText)
+
+                    if let location = event.location, !location.isEmpty
+                    {
+                        Text("· \(location)")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+private struct PersonalScheduleWidgetEmptyView: View
+{
+    var body: some View
+    {
+        VStack(alignment: .leading, spacing: 8)
+        {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 28))
+                .foregroundColor(.green)
+
+            Text("未来 7 天暂无安排")
+                .font(.system(size: 18, weight: .semibold))
+
+            Text("新增日程或同步校历后会显示在这里")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+/// 日程内容属于校园通行证权益；未订阅时不读取任何日程展示字段。
 private struct PersonalScheduleWidgetLockedView: View
 {
     var body: some View
@@ -259,7 +288,7 @@ private struct PersonalScheduleWidgetLockedView: View
                 .font(.system(size: 16, weight: .bold))
                 .multilineTextAlignment(.center)
 
-            Text("开通校园通行证后显示下一条日程安排")
+            Text("开通校园通行证后显示近期日程")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -270,27 +299,22 @@ private struct PersonalScheduleWidgetLockedView: View
 
 struct PersonalScheduleWidget: Widget
 {
-    // 主 App 用这个稳定标识符主动刷新本 Widget。
     static let kind = WidgetAppGroup.Kind.personalSchedule
 
     var body: some WidgetConfiguration
     {
-        StaticConfiguration(
-            kind: Self.kind,
-            provider: PersonalScheduleProvider() //把 Provider 交给 WidgetKit
-        )
+        StaticConfiguration(kind: Self.kind, provider: PersonalScheduleProvider())
         { entry in
             PersonalScheduleWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("日程")
-        .description("显示下一条日程安排")
+        .configurationDisplayName("近期日程")
+        .description("显示未来七天内优先级最高的三条日程")
         .supportedFamilies([.systemMedium])
     }
 }
 
-#Preview("日程组件", as: .systemMedium, widget: {
+#Preview("近期日程", as: .systemMedium, widget: {
     PersonalScheduleWidget()
 }, timelineProvider: {
-    // Canvas 直接复用正式 Provider，之后改数据来源时预览也会同步更新。
     PersonalScheduleProvider()
 })

@@ -24,8 +24,11 @@ struct WidgetCourse: Codable, Identifiable
     let colorRandom: Int
     let customColorHex: String?
     let isManual: Bool
+    /// 与 App 的 `Course.priority` 一一对应；旧 App Group 数据缺失时按 0 处理。
+    let priority: Int?
 
     var endPeriod: Int { start + step - 1 }
+    var displayPriority: Int { priority ?? 0 }
 }
 
 /// 课表 Widget 的只含 Foundation 的共享存储接口。

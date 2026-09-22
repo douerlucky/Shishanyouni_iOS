@@ -62,6 +62,9 @@ enum PersonalScheduleWidgetSync
         let items = (personalScheduleItems + schoolItems)
             .filter { PersonalScheduleWidgetShared.isActiveOrUpcoming($0, at: now, calendar: calendar) }
             .sorted { lhs, rhs in
+                // 先保住用户日程：当 App Group 达到上限时，校历不能把个人日程挤出候选数据。
+                if lhs.source != rhs.source { return lhs.source == .personalSchedule }
+
                 let lhsIsActive = isActive(lhs, at: now)
                 let rhsIsActive = isActive(rhs, at: now)
 

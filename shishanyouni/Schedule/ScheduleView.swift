@@ -16,6 +16,7 @@ struct ScheduleView: View
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("scheduleBackgroundEnabled") private var scheduleBackgroundEnabled: Bool = false
+    @AppStorage(PreferenceKey.showPersonalSchedule) private var showPersonalSchedule = true
 
     private enum ScheduleMode: String, CaseIterable, Identifiable
     {
@@ -23,6 +24,11 @@ struct ScheduleView: View
         case schoolCalendar = "校历"
 
         var id: String { rawValue }
+    }
+
+    private var availableModes: [ScheduleMode]
+    {
+        showPersonalSchedule ? ScheduleMode.allCases : [.schoolCalendar]
     }
 
     var body: some View
@@ -44,19 +50,22 @@ struct ScheduleView: View
 
             VStack(spacing: 0)
             {
-                Picker("日程模式", selection: $selectedMode)
+                if showPersonalSchedule
                 {
-                    ForEach(ScheduleMode.allCases)
-                    { mode in
-                        Text(mode.rawValue).tag(mode)
+                    Picker("日程模式", selection: $selectedMode)
+                    {
+                        ForEach(availableModes)
+                        { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+                    .opacity(scheduleContentOpacity)
+                    .padding(.horizontal, 12)
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
-                .opacity(scheduleContentOpacity)
-                .padding(.horizontal, 12)
 
                 Group
                 {
@@ -72,15 +81,26 @@ struct ScheduleView: View
             .padding(.top, scheduleBackgroundEnabled ? 72 : 0)
             .ignoresSafeArea(.container, edges: .bottom)
         }
-        .navigationTitle("日程")
+        .navigationTitle(showPersonalSchedule ? "日程" : "校历")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear
         {
             loadScheduleBackgroundImage()
+            if !showPersonalSchedule
+            {
+                selectedMode = .schoolCalendar
+            }
         }
         .onChange(of: backgroundImageFilename)
         { _ in
             loadScheduleBackgroundImage()
+        }
+        .onChange(of: showPersonalSchedule)
+        { isVisible in
+            if !isVisible
+            {
+                selectedMode = .schoolCalendar
+            }
         }
     }
 

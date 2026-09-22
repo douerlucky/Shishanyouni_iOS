@@ -238,9 +238,15 @@ struct Course: Identifiable, Codable
     /// 考核方式：考试、考查；未安排或尚未同步时为 nil。
     /// 使用可选值兼容旧版本已经保存的课表数据。
     var assessmentMethod: String? = nil
+    /// 同时间冲突课程的用户选择：`1` 为优先显示，`nil` / `0` 都表示未指定。
+    ///
+    /// 这里用可选值而不是非可选 `Int`，是为了让旧版本已保存、没有该字段的
+    /// JSON 仍能正常解码；所有展示层统一通过 `displayPriority` 将 nil 视作 0。
+    var priority: Int? = nil
 
     var endPeriod: Int { start + step - 1 } // 计算结束节次
     var parsedWeeks: Set<Int> { Set(weekList) } // 本课程上课的周次集合（供 CurriculumView 过滤使用）
+    var displayPriority: Int { priority ?? 0 }
 }
 
 extension Course
@@ -439,28 +445,101 @@ class GradeStore
 
     private init() {}
 
-    private func cacheKey(username: String, year: String, term: String) -> String
+    private func cacheKey(
+        username: String,
+        year: String,
+        term: String,
+        source: GradeQuerySource
+    ) -> String
+    {
+        "grade_cache_\(username)_\(year)_\(term)_\(source.rawValue)"
+    }
+
+    /// 兼容 1.5/1.6 以前没有数据源后缀的成绩缓存。
+    private func legacyCacheKey(username: String, year: String, term: String) -> String
     {
         "grade_cache_\(username)_\(year)_\(term)"
     }
 
     func saveGrades(_ grades: [Grade], username: String, year: String, term: String)
     {
+        saveGrades(
+            grades,
+            username: username,
+            year: year,
+            term: term,
+            source: .shishanyouni
+        )
+    }
+
+    func saveGrades(
+        _ grades: [Grade],
+        username: String,
+        year: String,
+        term: String,
+        source: GradeQuerySource
+    )
+    {
         let envelope = QueryCacheEnvelope(items: grades, updatedAt: Date())
         guard let data = try? JSONEncoder().encode(envelope) else { return }
-        UserDefaults.standard.set(data, forKey: cacheKey(username: username, year: year, term: term))
+        UserDefaults.standard.set(
+            data,
+            forKey: cacheKey(username: username, year: year, term: term, source: source)
+        )
     }
 
     func loadGrades(username: String, year: String, term: String) -> [Grade]
     {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey(username: username, year: year, term: term)),
+        loadGrades(
+            username: username,
+            year: year,
+            term: term,
+            source: .shishanyouni
+        )
+    }
+
+    func loadGrades(
+        username: String,
+        year: String,
+        term: String,
+        source: GradeQuerySource
+    ) -> [Grade]
+    {
+        let data = UserDefaults.standard.data(
+            forKey: cacheKey(username: username, year: year, term: term, source: source)
+        ) ?? (source == .shishanyouni
+            ? UserDefaults.standard.data(forKey: legacyCacheKey(username: username, year: year, term: term))
+            : nil)
+
+        guard let data,
               let envelope = try? JSONDecoder().decode(QueryCacheEnvelope<Grade>.self, from: data) else { return [] }
         return envelope.items
     }
 
     func lastUpdatedAt(username: String, year: String, term: String) -> Date?
     {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey(username: username, year: year, term: term)),
+        lastUpdatedAt(
+            username: username,
+            year: year,
+            term: term,
+            source: .shishanyouni
+        )
+    }
+
+    func lastUpdatedAt(
+        username: String,
+        year: String,
+        term: String,
+        source: GradeQuerySource
+    ) -> Date?
+    {
+        let data = UserDefaults.standard.data(
+            forKey: cacheKey(username: username, year: year, term: term, source: source)
+        ) ?? (source == .shishanyouni
+            ? UserDefaults.standard.data(forKey: legacyCacheKey(username: username, year: year, term: term))
+            : nil)
+
+        guard let data,
               let envelope = try? JSONDecoder().decode(QueryCacheEnvelope<Grade>.self, from: data) else { return nil }
         return envelope.updatedAt
     }

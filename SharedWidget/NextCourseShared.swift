@@ -20,6 +20,8 @@ struct WidgetNextCourse: Codable, Identifiable, Equatable
     let room: String?
     let teacher: String?
     let periodText: String
+    /// 来自 App `Course.priority` 的展示优先级；nil 与 0 都表示未指定。
+    let priority: Int?
 
     private enum CodingKeys: String, CodingKey
     {
@@ -30,6 +32,7 @@ struct WidgetNextCourse: Codable, Identifiable, Equatable
         case room
         case teacher
         case periodText
+        case priority
     }
 
     init(
@@ -39,7 +42,8 @@ struct WidgetNextCourse: Codable, Identifiable, Equatable
         endDate: Date,
         room: String?,
         teacher: String? = nil,
-        periodText: String
+        periodText: String,
+        priority: Int? = nil
     )
     {
         self.id = id
@@ -49,6 +53,7 @@ struct WidgetNextCourse: Codable, Identifiable, Equatable
         self.room = room
         self.teacher = teacher
         self.periodText = periodText
+        self.priority = priority
     }
 
     /// 兼容升级前已经写入 App Group 的课程数据。
@@ -63,7 +68,12 @@ struct WidgetNextCourse: Codable, Identifiable, Equatable
         room = try container.decodeIfPresent(String.self, forKey: .room)
         teacher = try container.decodeIfPresent(String.self, forKey: .teacher)
         periodText = try container.decode(String.self, forKey: .periodText)
+        // 旧版本的 App Group 数据没有 priority，缺失时按未指定处理。
+        priority = try container.decodeIfPresent(Int.self, forKey: .priority)
     }
+
+    /// 旧数据中的 nil 与新数据中的 0 语义完全相同：都没有手动优先级。
+    var displayPriority: Int { priority ?? 0 }
 }
 
 /// 下节课 Widget 的 App Group 存储和展示选择逻辑。
@@ -103,7 +113,7 @@ enum NextCourseWidgetShared
     {
         if let currentCourse = load()?
             .filter({ $0.startDate <= date && date < $0.endDate })
-            .min(by: { $0.endDate < $1.endDate })
+            .min(by: currentCourseComesBefore)
         {
             return currentCourse
         }
@@ -114,6 +124,35 @@ enum NextCourseWidgetShared
             .min
             {
                 if $0.startDate != $1.startDate { return $0.startDate < $1.startDate }
+                if $0.displayPriority != $1.displayPriority
+                {
+                    return $0.displayPriority > $1.displayPriority
+                }
+                return $0.id < $1.id
+            }
+    }
+
+    /// 返回从当前时刻起、未来两天内将要上的课程，供桌面中号组件显示三节。
+    ///
+    /// “正在上课”的课程属于小号／锁屏的当前状态，不占用这里的三个未来名额。
+    /// 同时段的课程先按 priority 决出唯一项，保证中号与课表卡片展示一致。
+    static func upcomingCourses(at date: Date = .now) -> [WidgetNextCourse]
+    {
+        let windowEnd = date.addingTimeInterval(displayWindow)
+        let candidates = (load() ?? [])
+            .filter
+            {
+                $0.startDate > date && $0.startDate <= windowEnd
+            }
+
+        return resolveOverlappingCourses(candidates)
+            .sorted
+            {
+                if $0.startDate != $1.startDate { return $0.startDate < $1.startDate }
+                if $0.displayPriority != $1.displayPriority
+                {
+                    return $0.displayPriority > $1.displayPriority
+                }
                 return $0.id < $1.id
             }
     }
@@ -145,5 +184,85 @@ enum NextCourseWidgetShared
             to: Calendar.current.startOfDay(for: date)
         )
         return tomorrow ?? date.addingTimeInterval(24 * 60 * 60)
+    }
+
+    /// WidgetKit 不是常驻计时器；在 24 小时内用约 5 分钟粒度刷新倒计时文字。
+    /// 课程开始和结束仍由 `nextRefreshDate` 精确作为时间线切换点。
+    static func nextCountdownRefreshDate(after date: Date = .now) -> Date?
+    {
+        guard let course = currentOrNextCourse(at: date) else { return nil }
+        let targetDate = course.startDate <= date ? course.endDate : course.startDate
+        guard targetDate.timeIntervalSince(date) <= 24 * 60 * 60 else { return nil }
+
+        let interval: TimeInterval = 5 * 60
+        let rounded = (floor(date.timeIntervalSince1970 / interval) + 1) * interval
+        let nextTick = Date(timeIntervalSince1970: rounded)
+        return min(nextTick, targetDate)
+    }
+
+    private static func currentCourseComesBefore(_ lhs: WidgetNextCourse, _ rhs: WidgetNextCourse) -> Bool
+    {
+        // 用户明确选中的课程先显示；未选择时保留原有“更早下课优先”的结果。
+        if lhs.displayPriority != rhs.displayPriority
+        {
+            return lhs.displayPriority > rhs.displayPriority
+        }
+        if lhs.endDate != rhs.endDate { return lhs.endDate < rhs.endDate }
+        return lhs.id < rhs.id
+    }
+
+    private static func resolveOverlappingCourses(_ courses: [WidgetNextCourse]) -> [WidgetNextCourse]
+    {
+        guard courses.count > 1 else { return courses }
+        let sorted = courses.sorted { $0.startDate < $1.startDate }
+        var parent = Array(0 ..< sorted.count)
+
+        func find(_ index: Int) -> Int
+        {
+            var index = index
+            while parent[index] != index { index = parent[index] }
+            return index
+        }
+
+        func union(_ lhs: Int, _ rhs: Int)
+        {
+            parent[find(lhs)] = find(rhs)
+        }
+
+        for lhs in 0 ..< sorted.count
+        {
+            for rhs in (lhs + 1) ..< sorted.count
+            {
+                if sorted[lhs].startDate < sorted[rhs].endDate,
+                   sorted[rhs].startDate < sorted[lhs].endDate
+                {
+                    union(lhs, rhs)
+                }
+            }
+        }
+
+        var groups: [Int: [WidgetNextCourse]] = [:]
+        for (index, course) in sorted.enumerated()
+        {
+            groups[find(index), default: []].append(course)
+        }
+
+        return groups.values.map
+        {
+            $0.reduce($0[0])
+            { currentWinner, candidate in
+                if currentWinner.displayPriority != candidate.displayPriority
+                {
+                    return currentWinner.displayPriority > candidate.displayPriority
+                        ? currentWinner
+                        : candidate
+                }
+                if currentWinner.endDate != candidate.endDate
+                {
+                    return currentWinner.endDate <= candidate.endDate ? currentWinner : candidate
+                }
+                return currentWinner.id <= candidate.id ? currentWinner : candidate
+            }
+        }
     }
 }

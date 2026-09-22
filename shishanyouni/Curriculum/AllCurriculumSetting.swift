@@ -31,8 +31,14 @@ struct AllCurriculumSetting: View
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
 
     @EnvironmentObject var iapStore: IAPStore
+
+    private var hidesCampusPassContent: Bool
+    {
+        !showCampusPassFeatures
+    }
 
     var body: some View
     {
@@ -49,7 +55,9 @@ struct AllCurriculumSetting: View
 
             List
             {
-                // 学期统计卡片（和课程卡片统一风格）
+                // 学期统计属于通行证内容；无通行证模式下连入口也不展示。
+                if !hidesCampusPassContent
+                {
                 Button(action: {
                     if iapStore.hasActiveSubscription
                     {
@@ -99,6 +107,7 @@ struct AllCurriculumSetting: View
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                }
 
                 if courses.isEmpty
                 {
@@ -157,11 +166,13 @@ struct AllCurriculumSetting: View
         .toolbar(.hidden, for: .tabBar)
         .toolbar
         {
-            // 课程相关工具：导入属于 IAP 权益，删除由 App 创建的数据始终可用。
-            ToolbarItem(placement: .navigationBarTrailing)
+            // 导入、删除系统日历都是通行证工具；无通行证模式下隐藏整个入口。
+            if !hidesCampusPassContent
             {
-                Menu
+                ToolbarItem(placement: .navigationBarTrailing)
                 {
+                    Menu
+                    {
                     Button
                     {
                         if iapStore.hasActiveSubscription
@@ -178,21 +189,22 @@ struct AllCurriculumSetting: View
                         Label("导入到系统日历", systemImage: "calendar.badge.plus")
                     }
 
-                    Button(role: .destructive)
-                    {
-                        showCalendarDeleteConfirmation = true
+                        Button(role: .destructive)
+                        {
+                            showCalendarDeleteConfirmation = true
+                        }
+                        label:
+                        {
+                            Label("删除已导入的课表日历", systemImage: "trash")
+                        }
                     }
                     label:
                     {
-                        Label("删除已导入的课表日历", systemImage: "trash")
+                        Image(systemName: isCalendarOperationInProgress ? "hourglass" : "ellipsis.circle")
+                            .fontWeight(.medium)
                     }
+                    .disabled(isCalendarOperationInProgress)
                 }
-                label:
-                {
-                    Image(systemName: isCalendarOperationInProgress ? "hourglass" : "ellipsis.circle")
-                        .fontWeight(.medium)
-                }
-                .disabled(isCalendarOperationInProgress)
             }
 
             // 保留原来的新增课程按钮
@@ -335,18 +347,21 @@ struct AllCurriculumSetting: View
 
                 Spacer()
 
-                Button
+                if !hidesCampusPassContent
                 {
-                    reminderOnBinding.wrappedValue.toggle()
-                } label: {
-                    Image(systemName: reminderOnBinding.wrappedValue ? "bell.fill" : "bell.slash")
-                        .font(.system(size: 16))
-                        .foregroundColor(reminderOnBinding.wrappedValue ? .yellow : .gray)
-                        .frame(width: 36, height: 36)
-                        .background(reminderOnBinding.wrappedValue ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.15))
-                        .clipShape(Circle())
+                    Button
+                    {
+                        reminderOnBinding.wrappedValue.toggle()
+                    } label: {
+                        Image(systemName: reminderOnBinding.wrappedValue ? "bell.fill" : "bell.slash")
+                            .font(.system(size: 16))
+                            .foregroundColor(reminderOnBinding.wrappedValue ? .yellow : .gray)
+                            .frame(width: 36, height: 36)
+                            .background(reminderOnBinding.wrappedValue ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.15))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             Label("周\(toWeekday(course.day)) 第\(course.start)-\(course.endPeriod)节",

@@ -36,12 +36,23 @@ struct WidgetScheduleItem: Codable, Identifiable, Equatable
     let isAllDay: Bool //是否全天
 }
 
+/// 中号“近期日程”组件的一张展示快照。
+/// 这是内存中的选择结果，不会写入 App Group；App Group 仍只保存原始日程 DTO。
+struct PersonalScheduleWidgetPresentation: Equatable
+{
+    let items: [WidgetScheduleItem]
+    let remainingItemCount: Int
+}
+
 /// 日程 Widget 的 App Group 存储与展示选择逻辑。
 ///
 /// 这个类型不 import WidgetKit，因此两个 Target 都可以安全使用；
 /// 调用 `WidgetCenter.reloadTimelines` 的职责留给 App 侧同步器。
 enum PersonalScheduleWidgetShared
 {
+    /// “近期日程”固定查看从此刻起的七天，不把更久以后的事项计入组件数量。
+    private static let presentationWindowDays = 7
+
     static func save(_ items: [WidgetScheduleItem])
     {
         guard let data = try? JSONEncoder().encode(items) else { return }
@@ -62,29 +73,35 @@ enum PersonalScheduleWidgetShared
         WidgetAppGroup.defaults?.removeObject(forKey: WidgetAppGroup.Key.personalScheduleItems)
     }
 
-    /// 当前应显示的下一条事项。
+    /// 选择中号组件要显示的“近期日程”。
     ///
-    /// 全天事项（例如校历、全天待办）优先级始终最低：只要候选中存在任意
-    /// 有具体时刻的日程，就显示定时日程；只有没有定时日程时才回退显示全天事项。
-    /// 同类事项中，正在进行的优先于未来事项，再按开始时间排序。
-    static func nextItem(at date: Date = .now) -> WidgetScheduleItem?
+    /// - 固定展示七天窗口中排序最靠前的三条；其余数量只统计同一窗口，文案为“未来一星期内还有 N 条”。
+    /// - 用户创建的日程永远优先于校历事项；同一来源内，全天事项排在定时事项后面。
+    /// - 组件行会各自显示日期，因此三条可以来自不同日期而不会失去时间语境。
+    static func recentPresentation(
+        at date: Date = .now,
+        maximumVisibleItemCount: Int = 3
+    ) -> PersonalScheduleWidgetPresentation?
     {
         guard let items = load() else { return nil }
         let calendar = Calendar.current
-        let candidates = items.filter { isActiveOrUpcoming($0, at: date, calendar: calendar) }
+        let windowEnd = calendar.date(byAdding: .day, value: presentationWindowDays, to: date)
+            ?? date.addingTimeInterval(TimeInterval(presentationWindowDays * 24 * 60 * 60))
+        let candidates = items
+            .filter
+            {
+                // 已开始但尚未结束的事项也算“近期”；未来事项则不能晚于七天窗口。
+                isActiveOrUpcoming($0, at: date, calendar: calendar) && $0.startDate <= windowEnd
+            }
+            .sorted { itemComesBefore($0, $1, at: date, calendar: calendar) }
 
-        return candidates.min
-        {
-            // 全天事项不能抢占任何定时日程，即使自身正在进行也一样。
-            if $0.isAllDay != $1.isAllDay { return !$0.isAllDay }
+        guard !candidates.isEmpty else { return nil }
+        let visibleItems = Array(candidates.prefix(maximumVisibleItemCount))
 
-            let lhsIsActive = isActive($0, at: date, calendar: calendar)
-            let rhsIsActive = isActive($1, at: date, calendar: calendar)
-
-            if lhsIsActive != rhsIsActive { return lhsIsActive }
-            if $0.startDate != $1.startDate { return $0.startDate < $1.startDate }
-            return $0.id < $1.id //返回最早开会的
-        }
+        return PersonalScheduleWidgetPresentation(
+            items: visibleItems,
+            remainingItemCount: max(candidates.count - visibleItems.count, 0)
+        )
     }
 
     /// App 同步器与 Widget Provider 共用同一套过期判定，避免旧事项列表显示过期事项。
@@ -110,28 +127,61 @@ enum PersonalScheduleWidgetShared
     /// 下一次值得请求系统刷新时间线的时间点。
     static func nextRefreshDate(after date: Date = .now) -> Date
     {
-        guard let item = nextItem(at: date) else
+        guard let items = load() else
         {
             let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: date))
             return tomorrow ?? date.addingTimeInterval(24 * 60 * 60)
         }
 
-        if item.startDate > date
+        // 事项开始、结束或进入未来七天窗口时，都可能改变前三条或剩余数量，取最近的状态切换点。
+        let nextTransition = items
+            .filter { isActiveOrUpcoming($0, at: date) }
+            .flatMap
+            { item -> [Date] in
+                var dates: [Date] = []
+                if item.startDate > date { dates.append(item.startDate) }
+                if let endDate = item.endDate, endDate > date { dates.append(endDate) }
+
+                // 例如八天后的事项，会在七天后进入组件的展示窗口；必须提前请求一次新 Timeline。
+                if let entersPresentationWindow = Calendar.current.date(
+                    byAdding: .day,
+                    value: -presentationWindowDays,
+                    to: item.startDate
+                ), entersPresentationWindow > date
+                {
+                    dates.append(entersPresentationWindow)
+                }
+                return dates
+            }
+            .min()
+
+        if let nextTransition
         {
-            return item.startDate
+            return nextTransition
         }
 
-        if item.isAllDay
-        {
-            return item.endDate ?? date.addingTimeInterval(60 * 60)
-        }
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: date))
+        return tomorrow ?? date.addingTimeInterval(24 * 60 * 60)
+    }
 
-        if let endDate = item.endDate, endDate > date
-        {
-            return endDate
-        }
+    private static func itemComesBefore(
+        _ lhs: WidgetScheduleItem,
+        _ rhs: WidgetScheduleItem,
+        at date: Date,
+        calendar: Calendar
+    ) -> Bool
+    {
+        // 用户亲自创建的日程永远比学校校历优先，哪怕校历的时间更早。
+        if lhs.source != rhs.source { return lhs.source == .personalSchedule }
 
-        return date.addingTimeInterval(60 * 60)
+        // 全天事项不能抢占任何定时日程，即使自身正在进行也一样。
+        if lhs.isAllDay != rhs.isAllDay { return !lhs.isAllDay }
+
+        let lhsIsActive = isActive(lhs, at: date, calendar: calendar)
+        let rhsIsActive = isActive(rhs, at: date, calendar: calendar)
+        if lhsIsActive != rhsIsActive { return lhsIsActive }
+        if lhs.startDate != rhs.startDate { return lhs.startDate < rhs.startDate }
+        return lhs.id < rhs.id
     }
 
     private static func isActive(_ item: WidgetScheduleItem, at date: Date, calendar: Calendar) -> Bool

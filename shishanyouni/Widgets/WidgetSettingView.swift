@@ -33,7 +33,7 @@ struct WidgetSettingView: View
                             Text("桌面小组件")
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
 
-                            Text("在主屏幕快速查看课表、下节课和下一条安排")
+                            Text("在主屏幕快速查看课表、下节课和近期日程")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -83,8 +83,8 @@ struct WidgetSettingView: View
                 }
 
                 WidgetShowcaseCard(
-                    title: "下一条安排",
-                    subtitle: "显示个人日程或校历中的下一条事项",
+                    title: "近期日程",
+                    subtitle: "显示日期、三条近期日程和余下数量",
                     family: "中号组件"
                 )
                 {
@@ -93,8 +93,8 @@ struct WidgetSettingView: View
 
                 WidgetShowcaseCard(
                     title: "下节课",
-                    subtitle: "显示当前课程或未来 2 天内的下一门课程",
-                    family: "小号组件 · 锁屏矩形"
+                    subtitle: "小号看一节课，中号查看未来三节课程",
+                    family: "小号 · 中号 · 锁屏矩形"
                 )
                 {
                     NextCourseWidgetThumbnail()
@@ -104,7 +104,7 @@ struct WidgetSettingView: View
             Section("如何添加")
             {
                 Label("长按主屏幕空白处，点击“编辑”后选择“添加小组件”。", systemImage: "hand.tap.fill")
-                Label("搜索“狮山有你”，再选择课表或下一条安排。", systemImage: "magnifyingglass")
+                Label("搜索“狮山有你”，再选择课表、近期日程或下节课。", systemImage: "magnifyingglass")
                 Label("锁屏长按“自定义” → “锁定屏幕” → “添加小组件”，选择“下节课”。", systemImage: "lock.fill")
                 Label("开通校园通行证后，组件会自动刷新并显示内容。", systemImage: "arrow.triangle.2.circlepath")
             }
@@ -223,12 +223,12 @@ private struct CurriculumWidgetThumbnail: View
     }
 }
 
-/// 中号“下一条安排”组件的缩小示意。
+/// 中号“近期日程”组件的缩小示意：明确日期、三条项目和余下数量。
 private struct PersonalScheduleWidgetThumbnail: View
 {
     var body: some View
     {
-        VStack(alignment: .leading, spacing: 7)
+        VStack(alignment: .leading, spacing: 4)
         {
             HStack
             {
@@ -236,43 +236,36 @@ private struct PersonalScheduleWidgetThumbnail: View
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(.secondary)
 
-                Text("日程")
+                Text("近期日程")
                     .font(.system(size: 8, weight: .medium))
                     .foregroundStyle(.secondary)
                     .fixedSize()
 
                 Spacer()
-                Text("个人")
+                Text("今天 · 9月22日")
                     .font(.system(size: 7, weight: .medium))
                     .foregroundStyle(.orange)
                     .fixedSize()
             }
 
-            HStack(spacing: 7)
-            {
-                Image(systemName: "checklist")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.orange)
-                    .frame(width: 27, height: 27)
-                    .background(.orange.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
-
-                VStack(alignment: .leading, spacing: 3)
+            ForEach(["项目组会议", "复习编译原理", "提交课程作业"], id: \.self)
+            { title in
+                HStack(spacing: 5)
                 {
-                    Text("项目组会议")
-                        .font(.system(size: 11, weight: .semibold))
-                        .fixedSize()
-                    Text("10:00 · 1 小时后")
-                        .font(.system(size: 7))
-                        .foregroundStyle(.secondary)
-                        .fixedSize()
-                    Text("逸夫楼 C302")
-                        .font(.system(size: 7))
-                        .foregroundStyle(.secondary)
-                        .fixedSize()
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(.orange)
+                        .frame(width: 2, height: 12)
+                    Text(title)
+                        .font(.system(size: 8, weight: .medium))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
                 }
             }
 
-            Spacer(minLength: 0)
+            Text("余下 2 条")
+                .font(.system(size: 7, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(10)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
@@ -293,7 +286,7 @@ private struct NextCourseWidgetThumbnail: View
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("1 小时后")
+                Text("1小时20分后")
                     .font(.system(size: 7, weight: .semibold))
                     .foregroundStyle(.blue)
                     .fixedSize()
@@ -309,7 +302,7 @@ private struct NextCourseWidgetThumbnail: View
                     .font(.system(size: 8))
                     .foregroundStyle(.secondary)
 
-                Text("10:00")
+                Text("今天 10:00–11:40")
                     .font(.system(size: 8))
                     .foregroundStyle(.secondary)
                     .fixedSize()

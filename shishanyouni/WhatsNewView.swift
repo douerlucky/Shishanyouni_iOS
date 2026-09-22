@@ -18,10 +18,28 @@ struct WhatsNewView: View
             color: .blue
         ),
         WhatsNewFeature(
+            title: "成绩分数详情查看",
+            message: "使用教务系统查询时，可以查看每门课程的详细分数。校园通行证用户专属。",
+            icon: "list.bullet.rectangle.portrait.fill",
+            color: .cyan
+        ),
+        WhatsNewFeature(
+            title: "冲突课程优先显示",
+            message: "课程时间冲突时，可长按课程选择优先显示的课程。",
+            icon: "arrow.up.arrow.down.circle.fill",
+            color: .pink
+        ),
+        WhatsNewFeature(
             title: "全新小组件",
-            message: "全新设计，现有大、中、小三种样式可选。校园通行证用户专属。",
+            message: "现在共有课表、近期日程、下节课和锁屏下节课 4 个小组件；桌面支持大、中、小样式。校园通行证用户专属。",
             icon: "widget.large.badge.plus",
             color: .purple
+        ),
+        WhatsNewFeature(
+            title: "“我的”页面重新分类",
+            message: "重新整理设置分类，并可根据自己的喜好自定义展示功能。",
+            icon: "slider.horizontal.3",
+            color: .mint
         ),
         WhatsNewFeature(
             title: "锁屏下节课",

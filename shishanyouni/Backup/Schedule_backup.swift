@@ -230,13 +230,27 @@ import Foundation
 
 class ScheduleQuery: NSObject, URLSessionTaskDelegate
 {
-    private let step1And2URL = "https://cas-paas.hzau.edu.cn/cas/login?service=http%3A%2F%2Fbyjxyt.hzau.edu.cn%2Fswlogin"
+    static let byjxytLoginServiceURL = "https://cas-paas.hzau.edu.cn/cas/login?service=http%3A%2F%2Fbyjxyt.hzau.edu.cn%2Fswlogin"
+    static let jwglLoginServiceURL = "https://cas-paas.hzau.edu.cn/cas/login?service=http%3A%2F%2Fjwgl.hzau.edu.cn%2Fsso%2Fhnyyxyiotlogin%3FtargetUrl%3D%7Bbase64%7DaHR0cDovL2p3Z2wuaHphdS5lZHUuY24vc3NvL3Nzby9pbmRleC5qc3A%3D"
+
+    private let step1And2URL: String
+    private let followServiceRedirects: Bool
     private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
     private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
     private let courseQueryURL = "http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151"
     
-    // 手动存储 cookies
-    private var cookieJar: [String: String] = [:]
+    // 按 Domain + Path + Name 保存，避免 CAS 的 SESSION 被误发给 jwgl。
+    private var cookieJar: [String: HTTPCookie] = [:]
+
+    init(
+        serviceURL: String = ScheduleQuery.byjxytLoginServiceURL,
+        followServiceRedirects: Bool = false
+    )
+    {
+        step1And2URL = serviceURL
+        self.followServiceRedirects = followServiceRedirects
+        super.init()
+    }
     
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
@@ -265,29 +279,59 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
                 partialResult[key] = value
             }
         }
-        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: step1And2URL)!)
+        let cookies = HTTPCookie.cookies(
+            withResponseHeaderFields: headerFields,
+            for: response.url ?? URL(string: step1And2URL)!
+        )
         for cookie in cookies
         {
-            cookieJar[cookie.name] = cookie.value
-            print("保存Cookie: \(cookie.name)=\(cookie.value.prefix(20))...")
+            let key = "\(cookie.domain)|\(cookie.path)|\(cookie.name)"
+            cookieJar[key] = cookie
+            print("保存Cookie[\(cookie.domain)]: \(cookie.name)=\(cookie.value.prefix(20))...")
         }
     }
     
-    private func getCookieHeader() -> String
+    private func getCookieHeader(for url: URL? = nil, includeAllPaths: Bool = false) -> String
     {
-        return cookieJar.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
-    }
+        let cookies = cookieJar.values.filter
+        { cookie in
+            guard let url else { return true }
+            guard let host = url.host?.lowercased() else { return false }
+            let domain = cookie.domain
+                .lowercased()
+                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+            let domainMatches = host == domain || host.hasSuffix(".\(domain)")
+            // 教务系统的 JSESSIONID 偶尔会被标成 /sso，但后续成绩接口位于 /cjcx。
+            // 登录票据请求仍按标准 Path 过滤；返回给教务接口时会显式放宽 Path。
+            let pathMatches = includeAllPaths || url.path.isEmpty || url.path.hasPrefix(cookie.path)
+            let secureMatches = !cookie.isSecure || url.scheme?.lowercased() == "https"
+            let hasNotExpired = cookie.expiresDate.map { $0 > Date() } ?? true
+            return domainMatches && pathMatches && secureMatches && hasNotExpired
+        }
 
-    /// 教务系统除 JSESSIONID 外还依赖 SLBServerPool* 保持会话落在同一台后端。
-    /// 只带 JSESSIONID 时，后续校历请求可能被负载均衡到另一台机器并回到登录页。
-    private func getAcademicCookieHeader() -> String
-    {
-        cookieJar.keys
-            .filter { $0 == "JSESSIONID" || $0.hasPrefix("SLBServerPool") }
-            .sorted()
-            .compactMap { name in
-                cookieJar[name].map { "\(name)=\($0)" }
+        // 一个会话有时同时返回 `/` 和 `/sso` 两个同名 JSESSIONID。
+        // Cookie 请求头不能重复发送同名值：放宽 Path 时优先根路径，
+        // 标准 Path 过滤时优先更具体的路径。
+        let uniqueCookies = cookies.reduce(into: [String: HTTPCookie]())
+        { result, cookie in
+            guard let existing = result[cookie.name] else
+            {
+                result[cookie.name] = cookie
+                return
             }
+
+            let shouldReplace = includeAllPaths
+                ? cookie.path.count < existing.path.count
+                : cookie.path.count > existing.path.count
+            if shouldReplace
+            {
+                result[cookie.name] = cookie
+            }
+        }
+
+        return uniqueCookies.values
+            .sorted { $0.name < $1.name }
+            .map { "\($0.name)=\($0.value)" }
             .joined(separator: "; ")
     }
 
@@ -297,24 +341,65 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         guard let url = URL(string: location) else { throw NSError(domain: "InvalidURL", code: 400) }
         print("🔐 尝试教务 Ticket: \(location)")
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-
-        let (_, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else
+        var currentURL = url
+        for redirectCount in 0 ... 10
         {
-            throw NSError(domain: "TicketLoginFailed", code: 500)
-        }
+            var request = URLRequest(url: currentURL)
+            request.httpMethod = "GET"
+            let cookieHeader = getCookieHeader(for: currentURL)
+            if !cookieHeader.isEmpty
+            {
+                request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
+            }
+            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
 
-        extractCookies(from: httpResponse)
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else
+            {
+                throw NSError(domain: "TicketLoginFailed", code: 500)
+            }
 
-        if let jsessionId = cookieJar["JSESSIONID"]
-        {
-            let academicCookieHeader = getAcademicCookieHeader()
-            print("✅ 登录成功，获得教务 Cookie（JSESSIONID + 负载均衡会话）")
-            return academicCookieHeader.isEmpty ? "JSESSIONID=\(jsessionId)" : academicCookieHeader
+            extractCookies(from: httpResponse)
+
+            if followServiceRedirects,
+               (300 ..< 400).contains(httpResponse.statusCode),
+               let redirectLocation = httpResponse.value(forHTTPHeaderField: "Location"),
+               let redirectURL = URL(string: redirectLocation, relativeTo: currentURL)?.absoluteURL
+            {
+                guard redirectCount < 10 else
+                {
+                    throw NSError(domain: "TooManyServiceRedirects", code: 310)
+                }
+                currentURL = redirectURL
+                print("🔐 跟随教务跳转: \(redirectURL.absoluteString)")
+                continue
+            }
+
+            let responseURL = httpResponse.url ?? currentURL
+            let serviceCookieHeader = getCookieHeader(for: responseURL, includeAllPaths: true)
+            let responseText = String(data: data, encoding: .utf8)?.lowercased() ?? ""
+            let responsePath = responseURL.path.lowercased()
+            let isAcademicLoginPage = responsePath.contains("/xtgl/login")
+                || responseText.contains("cas-paas.hzau.edu.cn/cas/login")
+                || responseText.contains("name=\"execution\"")
+                || responseText.contains("统一身份认证")
+
+            if !serviceCookieHeader.isEmpty && !isAcademicLoginPage
+            {
+                print("✅ 登录成功，获得 \(responseURL.host ?? "教务系统") Cookie")
+                return serviceCookieHeader
+            }
+
+            if isAcademicLoginPage
+            {
+                throw NSError(
+                    domain: "AcademicLoginFailed",
+                    code: 401,
+                    userInfo: [NSLocalizedDescriptionKey: "教务系统未接受 CAS 登录票据，请重试查询。"]
+                )
+            }
+
+            break
         }
 
         throw NSError(domain: "CookieNotFound", code: 404)
@@ -471,6 +556,9 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
     
     func loginAndGetCookie(username: String, rsaPassword: String, mfaCodeProvider: MFACodeProvider? = nil) async throws -> String
     {
+        // 每次查询都建立新会话，避免上一次失效的 Cookie 混入本次请求。
+        cookieJar.removeAll()
+
         // Step 1: GET 获取 Execution
         print("🔐 Step 1: 获取登录页面")
         var request1 = URLRequest(url: URL(string: step1And2URL)!)

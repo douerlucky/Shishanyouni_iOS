@@ -14,7 +14,16 @@ struct MainTabView: View
     @EnvironmentObject var userinfo: userInfo
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(PreferenceKey.lastShownWhatsNewVersion) private var lastShownWhatsNewVersion = ""
+    @AppStorage(PreferenceKey.appDisplayMode) private var displayModeRaw = AppDisplayMode.all.rawValue
+    @AppStorage(PreferenceKey.showScheduleTab) private var showScheduleTab = true
+    @AppStorage(PreferenceKey.showPersonalSchedule) private var showPersonalSchedule = true
+    @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
     @State private var showWhatsNew = false
+
+    private var isScheduleTabVisible: Bool
+    {
+        showScheduleTab
+    }
 
     init()
     {
@@ -30,15 +39,18 @@ struct MainTabView: View
     {
         TabView(selection: $userinfo.selectedTab)
         {
-            NavigationStack
+            if isScheduleTabVisible
             {
-                ScheduleView()
+                NavigationStack
+                {
+                    ScheduleView()
+                }
+                .tabItem
+                {
+                    Label(showPersonalSchedule ? "日程与校历" : "校历", systemImage: "calendar.badge.clock")
+                }
+                .tag(0)
             }
-            .tabItem
-            {
-                Label("日程与校历", systemImage: "calendar.badge.clock")
-            }
-            .tag(0)
 
             NavigationStack
             {
@@ -85,7 +97,13 @@ struct MainTabView: View
         }
         .onAppear
         {
+            migrateLegacyFeatureDisplayModeIfNeeded()
+            keepSelectionAvailableInCurrentMode()
             showWhatsNewIfNeeded()
+        }
+        .onChange(of: showScheduleTab)
+        { _ in
+            keepSelectionAvailableInCurrentMode()
         }
         .sheet(isPresented: $showWhatsNew)
         {
@@ -109,12 +127,44 @@ struct MainTabView: View
         return "\(version)-\(build)"
     }
 
+    /// 升级自旧版“简洁模式 / 无通行证内容”时，补齐新增的独立通行证开关。
+    private func migrateLegacyFeatureDisplayModeIfNeeded()
+    {
+        switch displayModeRaw
+        {
+        case "simple":
+            showCampusPassFeatures = false
+            displayModeRaw = AppDisplayMode.noCampusPassContent.rawValue
+        case "complete":
+            displayModeRaw = AppDisplayMode.all.rawValue
+        case AppDisplayMode.noCampusPassContent.rawValue:
+            showCampusPassFeatures = false
+        default:
+            break
+        }
+    }
+
     private func showWhatsNewIfNeeded()
     {
         guard #available(iOS 17.0, *) else { return }
         guard lastShownWhatsNewVersion != currentWhatsNewVersion else { return }
 
         showWhatsNew = true
+    }
+
+    private func keepSelectionAvailableInCurrentMode()
+    {
+        guard !isScheduleTabVisible else { return }
+
+        if userinfo.selectedTab == 0
+        {
+            userinfo.selectedTab = 1
+        }
+
+        if userinfo.defaultTab == 0
+        {
+            userinfo.defaultTab = 1
+        }
     }
 }
 

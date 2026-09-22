@@ -15,6 +15,18 @@ private let gradeQueryTimestampFormatter: DateFormatter = {
     return formatter
 }()
 
+/// 教务系统使用的学期值与 UI 不同：第一学期为 3，第二学期为 12。
+/// “全学年”不能传 0，必须分别查询两个学期再合并。
+private func teachingSystemTerms(for selectedTerm: String) -> [String]
+{
+    switch selectedTerm
+    {
+    case "1": return ["3"]
+    case "2": return ["12"]
+    default: return ["3", "12"]
+    }
+}
+
 // MARK: - GPA 计算 & 颜色
 
 /// 根据百分制成绩计算绩点（按学校标准）
@@ -110,32 +122,51 @@ struct GradeCard: View
     let grade: Grade
     /// 是否计入绩点统计
     @Binding var included: Bool
+    /// 只有教务系统数据源才有可用的成绩明细接口。
+    var showsDetailEntry = false
+    /// 成绩明细属于校园通行证功能，未开通时显示锁定提示。
+    var isDetailLocked = false
+    var onShowDetail: (() -> Void)? = nil
 
-    private var gpa: Double   { computeGPA(from: grade.cj) }
+    private var gpa: Double   { Double(grade.jd) ?? computeGPA(from: grade.cj) }
     private var color: Color  { included ? gpaColor(gpa) : .gray }
 
     var body: some View
     {
+        // 整张卡片是一个明确的 Button，右上角勾选框是独立 Button。
+        // 这样不会再依赖 ScrollView / LazyVGrid 中容易被竞争掉的 onTapGesture。
+        ZStack(alignment: .topTrailing)
+        {
+            Button(action: { onShowDetail?() })
+            {
+                cardContent
+            }
+            .buttonStyle(.plain)
+            .allowsHitTesting(showsDetailEntry)
+
+            // 勾选状态只影响绩点统计，不会触发成绩明细弹窗。
+            Button(action: { included.toggle() })
+            {
+                Image(systemName: included ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundColor(included ? gpaColor(gpa) : .gray.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+            .padding(16)
+        }
+        .animation(.easeInOut(duration: 0.2), value: included)
+    }
+
+    private var cardContent: some View
+    {
         VStack(alignment: .leading, spacing: 10)
         {
-            // 顶栏：课程名 + 勾选框
-            HStack(alignment: .top)
-            {
-                Text(grade.kcmc)
-                    .font(.system(size: 14))
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
-
-                // 右上角单选框
-                Button(action: { included.toggle() })
-                {
-                    Image(systemName: included ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 20))
-                        .foregroundColor(included ? gpaColor(gpa) : .gray.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-            }
+            Text(grade.kcmc)
+                .font(.system(size: 14))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.trailing, 28)
+                .frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
 
             // 绩点圆环（居中）
             HStack
@@ -172,6 +203,27 @@ struct GradeCard: View
                 }
             }
             .padding(.horizontal, 6)
+
+            if showsDetailEntry
+            {
+                HStack(spacing: 5)
+                {
+                    Image(systemName: isDetailLocked ? "lock.fill" : "list.bullet.rectangle")
+                    Text("成绩明细")
+                    Spacer()
+                    if isDetailLocked
+                    {
+                        Text("通行证")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.secondary)
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(isDetailLocked ? .secondary : .blue)
+                .padding(.top, 2)
+            }
         }
         .padding()
         .background(
@@ -179,7 +231,7 @@ struct GradeCard: View
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
                 .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
         )
-        .animation(.easeInOut(duration: 0.2), value: included)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
@@ -197,7 +249,7 @@ struct GradeSummaryCard: View
     {
         includedGrades.compactMap
         { g in
-            let gpa = computeGPA(from: g.cj)
+            let gpa = Double(g.jd) ?? computeGPA(from: g.cj)
             guard let xf = Double(g.xf) else { return nil }
             return (gpa, xf)
         }
@@ -348,6 +400,7 @@ struct GradeInquiry: View
 {
     @EnvironmentObject var userinfo: userInfo
     @EnvironmentObject var iapStore: IAPStore
+    @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
     @State var Grades: [Grade] = []
     @State private var isLoading = false
 
@@ -358,14 +411,28 @@ struct GradeInquiry: View
 
     @State var selectedYear = "2025"
     @State var selectedTerm = "2"
+    @AppStorage("gradeQuerySource") private var querySourceRaw = GradeQuerySource.shishanyouni.rawValue
 
     @State private var navigateToAnalysis = false
     @State private var navigateToSubscription = false
+    @State private var selectedGradeForDetail: Grade?
+    @State private var teachingSystemCookie: String?
 
     /// 被排除（不计入统计）的课程 ID 集合
     @State private var excludedIDs: Set<String> = []
 
     let gradeService = GradeService()
+
+    private var querySource: GradeQuerySource
+    {
+        get { GradeQuerySource(rawValue: querySourceRaw) ?? .shishanyouni }
+        nonmutating set { querySourceRaw = newValue.rawValue }
+    }
+
+    private var hidesCampusPassContent: Bool
+    {
+        !showCampusPassFeatures
+    }
 
     private var lastQueryText: String?
     {
@@ -373,7 +440,8 @@ struct GradeInquiry: View
               let date = GradeStore.shared.lastUpdatedAt(
                 username: userinfo.username,
                 year: selectedYear,
-                term: selectedTerm
+                term: selectedTerm,
+                source: querySource
               ) else { return nil }
         return "上次查询：\(gradeQueryTimestampFormatter.string(from: date))"
     }
@@ -447,6 +515,14 @@ struct GradeInquiry: View
                                     .font(.title2.bold())
                                     .padding(.horizontal, 16)
 
+                                if querySource != .teachingSystem
+                                {
+                                    Text("若要查看每科成绩的详细分数，请在下方选择使用教务系统进行查询")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 16)
+                                }
+
                                 let columns = [
                                     GridItem(.flexible(), spacing: 14),
                                     GridItem(.flexible())
@@ -462,7 +538,19 @@ struct GradeInquiry: View
                                                     if newVal { excludedIDs.remove(item.id) }
                                                     else      { excludedIDs.insert(item.id) }
                                                 }
-                                            )
+                                            ),
+                                            showsDetailEntry: !hidesCampusPassContent && querySource == .teachingSystem,
+                                            isDetailLocked: !iapStore.hasActiveSubscription,
+                                            onShowDetail: {
+                                                if iapStore.hasActiveSubscription
+                                                {
+                                                    selectedGradeForDetail = item
+                                                }
+                                                else
+                                                {
+                                                    navigateToSubscription = true
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -503,16 +591,48 @@ struct GradeInquiry: View
                 errorRetryAction: $errorRetryAction,
                 selectedYear: $selectedYear,
                 selectedTerm: $selectedTerm,
+                querySource: Binding(
+                    get: { querySource },
+                    set: { querySource = $0 }
+                ),
+                teachingSystemCookie: $teachingSystemCookie,
                 gradeService: gradeService,
                 onGradesLoaded: { excludedIDs = [] }   // 新查询时重置勾选
             )
+
+            // 成绩明细使用页面中央的自定义弹窗，而不是底部 Sheet。
+            if let grade = selectedGradeForDetail
+            {
+                Color.black.opacity(0.38)
+                    .ignoresSafeArea()
+                    .onTapGesture { selectedGradeForDetail = nil }
+                    .zIndex(20)
+
+                // 外层 ZStack 撑满屏幕，只负责居中；弹窗本身保持内容需要的高度。
+                ZStack
+                {
+                    GradeDetailPopup(
+                        grade: grade,
+                        cookie: teachingSystemCookie,
+                        fallbackStudentID: userinfo.username,
+                        fallbackYear: selectedYear,
+                        fallbackTerm: grade.xqm ?? teachingSystemTerms(for: selectedTerm).first ?? "3",
+                        gradeService: gradeService,
+                        onDismiss: { selectedGradeForDetail = nil }
+                    )
+                    .padding(.horizontal, 22)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .zIndex(21)
+            }
+
         }
         .navigationTitle("成绩查询")
         .toolbar(.hidden, for: .tabBar)
         .navigationBarTitleDisplayMode(.large)
         .toolbar
         {
-            if !Grades.isEmpty
+            if !Grades.isEmpty, !hidesCampusPassContent
             {
                 ToolbarItemGroup(placement: .topBarTrailing)
                 {
@@ -599,6 +719,16 @@ struct GradeInquiry: View
         { _ in
             loadCachedGrades()
         }
+        .onChange(of: querySourceRaw)
+        { _ in
+            teachingSystemCookie = nil
+            loadCachedGrades()
+        }
+        .onChange(of: userinfo.username)
+        { _ in
+            teachingSystemCookie = nil
+            loadCachedGrades()
+        }
     }
 
     private func loadCachedGrades()
@@ -607,7 +737,8 @@ struct GradeInquiry: View
         Grades = GradeStore.shared.loadGrades(
             username: userinfo.username,
             year: selectedYear,
-            term: selectedTerm
+            term: selectedTerm,
+            source: querySource
         )
         excludedIDs = []
     }
@@ -625,14 +756,22 @@ struct BottomButtonView: View
     @Binding var errorRetryAction: (() -> Void)?
     @Binding var selectedYear: String
     @Binding var selectedTerm: String
+    @Binding var querySource: GradeQuerySource
+    @Binding var teachingSystemCookie: String?
     @State private var showPicker = false
     @State private var showMFASheet = false
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
+    @State private var mfaFromShishanyouni = true
     @State private var mfaSendCodeAction: (() async -> String?)?
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @EnvironmentObject var userinfo: userInfo
     let gradeService: GradeService
+    /// 成绩明细必须使用 jwgl 域会话，因此这里走教务系统专用 CAS service。
+    private let scheduleQuery = ScheduleQuery(
+        serviceURL: ScheduleQuery.jwglLoginServiceURL,
+        followServiceRedirects: true
+    )
     /// 新数据加载完毕后调用（用于重置勾选状态）
     var onGradesLoaded: (() -> Void)? = nil
 
@@ -645,54 +784,80 @@ struct BottomButtonView: View
         return (enrollmentYear...endYear).map(String.init)
     }
 
-    /// xqm=0 是接口约定的全学年查询。
+    /// UI 的“全学年”用 0 表示；教务系统会拆成第一、第二学期两次查询。
     private let terms = [("全学年", "0"), ("第一学期", "1"), ("第二学期", "2")]
 
     private var selectionTitle: String
     {
-        let term = terms.first(where: { $0.1 == selectedTerm })?.0 ?? "全学年"
+        let term: String
+        switch selectedTerm
+        {
+        case "1": term = "上"
+        case "2": term = "下"
+        default: term = "全部"
+        }
         if selectedYear.isEmpty { return "所有成绩 · \(term)" }
         return "\(formatYearAbbreviation(selectedYear)) · \(term)"
     }
 
     var body: some View
     {
-        HStack(spacing: 15)
+        HStack(spacing: 8)
         {
+            // 数据源、学期、查询保持一排；学期按钮使用固定紧凑宽度。
+            QuerySourcePickerButton(
+                selection: $querySource,
+                fontSize: 13,
+                horizontalPadding: 10,
+                verticalPadding: 10
+            )
+            { source in
+                switchSource(to: source)
+            }
+            .disabled(isLoading)
+
             // 学期选择按钮
             Button(action: { showPicker = true })
             {
-                HStack
+                HStack(spacing: 4)
                 {
                     Text(selectionTitle)
                         .font(.system(size: 14, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .allowsTightening(true)
                     Image(systemName: "chevron.up")
                         .font(.system(size: 10, weight: .bold))
+                        .fixedSize()
                 }
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 8)
             .padding(.vertical, 10)
             .background(Color(.systemBackground).opacity(0.9))
             .clipShape(Capsule())
             .optionalLiquidGlass()
+            .frame(width: 112)
+            .disabled(isLoading)
 
-            // 查询按钮
             Button(action: { performGradeQuery() })
             {
                 Text("查询")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 24)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(Color.blue)
                     .clipShape(Capsule())
             }
             .optionalLiquidGlass()
             .clipShape(Capsule())
+            .frame(width: 82)
+            .disabled(isLoading)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 15)
-        .glassBackground(cornerRadius: 64)
+        .padding(10)
+        .glassBackground(cornerRadius: 32)
         .padding(.horizontal, 20)
         .padding(.bottom, 25)
         .sheet(isPresented: $showPicker)
@@ -745,12 +910,20 @@ struct BottomButtonView: View
             MFACodeInputSheet(
                 maskedPhone: mfaMaskedPhone,
                 code: $mfaCode,
-                fromShishanyouni: true,
+                fromShishanyouni: mfaFromShishanyouni,
                 onSendCode: $mfaSendCodeAction,
                 onCancel: { resolveMFACode(nil) },
                 onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
             )
         }
+    }
+
+    private func switchSource(to source: GradeQuerySource)
+    {
+        guard querySource != source else { return }
+        querySource = source
+        Grades = []
+        teachingSystemCookie = nil
     }
 
     private func fetchGradesWithMFA() async throws -> [Grade]
@@ -786,20 +959,66 @@ struct BottomButtonView: View
         {
             do
             {
-                let result = try await fetchGradesWithMFA()
+                let result: [Grade]
+                var newTeachingSystemCookie: String?
+
+                switch querySource
+                {
+                case .teachingSystem:
+                    guard !userinfo.encryptedPasswordSchool.isEmpty else
+                    {
+                        throw NSError(
+                            domain: "GradeService",
+                            code: 401,
+                            userInfo: [NSLocalizedDescriptionKey: "请先绑定教务系统账号。"]
+                        )
+                    }
+
+                    let cookie = try await scheduleQuery.loginAndGetCookie(
+                        username: userinfo.username,
+                        rsaPassword: userinfo.encryptedPasswordSchool,
+                        mfaCodeProvider: requestCASMFACode
+                    )
+                    if selectedTerm == "0"
+                    {
+                        result = try await gradeService.fetchAllYearGradesFromTeachingSystem(
+                            cookie: cookie,
+                            xnm: selectedYear
+                        )
+                    }
+                    else
+                    {
+                        let teachingTerm = teachingSystemTerms(for: selectedTerm)[0]
+                        result = try await gradeService.fetchGradesFromTeachingSystem(
+                            cookie: cookie,
+                            xnm: selectedYear,
+                            xqm: teachingTerm
+                        )
+                    }
+                    newTeachingSystemCookie = cookie
+
+                case .shishanyouni:
+                    result = try await fetchGradesWithMFA()
+                }
+
                 await MainActor.run
                 {
                     isLoading = false
                     Grades = result
+                    if let newTeachingSystemCookie
+                    {
+                        teachingSystemCookie = newTeachingSystemCookie
+                    }
                     GradeStore.shared.saveGrades(
                         Grades,
                         username: userinfo.username,
                         year: selectedYear,
-                        term: selectedTerm
+                        term: selectedTerm,
+                        source: querySource
                     )
                     onGradesLoaded?()
                     alertTitle   = "查询成功"
-                    alertMessage = "一共找到了 \(Grades.count) 门课的成绩"
+                    alertMessage = "从\(querySource.title)一共找到了 \(Grades.count) 门课的成绩"
                     showAlert    = true
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }
@@ -845,9 +1064,25 @@ struct BottomButtonView: View
     @MainActor
     private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
     {
+        mfaFromShishanyouni = true
         mfaMaskedPhone = maskedPhone
         mfaCode = ""
         mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func requestCASMFACode(maskedPhone: String?) async -> String?
+    {
+        mfaFromShishanyouni = false
+        mfaMaskedPhone = maskedPhone ?? "绑定手机号"
+        mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
         await Task.yield()
         showMFASheet = true
         return await withCheckedContinuation

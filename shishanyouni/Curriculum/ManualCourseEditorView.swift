@@ -398,7 +398,9 @@ struct ManualCourseEditorView: View
             colorRandom: editing.colorRandom,
             customColorHex: newColorHex,
             isManual: editing.isManual,
-            assessmentMethod: editing.assessmentMethod
+            assessmentMethod: editing.assessmentMethod,
+            // 编辑名称、地点等信息时不能意外清掉用户之前指定的优先显示。
+            priority: editing.priority
         )
         courses[index] = updated
 

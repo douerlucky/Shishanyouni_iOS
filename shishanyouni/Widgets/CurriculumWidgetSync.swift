@@ -93,7 +93,8 @@ enum CurriculumWidgetSync
                 colorRandom: $0.colorRandom,
                 customColorHex: $0.customColorHex,
                 isManual: $0.isManual,
-                assessmentMethod: nil
+                assessmentMethod: nil,
+                priority: $0.priority
             )
         }
     }
@@ -174,7 +175,9 @@ enum CurriculumWidgetSync
             weekList: course.weekList,
             colorRandom: course.colorRandom,
             customColorHex: course.customColorHex,
-            isManual: course.isManual
+            isManual: course.isManual,
+            // Widget 需要同 App 课表使用同一套“优先显示”结果。
+            priority: course.priority
         )
     }
 }

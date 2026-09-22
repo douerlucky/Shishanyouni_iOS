@@ -113,7 +113,9 @@ enum NextCourseSync
                         endDate: endDate,
                         room: course.room,
                         teacher: course.teacher,
-                        periodText: periodText(start: course.start, end: course.endPeriod)
+                        periodText: periodText(start: course.start, end: course.endPeriod),
+                        // 下节课桌面／锁屏组件也必须遵循用户在课表中选定的优先级。
+                        priority: course.priority
                     )
                 )
             }

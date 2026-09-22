@@ -63,6 +63,12 @@ struct HomeView: View
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
     @AppStorage("homeBackgroundEnabled") private var homeBackgroundEnabled: Bool = false
+    @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
+
+    private var hidesCampusPassContent: Bool
+    {
+        !showCampusPassFeatures
+    }
 
     var timeString: String
     {
@@ -125,18 +131,20 @@ struct HomeView: View
             items.append(HomeFeatureItem(key: .allCourses, title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: HomeMenuColor.yellow1) {
                 navigateToAllCoueseSearch = true
             })
-            items.append(HomeFeatureItem(key: .chooseCourse, title: "选课(beta)", icon: "checklist", color: HomeMenuColor.yellow2) {
-                // 选课会实际向教务系统提交选、退课请求，纳入校园通行证权益保护。
-                // 页面自身也会再次检查权限，避免从其它入口直达时绕过这里。
-                if iapStore.hasActiveSubscription
-                {
-                    navigateToChooseCourse = true
-                }
-                else
-                {
-                    navigateToSubscription = true
-                }
-            })
+            if !hidesCampusPassContent
+            {
+                items.append(HomeFeatureItem(key: .chooseCourse, title: "选课(beta)", icon: "checklist", color: HomeMenuColor.yellow2) {
+                    // 选课会实际向教务系统提交选、退课请求，属于通行证内容。
+                    if iapStore.hasActiveSubscription
+                    {
+                        navigateToChooseCourse = true
+                    }
+                    else
+                    {
+                        navigateToSubscription = true
+                    }
+                })
+            }
         }
 
         items.append(HomeFeatureItem(key: .classroom, title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1) {
@@ -148,16 +156,19 @@ struct HomeView: View
             items.append(HomeFeatureItem(key: .nanhuRun, title: "环湖跑查询", icon: "figure.run", color: HomeMenuColor.cyan1) {
                 navigateToNanhuRun = true
             })
-            items.append(HomeFeatureItem(key: .physicalTest, title: "体测查询", icon: "figure.run.square.stack.fill", color: HomeMenuColor.blue1) {
-                if iapStore.hasActiveSubscription
-                {
-                    navigateToPhysicalTest = true
-                }
-                else
-                {
-                    navigateToSubscription = true
-                }
-            })
+            if !hidesCampusPassContent
+            {
+                items.append(HomeFeatureItem(key: .physicalTest, title: "体测查询", icon: "figure.run.square.stack.fill", color: HomeMenuColor.blue1) {
+                    if iapStore.hasActiveSubscription
+                    {
+                        navigateToPhysicalTest = true
+                    }
+                    else
+                    {
+                        navigateToSubscription = true
+                    }
+                })
+            }
         }
 
         items.append(HomeFeatureItem(key: .physicalCalculator, title: "体测计算器", icon: "plus.forwardslash.minus", color: HomeMenuColor.blue2) {
@@ -166,26 +177,29 @@ struct HomeView: View
 
         if !isGuestMode
         {
-            items.append(HomeFeatureItem(key: .itc, title: "信息学院ITC平台 \n(beta)", icon: "chevron.left.forwardslash.chevron.right", color: HomeMenuColor.green2) {
-                if iapStore.hasActiveSubscription
-                {
-                    navigateToITC = true
-                }
-                else
-                {
-                    navigateToSubscription = true
-                }
-            })
-            items.append(HomeFeatureItem(key: .library, title: "图书馆预约（beta）", icon: "building.columns.fill", color: HomeMenuColor.cyan2) {
-                if iapStore.hasActiveSubscription
-                {
-                    navigateToLibrary = true
-                }
-                else
-                {
-                    navigateToSubscription = true
-                }
-            })
+            if !hidesCampusPassContent
+            {
+                items.append(HomeFeatureItem(key: .itc, title: "信息学院ITC平台 \n(beta)", icon: "chevron.left.forwardslash.chevron.right", color: HomeMenuColor.green2) {
+                    if iapStore.hasActiveSubscription
+                    {
+                        navigateToITC = true
+                    }
+                    else
+                    {
+                        navigateToSubscription = true
+                    }
+                })
+                items.append(HomeFeatureItem(key: .library, title: "图书馆预约（beta）", icon: "building.columns.fill", color: HomeMenuColor.cyan2) {
+                    if iapStore.hasActiveSubscription
+                    {
+                        navigateToLibrary = true
+                    }
+                    else
+                    {
+                        navigateToSubscription = true
+                    }
+                })
+            }
             items.append(HomeFeatureItem(key: .electricity, title: "宿舍电费", icon: "gauge.with.needle.fill", color: HomeMenuColor.purple1) {
                 navigateElectricity = true
             })

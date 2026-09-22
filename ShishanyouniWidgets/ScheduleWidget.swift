@@ -435,6 +435,11 @@ struct ScheduleWidgetEntryView: View
 
         func winner(_ a: WidgetCourse, _ b: WidgetCourse) -> WidgetCourse
         {
+            // 课表桌面组件与主 App 保持同一优先级选择规则。
+            if a.displayPriority != b.displayPriority
+            {
+                return a.displayPriority > b.displayPriority ? a : b
+            }
             if a.step != b.step { return a.step > b.step ? a : b }
             return a.isManual ? b : a
         }
@@ -631,8 +636,8 @@ private extension Array
         todayIndex: 4,
         currentPeriod: 9,
         weeklyCourses: [
-            WidgetCourse(id: "1", name: "编译原理", day: 2, start: 3, step: 2, room: nil, weekList: [8], colorRandom: 1, customColorHex: nil, isManual: false),
-            WidgetCourse(id: "2", name: "智慧农业", day: 5, start: 9, step: 2, room: nil, weekList: [8], colorRandom: 3, customColorHex: nil, isManual: false),
+            WidgetCourse(id: "1", name: "编译原理", day: 2, start: 3, step: 2, room: nil, weekList: [8], colorRandom: 1, customColorHex: nil, isManual: false, priority: nil),
+            WidgetCourse(id: "2", name: "智慧农业", day: 5, start: 9, step: 2, room: nil, weekList: [8], colorRandom: 3, customColorHex: nil, isManual: false, priority: nil),
         ],
         backgroundFilename: "",
         backgroundOpacity: 0.2,

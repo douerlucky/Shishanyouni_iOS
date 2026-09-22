@@ -13,6 +13,11 @@ import UIKit
 
 let curriculumCellHeight: CGFloat = 58
 
+func curriculumCellHeight(for fontScale: Double) -> CGFloat
+{
+    curriculumCellHeight * CGFloat(max(1.0, fontScale))
+}
+
 struct AddCourseContext: Identifiable
 {
     let id = UUID()
@@ -61,6 +66,7 @@ struct CurriculumView: View
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage(PreferenceKey.curriculumFontScale) private var curriculumFontScale: Double = 1.0
 
     let calendar = Calendar.current
     let minWeek = -9
@@ -81,6 +87,22 @@ struct CurriculumView: View
         CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
         print("✅ 课程保存成功，共 \(courses.count) 门")
         CurriculumNotificationManager.shared.rescheduleAllNotifications()
+    }
+
+    /// 将冲突组内被用户点选的课程设为唯一优先项。
+    /// 保存会触发 Widget 同步，因此 App、桌面、锁屏只会使用同一份选择结果。
+    private func setDisplayPriority(for selectedCourse: Course, in conflictGroup: [Course])
+    {
+        let conflictIDs = Set(conflictGroup.map(\.id))
+        guard conflictIDs.contains(selectedCourse.id) else { return }
+
+        for index in courses.indices where conflictIDs.contains(courses[index].id)
+        {
+            courses[index].priority = courses[index].id == selectedCourse.id ? 1 : 0
+        }
+
+        saveCourses()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     var body: some View
@@ -206,7 +228,7 @@ struct CurriculumView: View
                 {
                     HStack(alignment: .top, spacing: 0)
                     {
-                        TimeCurriculumView()
+                        TimeCurriculumView(fontScale: curriculumFontScale)
                             .frame(width: 60)
                             .opacity(scheduleContentOpacity)
                             .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
@@ -216,6 +238,7 @@ struct CurriculumView: View
                         CourseGridView(
                             courses: courses,
                             nowdisplayWeek: nowDisplayWeek,
+                            fontScale: curriculumFontScale,
                             onDeleteCourse: { course in
                                 removeCourseOccurrence(course, in: nowDisplayWeek)
                             },
@@ -227,6 +250,9 @@ struct CurriculumView: View
                             },
                             onAddCourseFromCard: { course in
                                 addCourseContext = AddCourseContext(day: course.day, period: course.start)
+                            },
+                            onSetCoursePriority: { selectedCourse, conflictGroup in
+                                setDisplayPriority(for: selectedCourse, in: conflictGroup)
                             }
                         )
                         .opacity(scheduleContentOpacity)
@@ -621,14 +647,38 @@ struct CourseGridView: View
 {
     let courses: [Course]
     let nowdisplayWeek: Int
+    let fontScale: Double
 
     var onDeleteCourse: ((Course) -> Void)?
     var onEditCourse: ((Course) -> Void)?
     var onLongPressEmptyCell: ((Int, Int) -> Void)?
     var onAddCourseFromCard: ((Course) -> Void)?
+    /// 课程卡片把整个冲突组一并交回父 View，父 View 负责持久化 priority。
+    var onSetCoursePriority: ((Course, [Course]) -> Void)?
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     private let weekdayNames = ["一", "二", "三", "四", "五", "六", "日"]
+
+    init(
+        courses: [Course],
+        nowdisplayWeek: Int,
+        fontScale: Double = 1.0,
+        onDeleteCourse: ((Course) -> Void)? = nil,
+        onEditCourse: ((Course) -> Void)? = nil,
+        onLongPressEmptyCell: ((Int, Int) -> Void)? = nil,
+        onAddCourseFromCard: ((Course) -> Void)? = nil,
+        onSetCoursePriority: ((Course, [Course]) -> Void)? = nil
+    )
+    {
+        self.courses = courses
+        self.nowdisplayWeek = nowdisplayWeek
+        self.fontScale = fontScale
+        self.onDeleteCourse = onDeleteCourse
+        self.onEditCourse = onEditCourse
+        self.onLongPressEmptyCell = onLongPressEmptyCell
+        self.onAddCourseFromCard = onAddCourseFromCard
+        self.onSetCoursePriority = onSetCoursePriority
+    }
 
     var body: some View
     {
@@ -729,9 +779,13 @@ struct CourseGridView: View
         a.start <= b.endPeriod && b.start <= a.endPeriod
     }
 
-    /// 包含型和贯穿型的统一胜者选择：节数长者优先，相同则导入课优先
+    /// 包含型和贯穿型的统一胜者选择：用户优先级 → 节数 → 导入课。
     private func winner(_ a: Course, _ b: Course) -> Course
     {
+        if a.displayPriority != b.displayPriority
+        {
+            return a.displayPriority > b.displayPriority ? a : b
+        }
         if a.step != b.step { return a.step > b.step ? a : b }
         return a.isManual ? b : a
     }
@@ -806,7 +860,7 @@ struct CourseGridView: View
         
         Color(.systemGray6)
             .opacity(0.4)
-            .frame(height: curriculumCellHeight)
+            .frame(height: curriculumCellHeight(for: fontScale))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:12)
             .padding(1)
@@ -844,7 +898,8 @@ struct CourseGridView: View
     private func courseCardView(course: Course, conflicts: [Course] = []) -> some View
     {
         let spans = CGFloat(course.step)
-        let cardHeight = spans * curriculumCellHeight + (spans - 1) * 2
+        let cellHeight = curriculumCellHeight(for: fontScale)
+        let cardHeight = spans * cellHeight + (spans - 1) * 2
         let color = courseColor(for: course)
 
         VStack(spacing: 4)
@@ -854,21 +909,21 @@ struct CourseGridView: View
             if course.name.count <= 5
             {
                 Text(course.name)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: CGFloat(12 * fontScale), weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
             }
             else if course.name.count > 5 && course.name.count <= 10
             {
                 Text(course.name)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: CGFloat(10 * fontScale), weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
             }
             else
             {
                 Text(course.name)
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: CGFloat(8 * fontScale), weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
             }
@@ -879,19 +934,19 @@ struct CourseGridView: View
                 {
                     if location.count <= 7
                     {
-                        Image(systemName: "location.fill").font(.system(size: 8))
-                        Text(location).font(.system(size: 10)).multilineTextAlignment(.center).lineLimit(2)
+                        Image(systemName: "location.fill").font(.system(size: CGFloat(8 * fontScale)))
+                        Text(location).font(.system(size: CGFloat(10 * fontScale))).multilineTextAlignment(.center).lineLimit(2)
                     }
                     else
                     {
                         // 前4个字符
                         Text(location.prefix(4))
-                            .font(.system(size: 8))
+                            .font(.system(size: CGFloat(8 * fontScale)))
                             .multilineTextAlignment(.center)
 
                         // 剩余部分（从第4个字符开始，对应 [4:]）
                         Text(String(location.dropFirst(4))) // 关键：dropFirst(4) 跳过前4个字符
-                            .font(.system(size: 7))
+                            .font(.system(size: CGFloat(7 * fontScale)))
                             .multilineTextAlignment(.center)
                             .lineLimit(1)
                     }
@@ -905,24 +960,24 @@ struct CourseGridView: View
                 {
                     if teacher.count <= 2
                     {
-                        Image(systemName: "person.fill").font(.system(size: 8))
+                        Image(systemName: "person.fill").font(.system(size: CGFloat(8 * fontScale)))
                         Text(teacher)
-                            .font(.system(size: 12))
+                            .font(.system(size: CGFloat(12 * fontScale)))
                             .multilineTextAlignment(.center)
                             .lineLimit(1)
                     }
                     else if teacher.count >= 3 && teacher.count <= 4
                     {
-                        Image(systemName: "person.fill").font(.system(size: 8))
+                        Image(systemName: "person.fill").font(.system(size: CGFloat(8 * fontScale)))
                         Text(teacher)
-                            .font(.system(size: 9))
+                            .font(.system(size: CGFloat(9 * fontScale)))
                             .multilineTextAlignment(.center)
                             .lineLimit(1)
                     }
                     else
                     {
                         Text(teacher)
-                            .font(.system(size: 8))
+                            .font(.system(size: CGFloat(8 * fontScale)))
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                     }
@@ -958,6 +1013,28 @@ struct CourseGridView: View
 
         .contextMenu
         {
+            if !conflicts.isEmpty
+            {
+                let conflictGroup = [course] + conflicts
+                Menu
+                {
+                    ForEach(conflictGroup)
+                    { candidate in
+                        Button
+                        {
+                            onSetCoursePriority?(candidate, conflictGroup)
+                        } label: {
+                            Label(
+                                candidate.name,
+                                systemImage: candidate.displayPriority == 1 ? "checkmark.star.fill" : "star"
+                            )
+                        }
+                    }
+                } label: {
+                    Label("优先显示课程", systemImage: "star")
+                }
+            }
+
             Button
             {
                 print("🔵 课程长按 → 编辑 [\(course.name)]")
@@ -1255,6 +1332,13 @@ struct ClassPeriod: Identifiable
 
 struct TimeCurriculumView: View
 {
+    let fontScale: Double
+
+    init(fontScale: Double = 1.0)
+    {
+        self.fontScale = fontScale
+    }
+
     @State private var now = Date()
     private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
@@ -1335,7 +1419,11 @@ struct TimeCurriculumView: View
                         .font(.system(size: 10, weight: .regular, design: .rounded))
                         .foregroundColor(isCurrent ? .white : .secondary)
                 }
-                .frame(maxWidth: .infinity, minHeight: curriculumCellHeight, maxHeight: curriculumCellHeight)
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: curriculumCellHeight(for: fontScale),
+                    maxHeight: curriculumCellHeight(for: fontScale)
+                )
                 .padding(.horizontal, 2)
                 .padding(.vertical, 1)
                 .background(
