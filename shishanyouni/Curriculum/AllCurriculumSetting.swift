@@ -524,23 +524,7 @@ struct AllCurriculumSetting: View
 
     private func loadBackgroundImage()
     {
-        guard !backgroundImageFilename.isEmpty
-        else
-        {
-            backgroundImage = nil
-            return
-        }
-        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(backgroundImageFilename)
-        if let data = try? Data(contentsOf: fileURL),
-           let image = UIImage(data: data)
-        {
-            backgroundImage = image
-        }
-        else
-        {
-            backgroundImage = nil
-        }
+        backgroundImage = BackgroundImageStore.loadImage(named: backgroundImageFilename)
     }
 
     private func loadSemesterStartDate()

@@ -334,6 +334,47 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		FE49577A3066BA8300B92FAA /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				FE28DF362F40437700814E65 /* SwiftyRSA.xcodeproj */,
+				FE3B40EF2F417D0C00C34896 /* SwiftyRSA.xcodeproj */,
+				FE1C95B22F91220400A81B3C /* SwiftyRSA.xcodeproj */,
+				FE77A01D2F37BC800045B79D /* SwiftyRSA.xcodeproj */,
+				A577A31D2F6E61AD006EC90E /* SwiftyRSA.xcodeproj */,
+				FE106FBA2F4328BF001EB50D /* SwiftyRSA.xcodeproj */,
+				A5032A062F6694EE00917FD3 /* SwiftyRSA.xcodeproj */,
+				FE05C2592F3E4483009522D6 /* SwiftyRSA.xcodeproj */,
+				FE6847842F3A33B500BC709F /* SwiftyRSA.xcodeproj */,
+				FE25E0202F389407005F9B7C /* SwiftyRSA.xcodeproj */,
+				A503295E2F66810900917FD3 /* SwiftyRSA.xcodeproj */,
+				A577A4922F6E9291006EC90E /* SwiftyRSA.xcodeproj */,
+				FE45AA872F7A67F30082B7E4 /* SwiftyRSA.xcodeproj */,
+				FE7FDF712F7AD1A900BFE579 /* SwiftyRSA.xcodeproj */,
+				FE111F0A2F91FA700097674B /* SwiftyRSA.xcodeproj */,
+				FE6D54EB2F64252E0063F464 /* SwiftyRSA.xcodeproj */,
+				FE45A9AD2F7A1DFB0082B7E4 /* SwiftyRSA.xcodeproj */,
+				FE0FAC442F616B3600F918D5 /* SwiftyRSA.xcodeproj */,
+				FE61BDA12F3A42F70082A9F9 /* SwiftyRSA.xcodeproj */,
+				FEADE0B02F607CB200C87F6D /* SwiftyRSA.xcodeproj */,
+				FE006B302F6085FC00FD1943 /* SwiftyRSA.xcodeproj */,
+				FE406A952F99F2F7007039C2 /* SwiftyRSA.xcodeproj */,
+				FEC4024F2F85384E00F916F1 /* SwiftyRSA.xcodeproj */,
+				FE38613D2F3CCF2400E0E1C9 /* SwiftyRSA.xcodeproj */,
+				FE8735F22F67C126007D0181 /* SwiftyRSA.xcodeproj */,
+				FEE808012F92242D005EC2E8 /* SwiftyRSA.xcodeproj */,
+				FE58BAB12F93C7440084972A /* SwiftyRSA.xcodeproj */,
+				FE0CDFE42F3FA546003F208B /* SwiftyRSA.xcodeproj */,
+				FEFF050E2F39F24C009EA8F0 /* SwiftyRSA.xcodeproj */,
+				FE3860C62F3AFA9500E0E1C9 /* SwiftyRSA.xcodeproj */,
+				FEFF05732F39F740009EA8F0 /* SwiftyRSA.xcodeproj */,
+				FEDE3E522F72B74B001ECA69 /* SwiftyRSA.xcodeproj */,
+				FEBC2B002F8F727000E9C0CE /* SwiftyRSA.xcodeproj */,
+				FE0EE3692F6EEA40009A37DD /* SwiftyRSA.xcodeproj */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		FE4D980D2F330FB40087BCAE = {
 			isa = PBXGroup;
 			children = (
@@ -347,6 +388,7 @@
 				FE406C1F2F9A4C4F007039C2 /* Frameworks */,
 				FE4D98172F330FB40087BCAE /* Products */,
 				FE1397703053BB030075B096 /* SharedWidget */,
+				FE49577A3066BA8300B92FAA /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -845,7 +887,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.6.2;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni.ScheduleWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -878,7 +920,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.6.2;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni.ScheduleWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1029,7 +1071,9 @@
 				INFOPLIST_FILE = shishanyouni/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "狮山有你";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "需要访问相册以保存课表图片";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "用于将课程和考试安排添加到系统日历。";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "用于将课程和考试安排添加到系统日历。";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用于将成绩长图保存到相册。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1040,7 +1084,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.6.2;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1065,7 +1109,9 @@
 				INFOPLIST_FILE = shishanyouni/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "狮山有你";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "需要访问相册以保存课表图片";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "用于将课程和考试安排添加到系统日历。";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "用于将课程和考试安排添加到系统日历。";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用于将成绩长图保存到相册。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1076,7 +1122,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.6.2;
 				PRODUCT_BUNDLE_IDENTIFIER = cn.edu.hzau.shishanyouni;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -229,32 +229,7 @@ struct HomeView: View
 
     private func loadHomeBackgroundImage()
     {
-        guard !backgroundImageFilename.isEmpty
-        else
-        {
-            backgroundImage = nil
-            return
-        }
-
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(backgroundImageFilename)
-
-        if let data = try? Data(contentsOf: documentsURL),
-           let image = UIImage(data: data)
-        {
-            backgroundImage = image
-            return
-        }
-
-        if let sharedURL = CurriculumWidgetSync.appGroupContainerURL()?.appendingPathComponent(backgroundImageFilename),
-           let data = try? Data(contentsOf: sharedURL),
-           let image = UIImage(data: data)
-        {
-            backgroundImage = image
-            return
-        }
-
-        backgroundImage = nil
+        backgroundImage = BackgroundImageStore.loadImage(named: backgroundImageFilename)
     }
 
     private func enterFavoriteEditing()

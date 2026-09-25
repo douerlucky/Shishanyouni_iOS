@@ -49,8 +49,10 @@ struct CurriculumView: View
     @State private var addCourseContext: AddCourseContext?
     @State private var editCourseContext: Course?
     
-    @AppStorage("enableLiquidGlassEffect") public var enableLiquidGlassEffect: Bool = false
-    @AppStorage("curriculumBackgroundEnabled") private var curriculumBackgroundEnabled: Bool = false
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) public var enableLiquidGlassEffect: Bool = false
+    // 与 BackgroundSettingView 保持同一默认值；首次选择自定义背景时，课表默认可见。
+    // 用户手动关闭后，AppStorage 中保存的 false 仍会优先于这个默认值。
+    @AppStorage(PreferenceKey.curriculumBackgroundEnabled) private var curriculumBackgroundEnabled: Bool = true
 
     @State var semesterStartDate: Date = {
         var components = DateComponents()
@@ -60,12 +62,12 @@ struct CurriculumView: View
         return Calendar.current.date(from: components) ?? Date()
     }()
 
-    @AppStorage("semesterStartDateTimestamp") private var savedTimestamp: Double = 0
-    @AppStorage("showBottomControls") private var showBottomControls: Bool = true
-    // Keep the old storage keys so existing timetable settings survive the folder rename.
-    @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
-    @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
-    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage(PreferenceKey.semesterStartDateTimestamp) private var savedTimestamp: Double = 0
+    @AppStorage(PreferenceKey.showBottomControls) private var showBottomControls: Bool = true
+    // Key 名称不变，只是集中在 PreferenceKey 管理；已保存的设置会继续生效。
+    @AppStorage(PreferenceKey.scheduleBackgroundImageFilename) private var backgroundImageFilename: String = ""
+    @AppStorage(PreferenceKey.scheduleBackgroundOpacity) private var backgroundOpacity: Double = 0.2
+    @AppStorage(PreferenceKey.scheduleContentOpacity) private var scheduleContentOpacity: Double = 1.0
     @AppStorage(PreferenceKey.curriculumFontScale) private var curriculumFontScale: Double = 1.0
 
     let calendar = Calendar.current
@@ -85,7 +87,6 @@ struct CurriculumView: View
     private func saveCourses()
     {
         CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
-        print("✅ 课程保存成功，共 \(courses.count) 门")
         CurriculumNotificationManager.shared.rescheduleAllNotifications()
     }
 
@@ -505,7 +506,6 @@ struct CurriculumView: View
         }
 
         courses = CurriculumStore.shared.loadCourses()
-        print("✅ 已加载 \(courses.count) 门课程")
         loadBackgroundImage()
     }
 
@@ -740,7 +740,6 @@ struct CourseGridView: View
         for (winner, conflicts) in resolved
         {
             startMap[winner.start] = (winner, conflicts)
-            print("📌 day\(day) 课程[\(winner.name)] start=\(winner.start) end=\(winner.endPeriod) conflicts=\(conflicts.map(\.name))")
         }
 
         var slots: [RenderSlot] = []
@@ -750,7 +749,6 @@ struct CourseGridView: View
         {
             if let (winner, conflicts) = startMap[period]
             {
-                print("🟢 day\(day) period=\(period) → 课程[\(winner.name)]，跳到\(winner.endPeriod + 1)")
                 slots.append(RenderSlot(
                     id: "c_\(winner.id)_\(period)",
                     kind: .course(winner, conflicts: conflicts)
@@ -759,7 +757,6 @@ struct CourseGridView: View
             }
             else
             {
-                print("⬜ day\(day) period=\(period) → 空白")
                 slots.append(RenderSlot(
                     id: "e_\(day)_\(period)",
                     kind: .empty(day: day, period: period)
@@ -845,7 +842,6 @@ struct CourseGridView: View
                 let w = group.reduce(group[0]) { winner($0, $1) }
                 let losers = group.filter { $0.id != w.id }
                 result.append((w, losers))
-                print("🏆 冲突组胜者[\(w.name)] step=\(w.step) isManual=\(w.isManual)，压住\(losers.map(\.name))")
             }
         }
 
@@ -870,7 +866,6 @@ struct CourseGridView: View
             {
                 Button
                 {
-                    print("🔵 空白长按 → 添加课程 day=\(day) period=\(period)")
                     onLongPressEmptyCell?(day, period)
                 } label: {
                     Label("添加课程", systemImage: "plus.circle")
@@ -885,10 +880,6 @@ struct CourseGridView: View
                         .font(.headline)
                 }
                 .padding(20)
-                .onAppear
-                {
-                    print("📋 [上下文菜单打开] 空白格子 day=\(day) period=\(period)")
-                }
             }
     }
 
@@ -1037,7 +1028,6 @@ struct CourseGridView: View
 
             Button
             {
-                print("🔵 课程长按 → 编辑 [\(course.name)]")
                 onEditCourse?(course)
             } label: {
                 Label("编辑", systemImage: "pencil")
@@ -1045,7 +1035,6 @@ struct CourseGridView: View
 
             Button
             {
-                print("🔵 课程长按 → 添加课程 day=\(course.day) period=\(course.start)")
                 onAddCourseFromCard?(course)
             } label: {
                 Label("添加课程", systemImage: "plus.circle")
@@ -1053,17 +1042,12 @@ struct CourseGridView: View
 
             Button(role: .destructive)
             {
-                print("🔴 课程长按 → 删除 [\(course.name)]")
                 onDeleteCourse?(course)
             } label: {
                 Label("删除", systemImage: "trash")
             }
         } preview: {
             CourseCardPreview(course: course, week: nowdisplayWeek, conflicts: conflicts)
-                .onAppear
-                {
-                    print("📋 [上下文菜单打开] 课程卡片 name=[\(course.name)] day=\(course.day) start=\(course.start) end=\(course.endPeriod) isManual=\(course.isManual) id=\(course.id)")
-                }
         }
     }
 
@@ -1262,60 +1246,7 @@ extension CurriculumView
 {
     private func loadBackgroundImage()
     {
-        guard !backgroundImageFilename.isEmpty
-        else
-        {
-            backgroundImage = nil
-            return
-        }
-        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(backgroundImageFilename)
-        if let data = try? Data(contentsOf: fileURL),
-           let image = UIImage(data: data)
-        {
-            backgroundImage = image
-        }
-        else
-        {
-            backgroundImage = nil
-        }
-    }
-
-    private func saveBackgroundImage(_ image: UIImage)
-    {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
-        let filename = "schedule_background_\(UUID().uuidString).jpg"
-        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(filename)
-        do
-        {
-            try data.write(to: fileURL)
-            // 删除旧文件
-            if !backgroundImageFilename.isEmpty
-            {
-                let oldURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                    .appendingPathComponent(backgroundImageFilename)
-                try? FileManager.default.removeItem(at: oldURL)
-            }
-            backgroundImageFilename = filename
-            backgroundImage = image
-        }
-        catch
-        {
-            print("Failed to save background image: \(error)")
-        }
-    }
-
-    private func clearBackgroundImage()
-    {
-        if !backgroundImageFilename.isEmpty
-        {
-            let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent(backgroundImageFilename)
-            try? FileManager.default.removeItem(at: fileURL)
-            backgroundImageFilename = ""
-        }
-        backgroundImage = nil
+        backgroundImage = BackgroundImageStore.loadImage(named: backgroundImageFilename)
     }
 }
 

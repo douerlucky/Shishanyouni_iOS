@@ -186,34 +186,20 @@ struct BackgroundSettingView: View
 
     private func loadPreviewImage()
     {
-        guard !backgroundImageFilename.isEmpty else { previewImage = nil; return }
-        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(backgroundImageFilename)
-        if let data = try? Data(contentsOf: fileURL) { previewImage = UIImage(data: data) }
+        previewImage = BackgroundImageStore.loadImage(named: backgroundImageFilename)
     }
 
     private func saveBackgroundImage(_ image: UIImage)
     {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
-        let filename = "schedule_background_\(UUID().uuidString).jpg"
-        let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(filename)
         do
         {
-            try data.write(to: fileURL)
-            if !backgroundImageFilename.isEmpty
-            {
-                let oldURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                    .appendingPathComponent(backgroundImageFilename)
-                try? FileManager.default.removeItem(at: oldURL)
-            }
+            let filename = try BackgroundImageStore.saveImage(
+                image,
+                replacing: backgroundImageFilename
+            )
             backgroundImageFilename = filename
-
-            if let sharedDir = CurriculumWidgetSync.appGroupContainerURL()
-            {
-                let sharedURL = sharedDir.appendingPathComponent(filename)
-                try? data.write(to: sharedURL)
-            }
+            // 选择图片就是明确要使用它；默认先应用到课表，其他页面仍由用户单独开关。
+            curriculumEnabled = true
             CurriculumWidgetSync.saveBackgroundMetadata(filename: filename, opacity: backgroundOpacity)
         }
         catch { print("Failed to save background image: \(error)") }
@@ -221,20 +207,9 @@ struct BackgroundSettingView: View
 
     private func clearBackgroundImage()
     {
-        if !backgroundImageFilename.isEmpty
-        {
-            let fileURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent(backgroundImageFilename)
-            try? FileManager.default.removeItem(at: fileURL)
-
-            if let sharedDir = CurriculumWidgetSync.appGroupContainerURL()
-            {
-                let sharedURL = sharedDir.appendingPathComponent(backgroundImageFilename)
-                try? FileManager.default.removeItem(at: sharedURL)
-            }
-            backgroundImageFilename = ""
-            CurriculumWidgetSync.clearBackgroundMetadata()
-        }
+        BackgroundImageStore.removeImage(named: backgroundImageFilename)
+        backgroundImageFilename = ""
+        CurriculumWidgetSync.clearBackgroundMetadata()
     }
 }
 
