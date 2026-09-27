@@ -165,9 +165,11 @@ enum CurriculumWidgetSync
 
     private static func widgetCourse(from course: Course) -> WidgetCourse
     {
-        WidgetCourse(
+        let shortName = course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        return WidgetCourse(
             id: course.id,
-            name: course.name,
+            name: shortName.isEmpty ? course.name : shortName,
             day: course.day,
             start: course.start,
             step: course.step,

@@ -8,6 +8,7 @@
 //  全部在同一个 VStack 层级
 //  课程卡片用 VStack + .background，不用 ZStack 叠层
 
+import Combine
 import SwiftUI
 import UIKit
 
@@ -30,6 +31,7 @@ struct AddCourseContext: Identifiable
 struct CurriculumView: View
 {
     @EnvironmentObject var userinfo: userInfo
+    @EnvironmentObject private var iapStore: IAPStore
     @State private var showSettings = false
     @State var nowDisplayMonth: Int = -1
     @State private var courses: [Course] = []
@@ -69,10 +71,29 @@ struct CurriculumView: View
     @AppStorage(PreferenceKey.scheduleBackgroundOpacity) private var backgroundOpacity: Double = 0.2
     @AppStorage(PreferenceKey.scheduleContentOpacity) private var scheduleContentOpacity: Double = 1.0
     @AppStorage(PreferenceKey.curriculumFontScale) private var curriculumFontScale: Double = 1.0
+    @AppStorage(PreferenceKey.showNoonPeriod) private var showNoonPeriod = false
+    @AppStorage(PreferenceKey.showEveningPeriod) private var showEveningPeriod = false
 
     let calendar = Calendar.current
     let minWeek = -9
     let maxWeek = 30
+
+    /// 关闭开关或校园通行证失效时只隐藏行，不会删除已经创建的课程。
+    private var visiblePeriods: [Int]
+    {
+        CurriculumClassSchedule.displayOrder.filter
+        { period in
+            switch period
+            {
+            case CurriculumClassSchedule.noonPeriod:
+                return showNoonPeriod && iapStore.hasActiveSubscription
+            case CurriculumClassSchedule.eveningPeriod:
+                return showEveningPeriod && iapStore.hasActiveSubscription
+            default:
+                return true
+            }
+        }
+    }
 
     private var weekBinding: Binding<String>
     {
@@ -88,6 +109,14 @@ struct CurriculumView: View
     {
         CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
         CurriculumNotificationManager.shared.rescheduleAllNotifications()
+    }
+
+    /// 课表格按单个时间段渲染；长按其中一段时，编辑器需要拿到整门课。
+    private func courseGroup(for course: Course) -> CourseGroup
+    {
+        let key = CourseGroupKey(course: course)
+        let groupCourses = courses.filter { CourseGroupKey(course: $0) == key }
+        return CourseGroup(id: key, courses: groupCourses)
     }
 
     /// 将冲突组内被用户点选的课程设为唯一优先项。
@@ -192,11 +221,14 @@ struct CurriculumView: View
         }
         .sheet(item: $editCourseContext)
         { course in
-            ManualCourseEditorView(courses: $courses, mode: .edit(course))
+            CourseGroupEditorView(
+                courses: $courses,
+                mode: .edit(courseGroup(for: course))
+            )
         }
         .sheet(item: $addCourseContext)
         { context in
-            ManualCourseEditorView(
+            CourseGroupEditorView(
                 courses: $courses,
                 mode: .add(prefillWeekday: context.day, prefillPeriod: context.period)
             )
@@ -229,17 +261,18 @@ struct CurriculumView: View
                 {
                     HStack(alignment: .top, spacing: 0)
                     {
-                        TimeCurriculumView(fontScale: curriculumFontScale)
+                        TimeCurriculumView(
+                            fontScale: curriculumFontScale,
+                            visiblePeriods: visiblePeriods
+                        )
                             .frame(width: 60)
                             .opacity(scheduleContentOpacity)
-                            .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
-                            .background(Color(.secondarySystemBackground).opacity(0.5))
-                            .clipShape(Capsule())
 
                         CourseGridView(
                             courses: courses,
                             nowdisplayWeek: nowDisplayWeek,
                             fontScale: curriculumFontScale,
+                            visiblePeriods: visiblePeriods,
                             onDeleteCourse: { course in
                                 removeCourseOccurrence(course, in: nowDisplayWeek)
                             },
@@ -578,6 +611,7 @@ struct CurriculumView: View
             let updatedCourse = Course(
                 id: target.id,
                 name: target.name,
+                shortName: target.shortName,
                 day: target.day,
                 start: target.start,
                 step: target.step,
@@ -637,7 +671,7 @@ struct WeekHeaderView: View
 }
 
 // CourseGridView
-// 每天一个 VStack，从第1节到第12节顺序渲染
+// 每天一个 VStack，按统一的显示顺序渲染：1–4 节、中午、5–8 节、晚上、9–12 节。
 // 课程起始节次渲染课程卡片，跳过后续被占节次
 // 空白节次渲染空白格子
 // 所有元素在同一个vstack里，同一层级无任何重叠
@@ -648,6 +682,7 @@ struct CourseGridView: View
     let courses: [Course]
     let nowdisplayWeek: Int
     let fontScale: Double
+    let visiblePeriods: [Int]
 
     var onDeleteCourse: ((Course) -> Void)?
     var onEditCourse: ((Course) -> Void)?
@@ -663,6 +698,7 @@ struct CourseGridView: View
         courses: [Course],
         nowdisplayWeek: Int,
         fontScale: Double = 1.0,
+        visiblePeriods: [Int] = CurriculumClassSchedule.displayOrder,
         onDeleteCourse: ((Course) -> Void)? = nil,
         onEditCourse: ((Course) -> Void)? = nil,
         onLongPressEmptyCell: ((Int, Int) -> Void)? = nil,
@@ -673,6 +709,7 @@ struct CourseGridView: View
         self.courses = courses
         self.nowdisplayWeek = nowdisplayWeek
         self.fontScale = fontScale
+        self.visiblePeriods = visiblePeriods
         self.onDeleteCourse = onDeleteCourse
         self.onEditCourse = onEditCourse
         self.onLongPressEmptyCell = onLongPressEmptyCell
@@ -729,7 +766,7 @@ struct CourseGridView: View
         return courses.filter { $0.day == day && $0.parsedWeeks.contains(nowdisplayWeek) }
     }
 
-    // 从第1节到第12节顺序扫描，生成渲染列表
+    // 按正式显示顺序扫描，生成渲染列表。
     // day从外层ForEach传入，保证空白格子的day永远正确
     private func buildSlots(day: Int, dayCourses: [Course]) -> [RenderSlot]
     {
@@ -743,17 +780,31 @@ struct CourseGridView: View
         }
 
         var slots: [RenderSlot] = []
-        var period = 1
+        var displayIndex = 0
 
-        while period <= 12
+        while displayIndex < visiblePeriods.count
         {
+            let period = visiblePeriods[displayIndex]
+
             if let (winner, conflicts) = startMap[period]
             {
                 slots.append(RenderSlot(
                     id: "c_\(winner.id)_\(period)",
                     kind: .course(winner, conflicts: conflicts)
                 ))
-                period = winner.endPeriod + 1
+                let span = CurriculumClassSchedule.displayPeriods(
+                        start: winner.start,
+                        end: winner.endPeriod
+                    )
+                    .filter(visiblePeriods.contains)
+                    .count
+                guard span > 0
+                else
+                {
+                    displayIndex += 1
+                    continue
+                }
+                displayIndex += span
             }
             else
             {
@@ -761,7 +812,7 @@ struct CourseGridView: View
                     id: "e_\(day)_\(period)",
                     kind: .empty(day: day, period: period)
                 ))
-                period += 1
+                displayIndex += 1
             }
         }
 
@@ -770,10 +821,19 @@ struct CourseGridView: View
 
     // MARK: - 冲突检测与解析
 
-    /// 两课程时间段是否有任意重叠
+    /// 两课程在课表可见行上是否有任意重叠。
+    /// 普通课程可覆盖中午或晚上，因此不能只用 1–12 的数字范围比较。
     private func overlaps(_ a: Course, _ b: Course) -> Bool
     {
-        a.start <= b.endPeriod && b.start <= a.endPeriod
+        let aPeriods = Set(CurriculumClassSchedule.displayPeriods(
+            start: a.start,
+            end: a.endPeriod
+        ))
+        let bPeriods = Set(CurriculumClassSchedule.displayPeriods(
+            start: b.start,
+            end: b.endPeriod
+        ))
+        return !aPeriods.isDisjoint(with: bPeriods)
     }
 
     /// 包含型和贯穿型的统一胜者选择：用户优先级 → 节数 → 导入课。
@@ -876,7 +936,7 @@ struct CourseGridView: View
                     Image(systemName: "plus.circle.fill")
                         .font(.largeTitle)
                         .foregroundColor(.blue)
-                    Text("周\(weekdayNames[day - 1]) 第\(period)节")
+                    Text("周\(weekdayNames[day - 1]) \(CurriculumClassSchedule.displayName(for: period))")
                         .font(.headline)
                 }
                 .padding(20)
@@ -888,7 +948,17 @@ struct CourseGridView: View
     @ViewBuilder
     private func courseCardView(course: Course, conflicts: [Course] = []) -> some View
     {
-        let spans = CGFloat(course.step)
+        // 时段设置隐藏中午或晚上后，课程卡片也必须只占可见行的高度，
+        // 否则跨过该时段的课程会与后面的网格错位。
+        let spans = CGFloat(max(
+            CurriculumClassSchedule.displayPeriods(
+                start: course.start,
+                end: course.endPeriod
+            )
+            .filter(visiblePeriods.contains)
+            .count,
+            1
+        ))
         let cellHeight = curriculumCellHeight(for: fontScale)
         let cardHeight = spans * cellHeight + (spans - 1) * 2
         let color = courseColor(for: course)
@@ -897,85 +967,44 @@ struct CourseGridView: View
         {
             Spacer(minLength: 2)
 
-            if course.name.count <= 5
-            {
-                Text(course.name)
-                    .font(.system(size: CGFloat(12 * fontScale), weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-            }
-            else if course.name.count > 5 && course.name.count <= 10
-            {
-                Text(course.name)
-                    .font(.system(size: CGFloat(10 * fontScale), weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-            }
-            else
-            {
-                Text(course.name)
-                    .font(.system(size: CGFloat(8 * fontScale), weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-            }
 
-            if let location = course.room
+            let shortName = course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+            Text(shortName.isEmpty ? course.name : shortName)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white)
+                .lineLimit(4)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.center)
+
+            if let room = course.room
             {
-                VStack(spacing: 2)
+                HStack(alignment: .center, spacing: 2)
                 {
-                    if location.count <= 7
-                    {
-                        Image(systemName: "location.fill").font(.system(size: CGFloat(8 * fontScale)))
-                        Text(location).font(.system(size: CGFloat(10 * fontScale))).multilineTextAlignment(.center).lineLimit(2)
-                    }
-                    else
-                    {
-                        // 前4个字符
-                        Text(location.prefix(4))
-                            .font(.system(size: CGFloat(8 * fontScale)))
-                            .multilineTextAlignment(.center)
-
-                        // 剩余部分（从第4个字符开始，对应 [4:]）
-                        Text(String(location.dropFirst(4))) // 关键：dropFirst(4) 跳过前4个字符
-                            .font(.system(size: CGFloat(7 * fontScale)))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(1)
-                    }
+                    Image(systemName: "location.fill")
+                    Text(room)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.leading)
                 }
+                .font(.system(size: 8))
                 .foregroundColor(.white)
             }
 
             if let teacher = course.teacher
             {
-                VStack(spacing: 2)
+                HStack(alignment: .center, spacing: 2)
                 {
-                    if teacher.count <= 2
-                    {
-                        Image(systemName: "person.fill").font(.system(size: CGFloat(8 * fontScale)))
-                        Text(teacher)
-                            .font(.system(size: CGFloat(12 * fontScale)))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(1)
-                    }
-                    else if teacher.count >= 3 && teacher.count <= 4
-                    {
-                        Image(systemName: "person.fill").font(.system(size: CGFloat(8 * fontScale)))
-                        Text(teacher)
-                            .font(.system(size: CGFloat(9 * fontScale)))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(1)
-                    }
-                    else
-                    {
-                        Text(teacher)
-                            .font(.system(size: CGFloat(8 * fontScale)))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
+                    Image(systemName: "person.fill")
+
+                    Text(teacher)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.leading)
                 }
+                .font(.system(size: 8))
                 .foregroundColor(.white)
             }
-
             Spacer(minLength: 2)
         }
 
@@ -1011,12 +1040,14 @@ struct CourseGridView: View
                 {
                     ForEach(conflictGroup)
                     { candidate in
+                        let shortName = candidate.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
                         Button
                         {
                             onSetCoursePriority?(candidate, conflictGroup)
                         } label: {
                             Label(
-                                candidate.name,
+                                shortName.isEmpty ? candidate.name : shortName,
                                 systemImage: candidate.displayPriority == 1 ? "checkmark.star.fill" : "star"
                             )
                         }
@@ -1109,7 +1140,10 @@ struct CourseCardPreview: View
                 Text("第 \(week) 周")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundColor(.secondary)
-                Text("第\(course.start)–\(course.endPeriod)节")
+                Text(CurriculumClassSchedule.periodText(
+                    start: course.start,
+                    end: course.endPeriod
+                ))
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                 Text(weekdays[course.day - 1])
@@ -1126,10 +1160,20 @@ struct CourseCardPreview: View
 
             VStack(alignment: .leading, spacing: 8)
             {
-                Text(course.name)
+                let shortName = course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+                Text(shortName.isEmpty ? course.name : shortName)
                     .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.primary)
                     .lineLimit(2)
+
+                if !shortName.isEmpty
+                {
+                    Text(course.name)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
                 if let room = course.room, !room.isEmpty
                 {
                     Label(room, systemImage: "location.fill")
@@ -1179,7 +1223,10 @@ struct CourseCardPreview: View
                         Text("第 \(week) 周")
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
-                        Text("第\(c.start)–\(c.endPeriod)节")
+                        Text(CurriculumClassSchedule.periodText(
+                            start: c.start,
+                            end: c.endPeriod
+                        ))
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
                         Text(weekdays[c.day - 1])
@@ -1196,13 +1243,22 @@ struct CourseCardPreview: View
 
                     VStack(alignment: .leading, spacing: 8)
                     {
+                        let shortName = c.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
                         Label("同时段其他课程", systemImage: "square.on.square")
                             .font(.system(size: 12))
                             .foregroundColor(.orange.opacity(0.8))
-                        Text(c.name)
+                        Text(shortName.isEmpty ? c.name : shortName)
                             .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.primary)
                             .lineLimit(2)
+                        if !shortName.isEmpty
+                        {
+                            Text(c.name)
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
                         if let room = c.room, !room.isEmpty
                         {
                             Label(room, systemImage: "location.fill")
@@ -1256,37 +1312,59 @@ struct ClassPeriod: Identifiable
 {
     let id: Int
     let periodNumber: Int
+    let title: String
     let displayStartTime: String
     let startTime: String
     let endTime: String
 }
-
 struct TimeCurriculumView: View
 {
     let fontScale: Double
+    let visiblePeriods: [Int]
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect = false
 
-    init(fontScale: Double = 1.0)
+    init(
+        fontScale: Double = 1.0,
+        visiblePeriods: [Int] = CurriculumClassSchedule.displayOrder
+    )
     {
         self.fontScale = fontScale
+        self.visiblePeriods = visiblePeriods
     }
 
     @State private var now = Date()
     private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
-    let classPeriods: [ClassPeriod] = [
-        ClassPeriod(id: 1, periodNumber: 1, displayStartTime: "7:30", startTime: "8:00", endTime: "8:45"),
-        ClassPeriod(id: 2, periodNumber: 2, displayStartTime: "8:45", startTime: "8:55", endTime: "9:40"),
-        ClassPeriod(id: 3, periodNumber: 3, displayStartTime: "9:40", startTime: "10:00", endTime: "10:45"),
-        ClassPeriod(id: 4, periodNumber: 4, displayStartTime: "10:45", startTime: "10:55", endTime: "11:40"),
-        ClassPeriod(id: 5, periodNumber: 5, displayStartTime: "14:00", startTime: "14:30", endTime: "15:15"),
-        ClassPeriod(id: 6, periodNumber: 6, displayStartTime: "15:15", startTime: "15:25", endTime: "16:10"),
-        ClassPeriod(id: 7, periodNumber: 7, displayStartTime: "16:10", startTime: "16:30", endTime: "17:15"),
-        ClassPeriod(id: 8, periodNumber: 8, displayStartTime: "17:15", startTime: "17:25", endTime: "18:10"),
-        ClassPeriod(id: 9, periodNumber: 9, displayStartTime: "18:30", startTime: "19:00", endTime: "19:45"),
-        ClassPeriod(id: 10, periodNumber: 10, displayStartTime: "19:45", startTime: "19:50", endTime: "20:35"),
-        ClassPeriod(id: 11, periodNumber: 11, displayStartTime: "20:35", startTime: "20:40", endTime: "21:25"),
-        ClassPeriod(id: 12, periodNumber: 12, displayStartTime: "21:25", startTime: "21:30", endTime: "22:15"),
+    /// 预备铃只影响左侧高亮的开始时间；正式起止时间统一来自 CurriculumClassSchedule。
+    private static let displayStartTimes: [Int: String] = [
+        1: "7:30", 2: "8:45", 3: "9:40", 4: "10:45",
+        5: "14:00", 6: "15:15", 7: "16:10", 8: "17:15",
+        9: "18:30", 10: "19:45", 11: "20:35", 12: "21:25",
     ]
+
+    private var classPeriods: [ClassPeriod]
+    {
+        visiblePeriods.compactMap
+        { number in
+            guard let period = CurriculumClassSchedule.period(number: number)
+            else { return nil }
+
+            let startTime = Self.timeText(hour: period.startHour, minute: period.startMinute)
+            return ClassPeriod(
+                id: number,
+                periodNumber: number,
+                title: CurriculumClassSchedule.timeAxisTitle(for: number),
+                displayStartTime: Self.displayStartTimes[number] ?? startTime,
+                startTime: startTime,
+                endTime: Self.timeText(hour: period.endHour, minute: period.endMinute)
+            )
+        }
+    }
+
+    private static func timeText(hour: Int, minute: Int) -> String
+    {
+        String(format: "%d:%02d", hour, minute)
+    }
 
     private var currentPeriodNumber: Int?
     {
@@ -1303,7 +1381,6 @@ struct TimeCurriculumView: View
         for period in classPeriods
         {
             guard let displayStart = minutes(from: period.displayStartTime),
-                  let start = minutes(from: period.startTime),
                   let end = minutes(from: period.endTime)
             else
             {
@@ -1337,36 +1414,62 @@ struct TimeCurriculumView: View
         {
             ForEach(classPeriods)
             { period in
-                let isCurrent = currentPeriodNumber == period.periodNumber
-                VStack(spacing: 2)
-                {
-                    Text("\(period.periodNumber)")
-                        .font(.system(size: 14, weight: isCurrent ? .bold : .medium, design: .rounded))
-                        .foregroundColor(isCurrent ? .white : .secondary)
-                    Text(period.startTime)
-                        .font(.system(size: 10, weight: .regular, design: .rounded))
-                        .foregroundColor(isCurrent ? .white : .secondary)
-                    Text(period.endTime)
-                        .font(.system(size: 10, weight: .regular, design: .rounded))
-                        .foregroundColor(isCurrent ? .white : .secondary)
-                }
-                .frame(
-                    maxWidth: .infinity,
-                    minHeight: curriculumCellHeight(for: fontScale),
-                    maxHeight: curriculumCellHeight(for: fontScale)
-                )
-                .padding(.horizontal, 2)
-                .padding(.vertical, 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(isCurrent ? Color.blue : Color.clear)
-                )
+                periodRow(period)
             }
         }
+        .background(
+            Color(.secondarySystemBackground).opacity(0.5),
+            in: Capsule()
+        )
+        .optionalLiquidGlass(
+            enabled: enableLiquidGlassEffect,
+            in: Capsule()
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
         .onReceive(timer)
         { input in
             now = input
         }
+    }
+
+    @ViewBuilder
+    private func periodRow(_ period: ClassPeriod) -> some View
+    {
+        let isCurrent = currentPeriodNumber == period.periodNumber
+
+        VStack(spacing: 2)
+        {
+            Text(period.title)
+                .font(.system(
+                    size: CurriculumClassSchedule.isExtraPeriod(period.periodNumber) ? 11 : 14,
+                    weight: isCurrent ? .bold : .medium,
+                    design: .rounded
+                ))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .foregroundColor(isCurrent ? .white : .secondary)
+            Text(period.startTime)
+                .font(.system(size: 10, weight: .regular, design: .rounded))
+                .foregroundColor(isCurrent ? .white : .secondary)
+            Text(period.endTime)
+                .font(.system(size: 10, weight: .regular, design: .rounded))
+                .foregroundColor(isCurrent ? .white : .secondary)
+        }
+        .frame(
+            maxWidth: .infinity,
+            minHeight: curriculumCellHeight(for: fontScale),
+            maxHeight: curriculumCellHeight(for: fontScale)
+        )
+        .padding(.horizontal, 2)
+        .padding(.vertical, 1)
+        // 当前节与整条时间轴共用 Capsule 轮廓，首节和末节不会出现直角边。
+        .background(
+            isCurrent ? Color.blue : Color.clear,
+            in: Capsule()
+        )
     }
 }
 
@@ -1374,4 +1477,5 @@ struct TimeCurriculumView: View
 {
     CurriculumView()
         .environmentObject(userInfo())
+        .environmentObject(IAPStore.preview(hasActiveSubscription: true))
 }

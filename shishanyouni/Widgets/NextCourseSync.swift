@@ -17,24 +17,6 @@ enum NextCourseSync
     private static let futureDays = 90
     private static let maximumItemCount = 300
 
-    /// 当前学校课表的实际上课时间。
-    /// 与 `CurriculumNotificationManager` 使用的节次时间保持一致；`displayStartTime`
-    /// （如 7:30 预备铃）不作为课程开始，避免把尚未正式上课的课当成已开始。
-    private static let classPeriods: [(number: Int, start: (hour: Int, minute: Int), end: (hour: Int, minute: Int))] = [
-        (1, (8, 0), (8, 45)),
-        (2, (8, 55), (9, 40)),
-        (3, (10, 0), (10, 45)),
-        (4, (10, 55), (11, 40)),
-        (5, (14, 30), (15, 15)),
-        (6, (15, 25), (16, 10)),
-        (7, (16, 30), (17, 15)),
-        (8, (17, 25), (18, 10)),
-        (9, (19, 0), (19, 45)),
-        (10, (19, 50), (20, 35)),
-        (11, (20, 40), (21, 25)),
-        (12, (21, 30), (22, 15)),
-    ]
-
     /// 课表导入、编辑、删除，以及 App 回到前台时调用。
     static func sync(
         courses: [Course]? = nil,
@@ -95,25 +77,40 @@ enum NextCourseSync
             {
                 guard course.day == weekday,
                       course.weekList.contains(week),
-                      let startPeriod = classPeriods.first(where: { $0.number == course.start }),
-                      let endPeriod = classPeriods.first(where: { $0.number == course.endPeriod }),
-                      let startDate = date(on: candidateDay, at: startPeriod.start, calendar: calendar),
-                      let endDate = date(on: candidateDay, at: endPeriod.end, calendar: calendar),
+                      let startPeriod = CurriculumClassSchedule.period(number: course.start),
+                      let endPeriod = CurriculumClassSchedule.period(number: course.endPeriod),
+                      let startDate = date(
+                        on: candidateDay,
+                        hour: startPeriod.startHour,
+                        minute: startPeriod.startMinute,
+                        calendar: calendar
+                      ),
+                      let endDate = date(
+                        on: candidateDay,
+                        hour: endPeriod.endHour,
+                        minute: endPeriod.endMinute,
+                        calendar: calendar
+                      ),
                       endDate > startDate
                 else
                 {
                     continue
                 }
 
+                let shortName = course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
                 items.append(
                     WidgetNextCourse(
                         id: "course-\(course.id)-\(startDate.timeIntervalSince1970)",
-                        name: course.name,
+                        name: shortName.isEmpty ? course.name : shortName,
                         startDate: startDate,
                         endDate: endDate,
                         room: course.room,
                         teacher: course.teacher,
-                        periodText: periodText(start: course.start, end: course.endPeriod),
+                        periodText: CurriculumClassSchedule.periodText(
+                            start: course.start,
+                            end: course.endPeriod
+                        ),
                         // 下节课桌面／锁屏组件也必须遵循用户在课表中选定的优先级。
                         priority: course.priority
                     )
@@ -135,13 +132,14 @@ enum NextCourseSync
 
     private static func date(
         on day: Date,
-        at time: (hour: Int, minute: Int),
+        hour: Int,
+        minute: Int,
         calendar: Calendar
     ) -> Date?
     {
         var components = calendar.dateComponents([.year, .month, .day], from: day)
-        components.hour = time.hour
-        components.minute = time.minute
+        components.hour = hour
+        components.minute = minute
         return calendar.date(from: components)
     }
 
@@ -169,8 +167,4 @@ enum NextCourseSync
         return weekday == 1 ? 7 : weekday - 1
     }
 
-    private static func periodText(start: Int, end: Int) -> String
-    {
-        start == end ? "第\(start)节" : "第\(start)-\(end)节"
-    }
 }

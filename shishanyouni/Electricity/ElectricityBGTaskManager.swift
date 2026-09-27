@@ -13,7 +13,13 @@ final class ElectricityBGTaskManager
     {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.taskID, using: nil)
         { task in
-            self.handleRefresh(task as! BGAppRefreshTask)
+            // 系统理论上会传入注册类型；不匹配时安全结束，避免后台任务崩溃。
+            guard let refreshTask = task as? BGAppRefreshTask else
+            {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self.handleRefresh(refreshTask)
         }
     }
 
@@ -40,10 +46,14 @@ final class ElectricityBGTaskManager
 
         let defaults = UserDefaults.standard
         let username = defaults.string(forKey: "saved_username") ?? ""
-        let encryptedPassword = defaults.string(forKey: "encrypted_password_school") ?? ""
         let roomId = defaults.string(forKey: "hzau_room_id") ?? ""
+        let password = KeychainHelper.shared.get(for: username) ?? ""
 
-        guard !username.isEmpty, !encryptedPassword.isEmpty, !roomId.isEmpty else
+        guard !username.isEmpty,
+              !password.isEmpty,
+              !roomId.isEmpty,
+              let encryptedPassword = encryptSchoolPassword(password: password)
+        else
         {
             scheduleNext()
             task.setTaskCompleted(success: true)

@@ -113,6 +113,7 @@ struct WidgetSettingView: View
         }
         .navigationTitle("小组件")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 }
 
@@ -248,7 +249,7 @@ private struct PersonalScheduleWidgetThumbnail: View
                     .fixedSize()
             }
 
-            ForEach(["项目组会议", "复习编译原理", "提交课程作业"], id: \.self)
+            ForEach(["组会", "做微积分的作业", "打动森"], id: \.self)
             { title in
                 HStack(spacing: 5)
                 {
@@ -292,7 +293,7 @@ private struct NextCourseWidgetThumbnail: View
                     .fixedSize()
             }
 
-            Text("编译原理")
+            Text("软件工程A")
                 .font(.system(size: 13, weight: .bold))
                 .fixedSize()
 
@@ -311,7 +312,7 @@ private struct NextCourseWidgetThumbnail: View
                     .font(.system(size: 8))
                     .foregroundStyle(.secondary)
 
-                Text("张老师")
+                Text("王颖")
                     .font(.system(size: 8))
                     .foregroundStyle(.secondary)
                     .fixedSize()

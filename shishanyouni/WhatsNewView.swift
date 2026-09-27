@@ -6,6 +6,38 @@ struct WhatsNewView: View
 
     private let features: [WhatsNewFeature] = [
         WhatsNewFeature(
+            title: "同一课程多个时间段",
+            message: "同一门课程会合并展示全部上课时间段，编辑时也可继续添加或删除时间段。",
+            icon: "clock.badge.checkmark.fill",
+            color: .blue
+        ),
+        WhatsNewFeature(
+            title: "图书馆馆藏搜索",
+            message: "支持按任意词、书名或作者搜索馆藏，并查看在架状态、所在房间和详细位置。",
+            icon: "books.vertical.fill",
+            color: .purple
+        ),
+        WhatsNewFeature(
+            title: "中午与傍晚时段",
+            message: "课表新增中午、傍晚两个时段，可在课表设置中按需开启或关闭。校园通行证用户专属。",
+            icon: "sun.and.horizon.fill",
+            color: .orange
+        ),
+        WhatsNewFeature(
+            title: "课程简称",
+            message: "编辑课程时可填写简称；填写后课表、提醒和小组件会优先显示简称。校园通行证用户专属。",
+            icon: "textformat.abc",
+            color: .indigo,
+            previewOriginalName: "线性代数",
+            previewShortName: "线代"
+        ),
+        WhatsNewFeature(
+            title: "成绩分数详情查看",
+            message: "使用教务系统查询时，可以查看每门课程的详细分数。校园通行证用户专属。",
+            icon: "list.bullet.rectangle.portrait.fill",
+            color: .cyan
+        ),
+        WhatsNewFeature(
             title: "期末考核类型",
             message: "所有课程现在都能查看期末考核是考试还是考查。",
             icon: "checkmark.seal.fill",
@@ -16,12 +48,6 @@ struct WhatsNewView: View
             message: "成绩查询现在支持一键下载长图。校园通行证用户专属。",
             icon: "arrow.down.doc.fill",
             color: .blue
-        ),
-        WhatsNewFeature(
-            title: "成绩分数详情查看",
-            message: "使用教务系统查询时，可以查看每门课程的详细分数。校园通行证用户专属。",
-            icon: "list.bullet.rectangle.portrait.fill",
-            color: .cyan
         ),
         WhatsNewFeature(
             title: "冲突课程优先显示",
@@ -156,6 +182,22 @@ private struct WhatsNewFeatureRow: View
                     .font(.headline)
                     .foregroundStyle(.primary)
 
+                if let originalName = feature.previewOriginalName,
+                   let shortName = feature.previewShortName
+                {
+                    VStack(alignment: .leading, spacing: 1)
+                    {
+                        Text(originalName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Label(shortName, systemImage: "arrow.down")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(feature.color)
+                    }
+                    .padding(.vertical, 2)
+                }
+
                 Text(feature.message)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -176,6 +218,25 @@ private struct WhatsNewFeature: Identifiable
     let message: String
     let icon: String
     let color: Color
+    let previewOriginalName: String?
+    let previewShortName: String?
+
+    init(
+        title: String,
+        message: String,
+        icon: String,
+        color: Color,
+        previewOriginalName: String? = nil,
+        previewShortName: String? = nil
+    )
+    {
+        self.title = title
+        self.message = message
+        self.icon = icon
+        self.color = color
+        self.previewOriginalName = previewOriginalName
+        self.previewShortName = previewShortName
+    }
 }
 
 #Preview

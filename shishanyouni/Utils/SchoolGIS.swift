@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-
-import SwiftUI
 import WebKit
 
 struct SchoolGISWeb: UIViewRepresentable
@@ -39,7 +37,7 @@ struct SchoolGISView: View
 
     var body: some View
     {
-        SchoolCalendarWeb(urlString: url)
+        SchoolGISWeb(urlString: url)
 
             .navigationTitle("校园地图")
             .toolbar(.hidden, for: .tabBar)

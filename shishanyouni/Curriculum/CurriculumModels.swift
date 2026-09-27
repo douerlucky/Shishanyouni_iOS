@@ -98,7 +98,10 @@ struct TimetableResponse: Decodable
 struct Course: Identifiable, Codable
 {
     let id: String
+    /// 教务系统的完整课程名；用于分组、统计和数据匹配，不会被简称替换。
     let name: String
+    /// 校园通行证用户可设置的显示简称；为空时一律回退到完整课程名。
+    var shortName: String? = nil
     /// 周一为 1，周日为 7。
     let day: Int
     let start: Int
@@ -121,6 +124,7 @@ struct Course: Identifiable, Codable
     var endPeriod: Int { start + step - 1 }
     var parsedWeeks: Set<Int> { Set(weekList) }
     var displayPriority: Int { priority ?? 0 }
+
 }
 
 extension Course
@@ -209,5 +213,92 @@ enum CurriculumError: LocalizedError
         case let .apiError(message): return "服务端错误：\(message)"
         case let .jsonDecodingFailed(error): return "数据解析失败：\(error.localizedDescription)"
         }
+    }
+}
+
+// MARK: - 所有课程页的展示分组
+
+/// 同一门课的判断依据：名称、教室、老师、学期。
+/// 底层 Course 仍是一条时间段记录；这里只用于“所有课程”页面合并展示。
+struct CourseGroupKey: Hashable
+{
+    let name: String
+    let room: String
+    let teacher: String
+    let term: String
+
+    init(course: Course)
+    {
+        name = Self.normalized(course.name)
+        room = Self.normalized(course.room)
+        teacher = Self.normalized(course.teacher)
+        term = Self.normalized(course.term)
+    }
+
+    private static func normalized(_ value: String?) -> String
+    {
+        (value ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(
+                of: "\\s+",
+                with: " ",
+                options: .regularExpression
+            )
+    }
+}
+
+/// “所有课程”列表中的一门课程，以及它包含的全部时间段。
+struct CourseGroup: Identifiable
+{
+    let id: CourseGroupKey
+    let name: String
+    let room: String?
+    let teacher: String?
+    let courses: [Course]
+
+    var shortName: String?
+    {
+        courses.first?.shortName
+    }
+
+    init(id: CourseGroupKey, courses: [Course])
+    {
+        precondition(!courses.isEmpty)
+
+        let first = courses[0]
+        self.id = id
+        self.name = first.name
+        self.room = first.room
+        self.teacher = first.teacher
+
+        // 同一课程组内按“星期 → 开始节次 → 周次”显示。
+        self.courses = courses.sorted
+        {
+            if $0.day != $1.day { return $0.day < $1.day }
+            if $0.start != $1.start { return $0.start < $1.start }
+            return $0.weekList.lexicographicallyPrecedes($1.weekList)
+        }
+    }
+}
+
+extension Array where Element == Course
+{
+    /// 将扁平课表记录按课程身份组合，供“所有课程”页面展示。
+    func groupedForCourseManagement() -> [CourseGroup]
+    {
+        let grouped = Dictionary(grouping: self)
+        {
+            CourseGroupKey(course: $0)
+        }
+
+        return grouped
+            .map
+            {
+                CourseGroup(id: $0.key, courses: $0.value)
+            }
+            .sorted
+            {
+                $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
     }
 }

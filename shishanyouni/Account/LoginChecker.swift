@@ -120,7 +120,7 @@ class ShishanyouniBinder {
             print("[ShishanyouniBinder] 状态码: \(http.statusCode)")
 
             let responseText = String(data: data, encoding: .utf8) ?? ""
-            print("[ShishanyouniBinder] 响应: \(responseText.prefix(500))")
+            print("[ShishanyouniBinder] 响应体大小: \(responseText.utf8.count) 字节")
 
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 throw ShishanyouniBindError.invalidResponse
@@ -205,7 +205,7 @@ class ShishanyouniBinder {
         }
         print("[ShishanyouniBinder] \(label)状态码: \(http.statusCode)")
         let responseText = String(data: data, encoding: .utf8) ?? ""
-        print("[ShishanyouniBinder] \(label)响应: \(responseText.prefix(500))")
+        print("[ShishanyouniBinder] \(label)响应体大小: \(responseText.utf8.count) 字节")
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ShishanyouniBindError.invalidResponse
@@ -265,7 +265,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: loginURL)!)
         for cookie in cookies {
             cookieJar[cookie.name] = cookie.value
-            print("保存: \(cookie.name)=\(cookie.value.prefix(20))...")
+            print("保存 Cookie: \(cookie.name)")
         }
     }
     
@@ -320,7 +320,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         guard detect.code == 0, let detectInfo = detect.data else {
             throw CASMFAError.initFailed
         }
-        print("[MFA][Login] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false), state=\(detectInfo.state ?? "nil"), fpVisitorId=\(CASMFADebug.fpVisitorId)")
+        print("[MFA][Login] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false)")
         guard detectInfo.need else {
             print("[MFA][Login] 服务端判定无需二次验证，本次不会弹验证码。")
             return ""
@@ -447,7 +447,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         }
         
         let execution = String(matchedText[valueStart.upperBound..<valueEnd.lowerBound])
-        print("Execution: \(execution.prefix(50))...")
+        print("已取得登录页面 execution。")
         
         // ===== Step 2: POST 提交表单 =====
         print("\nStep 2: POST 提交表单")
@@ -464,7 +464,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         let cookieHeader = getCookieHeader()
         if !cookieHeader.isEmpty {
             request2.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
-            print("发送 Cookies: \(cookieHeader.prefix(100))...")
+            print("已附加 \(cookieJar.count) 个 Cookie。")
         } else {
             print("警告：没有 cookies 可发送")
         }
@@ -497,15 +497,14 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         if httpResponse2.statusCode == 200 {
             // 200 表示登录失败（账号或密码错误）
             let responseText = String(data: data2, encoding: .utf8) ?? ""
-            print("登录失败，返回内容前 500 字符:")
-            print(responseText.prefix(500))
+            print("登录失败，响应体大小: \(responseText.utf8.count) 字节。")
             return .failure(message: "账号或密码错误")
         } else if httpResponse2.statusCode == 302 {
             // 302 表示登录成功
             print("登录成功！")
             
-            if let location = httpResponse2.allHeaderFields["Location"] as? String {
-                print("重定向到: \(location)")
+            if httpResponse2.allHeaderFields["Location"] != nil {
+                print("登录成功，已收到服务端跳转。")
             }
             return .success
         } else {

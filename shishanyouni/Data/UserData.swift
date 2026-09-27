@@ -27,7 +27,8 @@ class userInfo: ObservableObject
         static let savedNickname = "saved_nickname"
         static let savedCASBound = "saved_cas_bound"
         static let savedBackendBound = "saved_backend_bound"
-        static let savedShishanyouniToken = "saved_shishanyouni_token"
+        /// 旧版将后端 Token 存在 UserDefaults；仅用于首次启动时迁移到 Keychain。
+        static let legacyShishanyouniToken = "saved_shishanyouni_token"
     }
 
     @Published var username: String = ""
@@ -82,7 +83,7 @@ class userInfo: ObservableObject
                 print("✅ 已自动加载学号: \(username)")
             }
             nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname) ?? ""
-            shishanyouniToken = UserDefaults.standard.string(forKey: StorageKey.savedShishanyouniToken) ?? ""
+            shishanyouniToken = loadShishanyouniToken(for: savedUsername)
             if TestAccount.matches(username: username, password: plainPassword) { updateBindingStatus(casBound: true, shishanyouniBound: true) }
             else { isCASBound = UserDefaults.standard.bool(forKey: StorageKey.savedCASBound); isShishanyouniBound = UserDefaults.standard.bool(forKey: StorageKey.savedBackendBound) }
         } else { isCASBound = false; isShishanyouniBound = false }
@@ -94,33 +95,88 @@ class userInfo: ObservableObject
         UserDefaults.standard.set(username, forKey: StorageKey.savedUsername)
         KeychainHelper.shared.save(password: plainPassword, for: username)
         UserDefaults.standard.set(nickname, forKey: StorageKey.savedNickname)
-        UserDefaults.standard.set(shishanyouniToken, forKey: StorageKey.savedShishanyouniToken)
+        saveShishanyouniToken(shishanyouniToken)
         persistBindingStatus()
     }
 
     func clearUserInfo()
     {
-        KeychainHelper.shared.delete(for: username)
-        for k in [StorageKey.savedUsername, StorageKey.savedNickname, StorageKey.savedCASBound, StorageKey.savedBackendBound, StorageKey.savedShishanyouniToken, "encrypted_password_school"] { UserDefaults.standard.removeObject(forKey: k) }
+        if !username.isEmpty
+        {
+            KeychainHelper.shared.delete(for: username)
+            KeychainHelper.shared.delete(for: shishanyouniTokenKey(for: username))
+        }
+        for k in [StorageKey.savedUsername, StorageKey.savedNickname, StorageKey.savedCASBound, StorageKey.savedBackendBound, StorageKey.legacyShishanyouniToken, "encrypted_password_school"] { UserDefaults.standard.removeObject(forKey: k) }
         username = ""; plainPassword = ""; encryptedPasswordSchool = ""; encryptedPasswordShishanyouni = ""; shishanyouniToken = ""; nickname = ""; isCASBound = false; isShishanyouniBound = false
         print("已清除保存的学号和密码")
     }
 
     func clearSavedCredentials()
     {
-        if !username.isEmpty { KeychainHelper.shared.delete(for: username) }
-        for k in [StorageKey.savedUsername, StorageKey.savedNickname, StorageKey.savedCASBound, StorageKey.savedBackendBound, StorageKey.savedShishanyouniToken, "encrypted_password_school"] { UserDefaults.standard.removeObject(forKey: k) }
+        if !username.isEmpty
+        {
+            KeychainHelper.shared.delete(for: username)
+            KeychainHelper.shared.delete(for: shishanyouniTokenKey(for: username))
+        }
+        for k in [StorageKey.savedUsername, StorageKey.savedNickname, StorageKey.savedCASBound, StorageKey.savedBackendBound, StorageKey.legacyShishanyouniToken, "encrypted_password_school"] { UserDefaults.standard.removeObject(forKey: k) }
         print("已清除本地保存的账号信息，保留当前会话")
     }
 
     func updateBindingStatus(casBound: Bool, shishanyouniBound: Bool) { isCASBound = casBound; isShishanyouniBound = shishanyouniBound }
-    func updateShishanyouniToken(_ token: String) { shishanyouniToken = token; UserDefaults.standard.set(token, forKey: StorageKey.savedShishanyouniToken) }
-    func performSchoolEncryption() { if let r = encryptSchoolPassword(password: plainPassword) { encryptedPasswordSchool = r; UserDefaults.standard.set(r, forKey: "encrypted_password_school") } }
+    func updateShishanyouniToken(_ token: String) { shishanyouniToken = token; saveShishanyouniToken(token) }
+    func performSchoolEncryption() { if let r = encryptSchoolPassword(password: plainPassword) { encryptedPasswordSchool = r } }
     func performShishanyouniEncryption() { if let r = encryptShishanyouniPassword(password: plainPassword) { encryptedPasswordShishanyouni = r } }
     func loadUserNickname() { nickname = UserDefaults.standard.string(forKey: StorageKey.savedNickname) ?? "" }
     func saveUserNickname() { UserDefaults.standard.set(nickname, forKey: StorageKey.savedNickname) }
-    func debugprint() { print("设定为用户名:\(username)\n原始密码为:\(plainPassword)\n加密的密码为:\(encryptedPasswordSchool)") }
+    /// 供调试页确认账号状态；凭据内容绝不能写入控制台。
+    func debugprint()
+    {
+        #if DEBUG
+        print("账号调试状态：已填写学号=\(!username.isEmpty)，已填写密码=\(!plainPassword.isEmpty)，已生成教务加密凭据=\(!encryptedPasswordSchool.isEmpty)")
+        #endif
+    }
     private func persistBindingStatus() { UserDefaults.standard.set(isCASBound, forKey: StorageKey.savedCASBound); UserDefaults.standard.set(isShishanyouniBound, forKey: StorageKey.savedBackendBound) }
+
+    /// Token 与密码一样属于凭据，使用独立 Keychain 账户，避免与登录密码冲突。
+    private func shishanyouniTokenKey(for username: String) -> String
+    {
+        "shishanyouni-token-\(username)"
+    }
+
+    private func loadShishanyouniToken(for username: String) -> String
+    {
+        let key = shishanyouniTokenKey(for: username)
+        if let token = KeychainHelper.shared.get(for: key)
+        {
+            return token
+        }
+
+        // 兼容已安装旧版：读取一次后迁移，并立即删除明文偏好设置。
+        let legacyToken = UserDefaults.standard.string(forKey: StorageKey.legacyShishanyouniToken) ?? ""
+        if !legacyToken.isEmpty
+        {
+            if KeychainHelper.shared.save(password: legacyToken, for: key)
+            {
+                UserDefaults.standard.removeObject(forKey: StorageKey.legacyShishanyouniToken)
+            }
+        }
+        return legacyToken
+    }
+
+    private func saveShishanyouniToken(_ token: String)
+    {
+        guard !username.isEmpty else { return }
+        let key = shishanyouniTokenKey(for: username)
+        if token.isEmpty
+        {
+            KeychainHelper.shared.delete(for: key)
+        }
+        else
+        {
+            guard KeychainHelper.shared.save(password: token, for: key) else { return }
+        }
+        UserDefaults.standard.removeObject(forKey: StorageKey.legacyShishanyouniToken)
+    }
 
     #if DEBUG
     private func loadDevConfig() -> (String, String)? {

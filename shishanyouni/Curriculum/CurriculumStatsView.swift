@@ -163,10 +163,13 @@ struct CurriculumStatsView: View {
         }
 
         let totalPeriods = subjectPeriods.values.reduce(0) { $0 + $1.periods }
-        let totalSlots = 7 * 12
+        let totalSlots = 7 * CurriculumClassSchedule.displayOrder.count
         var occupiedSlots: Set<String> = []
         for course in weekCourses {
-            for period in course.start...course.endPeriod {
+            for period in CurriculumClassSchedule.displayPeriods(
+                start: course.start,
+                end: course.endPeriod
+            ) {
                 occupiedSlots.insert("\(course.day)_\(period)")
             }
         }

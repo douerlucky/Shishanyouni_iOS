@@ -1,4 +1,5 @@
 
+import Combine
 import EventKit
 import SwiftUI
 
@@ -429,15 +430,13 @@ struct ExamCard: View
         showCalendarAlert = true
     }
 
+    @MainActor
     private func addExamToCalendar() async
     {
-        await MainActor.run { isAddingToCalendar = true }
+        isAddingToCalendar = true
         defer
         {
-            Task
-            { @MainActor in
-                isAddingToCalendar = false
-            }
+            isAddingToCalendar = false
         }
 
         do
@@ -447,14 +446,14 @@ struct ExamCard: View
             guard granted
             else
             {
-                await setCalendarAlert(title: "无法添加", message: "需要允许访问系统日历，才可以帮你把考试安排塞进去哦。")
+                setCalendarAlert(title: "无法添加", message: "需要允许访问系统日历，才可以帮你把考试安排塞进去哦。")
                 return
             }
 
             let (startDate, endDate) = try parseExamDateRange()
             if hasExistingEvent(in: store, startDate: startDate, endDate: endDate)
             {
-                await setCalendarAlert(title: "已经添加过啦", message: "系统日历里已经有这场考试，不会重复添加。")
+                setCalendarAlert(title: "已经添加过啦", message: "系统日历里已经有这场考试，不会重复添加。")
                 UINotificationFeedbackGenerator().notificationOccurred(.warning)
                 return
             }
@@ -462,7 +461,7 @@ struct ExamCard: View
             guard let calendar = store.defaultCalendarForNewEvents
             else
             {
-                await setCalendarAlert(title: "添加失败", message: "没有找到可以写入的默认日历。")
+                setCalendarAlert(title: "添加失败", message: "没有找到可以写入的默认日历。")
                 return
             }
 
@@ -476,12 +475,12 @@ struct ExamCard: View
             event.alarms = [EKAlarm(relativeOffset: -24 * 60 * 60)]
 
             try store.save(event, span: .thisEvent, commit: true)
-            await setCalendarAlert(title: "添加成功", message: "已添加到系统日历，并设置为考前 1 天提醒。")
+            setCalendarAlert(title: "添加成功", message: "已添加到系统日历，并设置为考前 1 天提醒。")
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
         catch
         {
-            await setCalendarAlert(title: "添加失败", message: error.localizedDescription)
+            setCalendarAlert(title: "添加失败", message: error.localizedDescription)
             UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
     }

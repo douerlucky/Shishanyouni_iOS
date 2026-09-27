@@ -153,10 +153,12 @@ struct Provider: TimelineProvider
             (2, "8:45", "9:40"),
             (3, "9:40", "10:45"),
             (4, "10:45", "11:40"),
+            (CurriculumPeriodLayout.noonPeriod, "11:40", "14:30"),
             (5, "14:00", "15:15"),
             (6, "15:15", "16:10"),
             (7, "16:10", "17:15"),
             (8, "17:15", "18:10"),
+            (CurriculumPeriodLayout.eveningPeriod, "18:10", "19:00"),
             (9, "18:30", "19:45"),
             (10, "19:45", "20:35"),
             (11, "20:35", "21:25"),
@@ -197,7 +199,7 @@ struct ScheduleWidgetEntryView: View
     @Environment(\.widgetRenderingMode) private var widgetRenderingMode
 
     private let weekdays = ["一", "二", "三", "四", "五", "六", "日"]
-    private let periodCount = 12
+    private let periodOrder = CurriculumPeriodLayout.displayOrder
     private let rowSpacing: CGFloat = 1.5
     private let columnSpacing: CGFloat = 2
     private let periodColumnWidth: CGFloat = 20
@@ -210,6 +212,8 @@ struct ScheduleWidgetEntryView: View
         }
         return false
     }
+
+    private var periodCount: Int { periodOrder.count }
 
     var body: some View
     {
@@ -284,12 +288,17 @@ struct ScheduleWidgetEntryView: View
                     {
                         VStack(spacing: rowSpacing)
                         {
-                            ForEach(1 ... periodCount, id: \.self)
+                            ForEach(periodOrder, id: \.self)
                             { period in
                                 let isCurrent = entry.currentPeriod == period
-                                Text("\(period)")
-                                    .font(.system(size: 7, weight: isCurrent ? .bold : .medium))
+                                Text(CurriculumPeriodLayout.timeAxisTitle(for: period))
+                                    .font(.system(
+                                        size: CurriculumPeriodLayout.isExtraPeriod(period) ? 6 : 7,
+                                        weight: isCurrent ? .bold : .medium
+                                    ))
                                     .foregroundColor(isCurrent ? .white : .secondary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
                                     .frame(width: periodColumnWidth, height: cellHeight)
                                     .background(
                                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -368,13 +377,13 @@ struct ScheduleWidgetEntryView: View
     private func dayColumn(day: Int, cellHeight: CGFloat, availableHeight: CGFloat) -> some View
     {
         let dayCourses = resolveConflictsForDay(coursesForDay(day))
-            .filter { $0.start <= periodCount && $0.endPeriod >= 1 }
+            .filter { periodOrder.contains($0.start) && periodOrder.contains($0.endPeriod) }
 
         ZStack(alignment: .top)
         {
             VStack(spacing: rowSpacing)
             {
-                ForEach(1 ... periodCount, id: \.self)
+                ForEach(periodOrder, id: \.self)
                 { _ in
                     emptyCell(cellHeight: cellHeight)
                 }
@@ -396,7 +405,8 @@ struct ScheduleWidgetEntryView: View
 
     private func yOffset(for course: WidgetCourse, cellHeight: CGFloat) -> CGFloat
     {
-        CGFloat(max(min(course.start, periodCount), 1) - 1) * (cellHeight + rowSpacing)
+        let index = periodOrder.firstIndex(of: course.start) ?? 0
+        return CGFloat(index) * (cellHeight + rowSpacing)
     }
 
     private func resolveConflictsForDay(_ courses: [WidgetCourse]) -> [WidgetCourse]
@@ -417,7 +427,15 @@ struct ScheduleWidgetEntryView: View
         }
         func overlaps(_ a: WidgetCourse, _ b: WidgetCourse) -> Bool
         {
-            a.start <= b.endPeriod && b.start <= a.endPeriod
+            let aPeriods = Set(CurriculumPeriodLayout.displayPeriods(
+                start: a.start,
+                end: a.endPeriod
+            ))
+            let bPeriods = Set(CurriculumPeriodLayout.displayPeriods(
+                start: b.start,
+                end: b.endPeriod
+            ))
+            return !aPeriods.isDisjoint(with: bPeriods)
         }
         for i in 0 ..< sorted.count
         {
@@ -463,9 +481,13 @@ struct ScheduleWidgetEntryView: View
     @ViewBuilder
     private func courseCell(course: WidgetCourse, cellHeight: CGFloat) -> some View
     {
-        let start = max(course.start, 1)
-        let end = min(course.endPeriod, periodCount)
-        let span = max(end - start + 1, 1)
+        let span = max(
+            CurriculumPeriodLayout.displayPeriods(
+                start: course.start,
+                end: course.endPeriod
+            ).count,
+            1
+        )
         let height = CGFloat(span) * cellHeight + CGFloat(max(span - 1, 0)) * rowSpacing
 
         VStack(spacing: 1)

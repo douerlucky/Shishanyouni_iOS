@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 
@@ -43,6 +44,7 @@ struct HomeView: View
     @State private var navigateToClub = false
     @State private var navigateToGIS = false
     @State private var navigateToLibrary = false
+    @State private var navigateToLibraryCatalog = false
     @State private var navigateToITC = false
     @State private var navigateToAIAssistant = false
     @State private var navigateToSubscription = false
@@ -149,6 +151,10 @@ struct HomeView: View
 
         items.append(HomeFeatureItem(key: .classroom, title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1) {
             navigateToClassroom = true
+        })
+        // 馆藏接口不需要校园账号，因此游客也可以使用此入口。
+        items.append(HomeFeatureItem(key: .libraryCatalog, title: "馆藏检索", icon: "books.vertical.fill", color: HomeMenuColor.purple2) {
+            navigateToLibraryCatalog = true
         })
 
         if !isGuestMode
@@ -346,6 +352,8 @@ struct HomeView: View
             { SchoolGISView() }
             .navigationDestination(isPresented: $navigateToLibrary)
             { LibraryOverviewView() }
+            .navigationDestination(isPresented: $navigateToLibraryCatalog)
+            { LibraryCatalogSearchView() }
             .navigationDestination(isPresented: $navigateToITC)
             { ITCView() }
             .navigationDestination(isPresented: $navigateToAIAssistant)

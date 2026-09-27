@@ -246,7 +246,8 @@ enum CurriculumToSystemCalendar
             for draft in drafts
             {
                 let event = EKEvent(eventStore: store)
-                event.title = draft.course.name
+                let shortName = draft.course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                event.title = shortName.isEmpty ? draft.course.name : shortName
                 event.startDate = draft.startDate
                 event.endDate = draft.endDate
                 event.calendar = calendar
@@ -316,7 +317,7 @@ enum CurriculumToSystemCalendar
     {
         var lines = [
             "由狮山有你导入",
-            "第\(draft.week)周 · 周\(draft.course.day) · 第\(draft.course.start)-\(draft.course.endPeriod)节"
+            "第\(draft.week)周 · 周\(draft.course.day) · \(CurriculumClassSchedule.periodText(start: draft.course.start, end: draft.course.endPeriod))"
         ]
 
         if let teacher = draft.course.teacher,
@@ -358,6 +359,10 @@ struct CurriculumClassPeriod: Equatable
 /// 课表、提醒、系统日历共用的正式节次时间表。
 enum CurriculumClassSchedule
 {
+    /// 中午、晚上不是教务系统节次，保留专用编号以兼容原有 1–12 节数据。
+    static let noonPeriod = CurriculumPeriodLayout.noonPeriod
+    static let eveningPeriod = CurriculumPeriodLayout.eveningPeriod
+
     static let periods: [CurriculumClassPeriod] =
     [
         .init(number: 1, startHour: 8, endHour: 8, endMinute: 45),
@@ -372,6 +377,8 @@ enum CurriculumClassSchedule
         .init(number: 10, startHour: 19, startMinute: 50, endHour: 20, endMinute: 35),
         .init(number: 11, startHour: 20, startMinute: 40, endHour: 21, endMinute: 25),
         .init(number: 12, startHour: 21, startMinute: 30, endHour: 22, endMinute: 15),
+        .init(number: noonPeriod, startHour: 11, startMinute: 40, endHour: 14, endMinute: 30),
+        .init(number: eveningPeriod, startHour: 18, startMinute: 10, endHour: 19, endMinute: 00),
     ]
 
     static func period(number: Int) -> CurriculumClassPeriod?
@@ -403,5 +410,74 @@ enum CurriculumClassSchedule
         else { return nil }
 
         return (startDate, endDate)
+    }
+
+
+    /// 课表从上到下的真实显示顺序，和 Widget 共享。
+    static let displayOrder = CurriculumPeriodLayout.displayOrder
+
+    static func displayName(for period: Int) -> String
+    {
+        CurriculumPeriodLayout.displayName(for: period)
+    }
+
+    /// 时间轴只需要简短编号；中午、晚上则保留完整名称。
+    static func timeAxisTitle(for period: Int) -> String
+    {
+        CurriculumPeriodLayout.timeAxisTitle(for: period)
+    }
+
+    static func isExtraPeriod(_ period: Int) -> Bool
+    {
+        CurriculumPeriodLayout.isExtraPeriod(period)
+    }
+
+    /// 普通课程可跨上午、下午或晚上；中午、晚上这两个附加时段只能单独选中。
+    /// 这样教务导入的第 1–8 节、第 1–12 节课程可以保持原样编辑和保存。
+    static func validEndPeriods(for start: Int) -> [Int]
+    {
+        if isExtraPeriod(start) { return [start] }
+        guard (1 ... 12).contains(start) else { return [] }
+        return Array(start ... 12)
+    }
+
+    static func isValidCourseRange(start: Int, end: Int) -> Bool
+    {
+        validEndPeriods(for: start).contains(end)
+    }
+
+    /// 课程在课表中占用的行。普通课程跨越中午、晚上时会一并覆盖对应行；
+    /// 因此第 1–8 节、第 1–12 节课在网格中仍是一张连续卡片。
+    static func displayPeriods(start: Int, end: Int) -> [Int]
+    {
+        CurriculumPeriodLayout.displayPeriods(start: start, end: end)
+    }
+
+    static func nextDisplayPeriod(after period: Int) -> Int?
+    {
+        guard let index = displayOrder.firstIndex(of: period),
+              index + 1 < displayOrder.count
+        else { return nil }
+
+        return displayOrder[index + 1]
+    }
+
+    /// 新增时间段时，普通课程默认占用相邻两节；中午、晚上只占自身一行。
+    static func defaultEndPeriod(for start: Int) -> Int
+    {
+        validEndPeriods(for: start).dropFirst().first ?? start
+    }
+
+    static func periodText(start: Int, end: Int) -> String
+    {
+        if start == end { return displayName(for: start) }
+
+        // 只有普通节次可形成连续区间；中午和晚上始终是单独的时间段。
+        if !isExtraPeriod(start), !isExtraPeriod(end)
+        {
+            return "第\(start)-\(end)节"
+        }
+
+        return "\(displayName(for: start))–\(displayName(for: end))"
     }
 }

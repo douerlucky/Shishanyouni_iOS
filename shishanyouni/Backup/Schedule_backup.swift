@@ -287,7 +287,7 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         {
             let key = "\(cookie.domain)|\(cookie.path)|\(cookie.name)"
             cookieJar[key] = cookie
-            print("保存Cookie[\(cookie.domain)]: \(cookie.name)=\(cookie.value.prefix(20))...")
+            print("保存 Cookie[\(cookie.domain)]: \(cookie.name)")
         }
     }
     
@@ -339,7 +339,7 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
     {
         print("🔐 获取教务 Ticket")
         guard let url = URL(string: location) else { throw NSError(domain: "InvalidURL", code: 400) }
-        print("🔐 尝试教务 Ticket: \(location)")
+        print("🔐 已取得教务 Ticket 跳转。")
 
         var currentURL = url
         for redirectCount in 0 ... 10

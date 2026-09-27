@@ -21,6 +21,7 @@ enum HomeFeatureKey: String, CaseIterable, Codable, Identifiable
     case physicalCalculator
     case itc
     case library
+    case libraryCatalog
     case electricity
     case bus
     case strategy

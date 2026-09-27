@@ -52,6 +52,18 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
         rescheduleAllNotifications()
     }
 
+    /// 删除课程或时间段前，移除它们保存的提醒偏好。
+    ///
+    /// 这里故意不立即重排通知：调用方会先更新并保存课表，再统一调用
+    /// `rescheduleAllNotifications()`，避免根据即将删除的旧课表重新创建通知。
+    func removeReminderPreferences(for courseIDs: Set<String>) {
+        guard !courseIDs.isEmpty else { return }
+
+        var ids = enabledCourseIDs
+        ids.subtract(courseIDs)
+        enabledCourseIDs = ids
+    }
+
     func requestPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error { print("❌ 通知权限请求失败: \(error)") }
@@ -120,7 +132,8 @@ class CurriculumNotificationManager: NSObject, UNUserNotificationCenterDelegate 
 
             let content = UNMutableNotificationContent()
             content.title = "📚 上课提醒"
-            content.body = "\(course.name) 即将开始"
+            let shortName = course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            content.body = "\(shortName.isEmpty ? course.name : shortName) 即将开始"
             if let room = course.room { content.body += "\n教室：\(room)" }
             content.sound = .default
             content.badge = nil

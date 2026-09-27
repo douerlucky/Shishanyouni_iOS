@@ -94,9 +94,12 @@ struct CurriculumAdvancedStatsView: View {
         let totalWeeks = Set(courses.flatMap(\.weekList)).count
         var heat: [SlotHeat] = []
         for day in 1...7 {
-            for period in 1...12 {
+            for period in CurriculumClassSchedule.displayOrder {
                 let weeksOccupied = courses.filter { c in
-                    c.day == day && c.start <= period && c.endPeriod >= period
+                    c.day == day && CurriculumClassSchedule.displayPeriods(
+                        start: c.start,
+                        end: c.endPeriod
+                    ).contains(period)
                 }.flatMap(\.weekList).reduce(into: Set<Int>()) { $0.insert($1) }.count
                 let occupancy = totalWeeks > 0 ? Double(weeksOccupied) / Double(totalWeeks) : 0
                 heat.append(SlotHeat(id: "\(day)_\(period)", day: day, period: period, occupancy: occupancy))
@@ -320,10 +323,14 @@ struct CurriculumAdvancedStatsView: View {
                     }
                 }
 
-                ForEach(0..<12, id: \.self) { row in
-                    let period = row + 1
+                ForEach(CurriculumClassSchedule.displayOrder, id: \.self) { period in
                     HStack(spacing: 2) {
-                        Text("\(period)").font(.system(size: 9)).foregroundColor(.secondary).frame(width: 28)
+                        Text(CurriculumClassSchedule.timeAxisTitle(for: period))
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(width: 28)
 
                         ForEach(1...7, id: \.self) { day in
                             let slot = slotHeatmap.first { $0.day == day && $0.period == period }

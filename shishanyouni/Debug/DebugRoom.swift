@@ -227,7 +227,7 @@ struct DebugRoom: View
                                     await requestMFACode(maskedPhone: phone)
                                 }
                             )
-                            print("✅ 成功获取 Cookie: \(cookie)")
+                            print("✅ 成功获取南湖跑会话 Cookie")
                             let circles = try await nanhurunquery.fetchRunScores(cookie: cookie)
                             print(circles)
                         }
@@ -248,14 +248,14 @@ struct DebugRoom: View
                         do
                         {
                             print("🚀 开始测试电费接口...")
-                            let token = try await electrictyquery.loginAndGetToken(
+                            _ = try await electrictyquery.loginAndGetToken(
                                 username: userinfo.username,
                                 rsaPassword: userinfo.encryptedPasswordSchool,
                                 mfaCodeProvider: { phone in
                                     await requestMFACode(maskedPhone: phone)
                                 }
                             )
-                            print("✅ 成功获取 Token: \(token)")
+                            print("✅ 成功获取电费系统会话 Token")
                         }
                         catch
                         {
@@ -303,16 +303,10 @@ struct DebugRoom: View
 
     private func debugPrintError(_ error: Error)
     {
-        if let nsErr = error as? NSError
-        {
-            print("❌ 失败！错误域: \(nsErr.domain)  代码: \(nsErr.code)")
-            print("   描述: \(nsErr.localizedDescription)")
-            for (k, v) in nsErr.userInfo { print("   \(k): \(v)") }
-        }
-        else
-        {
-            print("❌ 未知错误: \(error)")
-        }
+        let nsErr = error as NSError
+        print("❌ 失败！错误域: \(nsErr.domain)  代码: \(nsErr.code)")
+        print("   描述: \(nsErr.localizedDescription)")
+        for (k, v) in nsErr.userInfo { print("   \(k): \(v)") }
     }
 
     @MainActor

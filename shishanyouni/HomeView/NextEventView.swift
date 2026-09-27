@@ -119,12 +119,6 @@ class NextEventViewModel: ObservableObject
     {
         // 课表只存“第几周/周几/第几节”，这里扫描未来三天并还原为实际 Date。
         var result: [NextEventItem] = []
-        let classPeriods: [(period: Int, startHour: Int, startMin: Int)] = [
-            (1, 8, 0), (2, 8, 55), (3, 10, 0), (4, 10, 55),
-            (5, 14, 30), (6, 15, 25), (7, 16, 30), (8, 17, 25),
-            (9, 19, 0), (10, 19, 50), (11, 20, 40), (12, 21, 30),
-        ]
-
         let scanStart = calendar.startOfDay(for: now)
         let scanEnd = calendar.startOfDay(for: limit)
         let totalDays = max(calendar.dateComponents([.day], from: scanStart, to: scanEnd).day ?? 0, 0)
@@ -139,11 +133,11 @@ class NextEventViewModel: ObservableObject
             {
                 guard course.day == weekday else { continue }
                 guard course.weekList.contains(week) else { continue }
-                guard let periodInfo = classPeriods.first(where: { $0.period == course.start }) else { continue }
+                guard let periodInfo = CurriculumClassSchedule.period(number: course.start) else { continue }
 
                 var comps = calendar.dateComponents([.year, .month, .day], from: candidateDay)
                 comps.hour = periodInfo.startHour
-                comps.minute = periodInfo.startMin
+                comps.minute = periodInfo.startMinute
                 guard let classDateTime = calendar.date(from: comps) else { continue }
                 guard classDateTime >= now && classDateTime <= limit else { continue }
 
@@ -285,7 +279,7 @@ class NextEventViewModel: ObservableObject
     private func formatCoursePeriods(start: Int, step: Int) -> String
     {
         let end = start + step - 1
-        return start == end ? "第\(start)节课" : "第\(start)-\(end)节课"
+        return CurriculumClassSchedule.periodText(start: start, end: end) + "课"
     }
 }
 

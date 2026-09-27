@@ -13,6 +13,7 @@ import UIKit
 struct CurriculumSettingView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var userinfo: userInfo
+    @EnvironmentObject private var iapStore: IAPStore
 
     @Binding var semesterStartDate: Date
     @Binding var courses: [Course]
@@ -21,6 +22,8 @@ struct CurriculumSettingView: View {
     @AppStorage(PreferenceKey.curriculumBackgroundEnabled) private var curriculumBackgroundEnabled = true
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage(PreferenceKey.showNoonPeriod) private var showNoonPeriod = false
+    @AppStorage(PreferenceKey.showEveningPeriod) private var showEveningPeriod = false
 
     /// `nil` 表示从未设置过开学日期，不能用任意默认日期伪装成已有数据。
     @State private var tempStartDate: Date?
@@ -43,6 +46,7 @@ struct CurriculumSettingView: View {
     @State private var importErrorRetryAction: (() -> Void)?
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showMFASheet = false
+    @State private var showSubscription = false
     @State private var mfaMaskedPhone = ""
     @State private var mfaCode = ""
     @State private var mfaSendCodeAction: (() async -> String?)?
@@ -88,6 +92,7 @@ struct CurriculumSettingView: View {
                 importSection
                 clearSection
                 notificationSection
+                periodSection
                 saveSection
             }
             .navigationTitle("设置")
@@ -108,6 +113,9 @@ struct CurriculumSettingView: View {
         }
         .sheet(isPresented: $showMFASheet) {
             mfaCodeInputSheet
+        }
+        .sheet(isPresented: $showSubscription) {
+            SubscriptionView()
         }
         .alert(importAlertMessage, isPresented: $showImportAlert) {
             if let retry = importErrorRetryAction {
@@ -323,6 +331,69 @@ struct CurriculumSettingView: View {
                 pendingNotificationCount = count
             }
         }
+    }
+
+    private var periodSection: some View {
+        Section {
+            premiumPeriodToggle(
+                title: "显示中午时段",
+                time: "11:40–14:30",
+                isOn: $showNoonPeriod
+            )
+
+            premiumPeriodToggle(
+                title: "显示晚上时段",
+                time: "18:10–19:00",
+                isOn: $showEveningPeriod
+            )
+        } header: {
+            Text("时段设置")
+        } footer: {
+            Text("中午和晚上时段属于校园通行证功能。关闭后仅隐藏对应行，已安排的课程不会被删除。")
+                .font(.caption)
+        }
+    }
+
+    private func premiumPeriodToggle(
+        title: String,
+        time: String,
+        isOn: Binding<Bool>
+    ) -> some View {
+        Toggle(isOn: premiumPeriodBinding(isOn)) {
+            HStack(spacing: 10) {
+                Image(systemName: iapStore.hasActiveSubscription ? "clock.badge.checkmark" : "lock.fill")
+                    .foregroundStyle(iapStore.hasActiveSubscription ? .blue : .orange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    Text(time)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .tint(.blue)
+        .listRowSeparator(.hidden)
+    }
+
+    /// 未开通时仍允许点击开关，以便直接进入购买页；运行时实际显示还会再次校验权益。
+    private func premiumPeriodBinding(_ storage: Binding<Bool>) -> Binding<Bool> {
+        Binding(
+            get: { storage.wrappedValue && iapStore.hasActiveSubscription },
+            set: { wantsToShow in
+                guard wantsToShow else {
+                    storage.wrappedValue = false
+                    return
+                }
+
+                guard iapStore.hasActiveSubscription else {
+                    showSubscription = true
+                    return
+                }
+
+                storage.wrappedValue = true
+            }
+        )
     }
 
     private var backgroundSection: some View {
@@ -856,4 +927,5 @@ private struct LiquidGlassPrimaryButtonStyle: ButtonStyle {
         courses: .constant([])
     )
     .environmentObject(userInfo())
+    .environmentObject(IAPStore.preview(hasActiveSubscription: true))
 }

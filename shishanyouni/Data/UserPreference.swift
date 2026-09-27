@@ -70,10 +70,6 @@ enum PreferenceKey
     static let savedCASBound = "saved_cas_bound"
     /// 狮山有你后端绑定状态 - userInfo / LoginView
     static let savedBackendBound = "saved_backend_bound"
-    /// 狮山有你 Token - userInfo / LoginChecker
-    static let savedShishanyouniToken = "saved_shishanyouni_token"
-    /// 加密的学校密码 - userInfo.performSchoolEncryption
-    static let encryptedPasswordSchool = "encrypted_password_school"
     /// 首页显示时钟 - userInfo → HomeView
     static let prefShowClock = "pref_showClock"
     /// 首页显示入学天数 - userInfo → HomeView
@@ -126,6 +122,10 @@ enum PreferenceKey
     static let showBottomControls = "showBottomControls"
     /// 当前显示周数 - CurriculumView / Widget
     static let scheduleCurrentWeek = "schedule_current_week"
+    /// 是否显示中午时段（校园通行证功能） - CurriculumView / CurriculumSettingView
+    static let showNoonPeriod = "show_noon_period"
+    /// 是否显示晚上时段（校园通行证功能） - CurriculumView / CurriculumSettingView
+    static let showEveningPeriod = "show_evening_period"
 
     // ========== 课表桌面小组件相关（App Group 共享） ==========
     /// 课表课程数据（JSON 编码） - CurriculumWidgetSync / Widget

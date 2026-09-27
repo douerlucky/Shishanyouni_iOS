@@ -352,19 +352,23 @@ struct ElectricityView: View
     {
         Task
         {
-            let token = try await loginToken()
-            let list = try await query.fetchFloorList(token: token, buildingId: bId)
-            await MainActor.run
+            do
             {
-                self.floors = list
-                if let firstFloor = list.first
+                let token = try await loginToken()
+                let list = try await query.fetchFloorList(token: token, buildingId: bId)
+                await MainActor.run
                 {
-                    self.selectedFloorId = firstFloor.value
-                    // 注意这里：从 "1-1770..." 中提取出 "1"
-                    let floorNum = firstFloor.value.components(separatedBy: "-").first ?? firstFloor.value
-                    updateRooms(buildingId: bId, floor: floorNum)
+                    self.floors = list
+                    if let firstFloor = list.first
+                    {
+                        self.selectedFloorId = firstFloor.value
+                        // 注意这里：从 "1-1770..." 中提取出 "1"
+                        let floorNum = firstFloor.value.components(separatedBy: "-").first ?? firstFloor.value
+                        updateRooms(buildingId: bId, floor: floorNum)
+                    }
                 }
             }
+            catch { await showError(error) }
         }
     }
 
@@ -372,13 +376,17 @@ struct ElectricityView: View
     {
         Task
         {
-            let token = try await loginToken()
-            let list = try await query.fetchRoomList(token: token, buildingId: buildingId, floorNum: floor)
-            await MainActor.run
+            do
             {
-                self.rooms = list
-                self.selectedRoomId = list.first?.value ?? ""
+                let token = try await loginToken()
+                let list = try await query.fetchRoomList(token: token, buildingId: buildingId, floorNum: floor)
+                await MainActor.run
+                {
+                    self.rooms = list
+                    self.selectedRoomId = list.first?.value ?? ""
+                }
             }
+            catch { await showError(error) }
         }
     }
 

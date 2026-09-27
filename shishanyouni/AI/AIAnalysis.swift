@@ -137,7 +137,7 @@ enum AIAnalysis
                 var info = "  - \(course.name)"
                 if let teacher = course.teacher, !teacher.isEmpty { info += "（\(teacher)）" }
                 if let room = course.room, !room.isEmpty { info += " \(room)" }
-                info += "，每周第 \(course.start)-\(course.start + course.step - 1) 节，周\(course.day)"
+                info += "，每周\(CurriculumClassSchedule.periodText(start: course.start, end: course.endPeriod))，周\(course.day)"
                 if let weeks = course.weeks, !weeks.isEmpty { info += "，\(weeks)" }
                 lines.append(info)
             }

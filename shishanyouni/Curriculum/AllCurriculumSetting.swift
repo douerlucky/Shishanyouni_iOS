@@ -5,17 +5,17 @@
 //  Created by douer_lucky on 2026/4/23.
 //
 
+import EventKit
 import SwiftUI
 import UIKit
-import EventKit
 
 struct AllCurriculumSetting: View
 {
     @State private var courses: [Course] = []
     @State private var backgroundImage: UIImage?
     @State private var addCourseContext: AddCourseContext?
-    @State private var editingCourse: Course?
-    @State private var pendingDeleteCourse: Course?
+    @State private var editingGroup: CourseGroup?
+    @State private var pendingDeleteGroup: CourseGroup?
     @State private var showDeleteConfirm = false
     @State private var semesterStartDate: Date = Date()
     @State private var reminderStates: [String: Bool] = [:]
@@ -40,6 +40,12 @@ struct AllCurriculumSetting: View
         !showCampusPassFeatures
     }
 
+    /// `courses` 是保存用的扁平数组；只有“所有课程”页按课程身份合并展示。
+    private var courseGroups: [CourseGroup]
+    {
+        courses.groupedForCourseManagement()
+    }
+
     var body: some View
     {
         ZStack
@@ -58,55 +64,55 @@ struct AllCurriculumSetting: View
                 // 学期统计属于通行证内容；无通行证模式下连入口也不展示。
                 if !hidesCampusPassContent
                 {
-                Button(action: {
-                    if iapStore.hasActiveSubscription
-                    {
-                        navigateToAdvancedStats = true
-                    }
-                    else
-                    {
-                        navigateToSubscription = true
-                    }
-                })
-                {
-                    HStack(spacing: 12)
-                    {
-                        Image(systemName: "chart.bar.xaxis.ascending")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
-                            .background(Color.blue.opacity(0.25))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                        VStack(alignment: .leading, spacing: 4)
+                    Button(action: {
+                        if iapStore.hasActiveSubscription
                         {
-                            Text("学期统计")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                            Text("学时分析 · 科目占比 · 空档热力图")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.7))
+                            navigateToAdvancedStats = true
                         }
+                        else
+                        {
+                            navigateToSubscription = true
+                        }
+                    })
+                    {
+                        HStack(spacing: 12)
+                        {
+                            Image(systemName: "chart.bar.xaxis.ascending")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .frame(width: 40, height: 40)
+                                .background(Color.blue.opacity(0.25))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        Spacer()
+                            VStack(alignment: .leading, spacing: 4)
+                            {
+                                Text("学期统计")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                Text("学时分析 · 科目占比 · 空档热力图")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
 
-                        Image(systemName: "chevron.right")
-                            .font(.body)
-                            .foregroundColor(.white.opacity(0.5))
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.body)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(Color.blue.opacity(scheduleContentOpacity))
+                        )
+                        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 24)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(Color.blue.opacity(scheduleContentOpacity))
-                    )
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 24)
-                }
-                .buttonStyle(.plain)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
                 }
 
                 if courses.isEmpty
@@ -120,33 +126,36 @@ struct AllCurriculumSetting: View
                 }
                 else
                 {
-                    ForEach(courses)
-                    { course in
-                        courseCard(course)
+                    ForEach(courseGroups)
+                    { group in
+                        courseGroupCard(group)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false)
                             {
                                 Button(role: .destructive)
                                 {
-                                    pendingDeleteCourse = course
+                                    pendingDeleteGroup = group
                                     showDeleteConfirm = true
                                 }
                                 label:
                                 {
-                                    Label("删除", systemImage: "trash")
+                                    Label("删除课程", systemImage: "trash")
                                 }
+
                                 Button
                                 {
-                                    editingCourse = course
+                                    editingGroup = group
                                 }
                                 label:
                                 {
-                                    Label("编辑", systemImage: "pencil")
+                                    Label("编辑课程", systemImage: "pencil")
                                 }
                                 .tint(.blue)
                             }
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                            .listRowInsets(
+                                EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+                            )
                     }
                 }
             }
@@ -173,21 +182,21 @@ struct AllCurriculumSetting: View
                 {
                     Menu
                     {
-                    Button
-                    {
-                        if iapStore.hasActiveSubscription
+                        Button
                         {
-                            showCalendarImportConfirmation = true
+                            if iapStore.hasActiveSubscription
+                            {
+                                showCalendarImportConfirmation = true
+                            }
+                            else
+                            {
+                                navigateToSubscription = true
+                            }
                         }
-                        else
+                        label:
                         {
-                            navigateToSubscription = true
+                            Label("导入到系统日历", systemImage: "calendar.badge.plus")
                         }
-                    }
-                    label:
-                    {
-                        Label("导入到系统日历", systemImage: "calendar.badge.plus")
-                    }
 
                         Button(role: .destructive)
                         {
@@ -228,16 +237,16 @@ struct AllCurriculumSetting: View
         { _ in
             loadBackgroundImage()
         }
-        .sheet(item: $editingCourse, onDismiss: {
+        .sheet(item: $editingGroup, onDismiss: {
             sortCoursesByNameAndTime()
             saveCourses()
         })
-        { course in
-            ManualCourseEditorView(courses: $courses, mode: .edit(course))
+        { group in
+            CourseGroupEditorView(courses: $courses, mode: .edit(group))
         }
         .sheet(item: $addCourseContext)
         { context in
-            ManualCourseEditorView(
+            CourseGroupEditorView(
                 courses: $courses,
                 mode: .add(prefillWeekday: context.day, prefillPeriod: context.period)
             )
@@ -246,16 +255,16 @@ struct AllCurriculumSetting: View
         {
             Button("取消", role: .cancel)
             {
-                pendingDeleteCourse = nil
+                pendingDeleteGroup = nil
             }
             Button("删除", role: .destructive)
             {
-                confirmDeleteCourse()
+                confirmDeleteGroup()
             }
         }
         message:
         {
-            Text("将删除「\(pendingDeleteCourse?.name ?? "该课程")」，此操作不可撤销。")
+            Text("将删除「\(pendingDeleteGroup?.name ?? "该课程")」的全部时间段及其提醒，此操作不可撤销。")
         }
         .navigationDestination(isPresented: $navigateToAdvancedStats)
         {
@@ -319,85 +328,198 @@ struct AllCurriculumSetting: View
         }
     }
 
+    /// 一张“课程组”卡片：公共资料只显示一次，时间段逐条显示。
     @ViewBuilder
-    private func courseCard(_ course: Course) -> some View
+    private func courseGroupCard(_ group: CourseGroup) -> some View
     {
-        let reminderOnBinding = Binding<Bool>(
-            get: { self.reminderStates[course.id] ?? CurriculumNotificationManager.shared.isReminderEnabled(for: course.id) },
-            set: { newValue in
-                if !self.iapStore.hasActiveSubscription
-                {
-                    self.navigateToSubscription = true
-                    return
-                }
-                self.reminderStates[course.id] = newValue
-                CurriculumNotificationManager.shared.toggleReminder(for: course.id, enabled: newValue)
-            }
-        )
-
-        VStack(alignment: .leading, spacing: 6)
+        VStack(alignment: .leading, spacing: 10)
         {
-            HStack
+            let shortName = group.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+            VStack(alignment: .leading, spacing: 2)
             {
-                Text(course.name)
+                Text(shortName.isEmpty ? group.name : shortName)
                     .font(.title2)
                     .fontWeight(.semibold)
                     .lineLimit(2)
                     .foregroundColor(.white)
 
-                Spacer()
-
-                if !hidesCampusPassContent
+                if !shortName.isEmpty
                 {
-                    Button
-                    {
-                        reminderOnBinding.wrappedValue.toggle()
-                    } label: {
-                        Image(systemName: reminderOnBinding.wrappedValue ? "bell.fill" : "bell.slash")
-                            .font(.system(size: 16))
-                            .foregroundColor(reminderOnBinding.wrappedValue ? .yellow : .gray)
-                            .frame(width: 36, height: 36)
-                            .background(reminderOnBinding.wrappedValue ? Color.yellow.opacity(0.2) : Color.gray.opacity(0.15))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
+                    Text(group.name)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.65))
+                        .lineLimit(1)
                 }
             }
 
-            Label("周\(toWeekday(course.day)) 第\(course.start)-\(course.endPeriod)节",
-                  systemImage: "clock")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
-
-            Label(course.weeks ?? "未知周次", systemImage: "calendar")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
-
-            Label(course.room ?? "未知教室",
-                  systemImage: "location")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.7))
-
-            Label(course.teacher ?? "未知老师", systemImage: "person")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.7))
-
-            // 仅对已从教务同步到的课程展示考核方式；手动课程不会显示占位文本。
-            if let assessmentMethod = course.assessmentMethod,
-               !assessmentMethod.isEmpty
+            if let room = group.room, !room.isEmpty
             {
-                Label(assessmentMethod, systemImage: "checkmark.seal.fill")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.9))
+                courseDetailRow(
+                    systemImage: "location.fill",
+                    caption: "教室",
+                    text: room
+                )
+            }
+
+            if let teacher = group.teacher, !teacher.isEmpty
+            {
+                courseDetailRow(
+                    systemImage: "person.fill",
+                    caption: "老师",
+                    text: teacher
+                )
+            }
+
+            // 用下标而不是 Course.id，兼容旧数据中可能重复的 id。
+            ForEach(group.courses.indices, id: \.self)
+            { index in
+                courseTimeSlotRow(
+                    group.courses[index],
+                    number: index + 1
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(courseColor(for: course).opacity(scheduleContentOpacity))
+                .fill(
+                    courseColor(for: group.courses[0])
+                        .opacity(scheduleContentOpacity)
+                )
         )
-        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 24)
+        .optionalLiquidGlass(
+            enabled: enableLiquidGlassEffect,
+            cornerRadius: 24
+        )
+    }
+
+    /// 所有资料行都复用相同的左侧信息列：图标在上、说明在下。
+    /// 这样教室、老师、时间段的图标和文字能完整地纵向对齐。
+    @ViewBuilder
+    private func courseDetailRow(
+        systemImage: String,
+        caption: String,
+        text: String
+    ) -> some View
+    {
+        HStack(alignment: .center, spacing: 10)
+        {
+            courseInfoColumn(systemImage: systemImage, caption: caption)
+
+            Text(text)
+                .font(.subheadline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.leading)
+        }
+        .foregroundColor(.white.opacity(0.8))
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 每一行共用这个窄列，既对齐又不把内容推得太右。
+    @ViewBuilder
+    private func courseInfoColumn(
+        systemImage: String,
+        caption: String
+    ) -> some View
+    {
+        VStack(spacing: 3)
+        {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .medium))
+
+            Text(caption)
+                .font(.caption2.weight(.medium))
+                .lineLimit(1)
+        }
+        .frame(width: 56)
+    }
+
+    /// 一个时间段仍对应一条底层 Course，因此提醒开关也必须放在这里。
+    @ViewBuilder
+    private func courseTimeSlotRow(
+        _ course: Course,
+        number: Int
+    ) -> some View
+    {
+        let reminderOnBinding = Binding<Bool>(
+            get:
+            {
+                reminderStates[course.id]
+                    ?? CurriculumNotificationManager.shared
+                        .isReminderEnabled(for: course.id)
+            },
+            set:
+            {
+                newValue in
+
+                if !iapStore.hasActiveSubscription
+                {
+                    navigateToSubscription = true
+                    return
+                }
+
+                reminderStates[course.id] = newValue
+                CurriculumNotificationManager.shared.toggleReminder(
+                    for: course.id,
+                    enabled: newValue
+                )
+            }
+        )
+
+        HStack(alignment: .center, spacing: 10)
+        {
+            courseInfoColumn(
+                systemImage: "clock.fill",
+                caption: "时间段 \(number)"
+            )
+            .foregroundColor(.white.opacity(0.9))
+
+            VStack(alignment: .leading, spacing: 4)
+            {
+                Text(course.weeks ?? "未知周次")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.white)
+
+                Text(
+                    "周\(toWeekday(course.day)) \(CurriculumClassSchedule.periodText(start: course.start, end: course.endPeriod))"
+                )
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.8))
+            }
+
+            Spacer(minLength: 0)
+
+            if !hidesCampusPassContent
+            {
+                Button
+                {
+                    reminderOnBinding.wrappedValue.toggle()
+                }
+                label:
+                {
+                    Image(
+                        systemName: reminderOnBinding.wrappedValue
+                            ? "bell.fill"
+                            : "bell.slash"
+                    )
+                    .font(.system(size: 16))
+                    .foregroundColor(
+                        reminderOnBinding.wrappedValue ? .yellow : .gray
+                    )
+                    .frame(width: 36, height: 36)
+                    .background(
+                        reminderOnBinding.wrappedValue
+                            ? Color.yellow.opacity(0.2)
+                            : Color.gray.opacity(0.15)
+                    )
+                    .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 
     private func toWeekday(_ day: Int) -> String
@@ -466,17 +588,23 @@ struct AllCurriculumSetting: View
         sortCoursesByNameAndTime()
     }
 
-    private func confirmDeleteCourse()
+    private func confirmDeleteGroup()
     {
-        guard let course = pendingDeleteCourse else { return }
-        courses.removeAll { $0.id == course.id }
-        pendingDeleteCourse = nil
+        guard let group = pendingDeleteGroup else { return }
+
+        // 删除一门合并展示的课程，必须同时删掉它全部时间段的提醒偏好。
+        let reminderIDs = Set(group.courses.map(\.id))
+        CurriculumNotificationManager.shared.removeReminderPreferences(for: reminderIDs)
+        courses.removeAll { CourseGroupKey(course: $0) == group.id }
+        reminderIDs.forEach { reminderStates[$0] = nil }
+        pendingDeleteGroup = nil
         saveCourses()
     }
 
     private func saveCourses()
     {
         CurriculumStore.shared.saveCourses(courses, semesterStart: nil)
+        CurriculumNotificationManager.shared.rescheduleAllNotifications()
     }
 
     private func sortCoursesByNameAndTime()

@@ -177,25 +177,32 @@ struct MainTabView: View
 
 extension View
 {
+    /// 在支持的系统上，为指定形状应用 Liquid Glass。
     @ViewBuilder
-    func optionalLiquidGlass(enabled: Bool = true,cornerRadius: CGFloat = 64) -> some View
+    func optionalLiquidGlass<S: Shape>(
+        enabled: Bool = true,
+        in shape: S
+    ) -> some View
     {
-        if #available(iOS 26.0, *)
+        if #available(iOS 26.0, *), enabled
         {
-            if(enabled)
-            {
-                self.glassEffect(.clear, in: RoundedRectangle(cornerRadius: cornerRadius))
-            }
-            else
-            {
-                self
-            }
-            
+            self.glassEffect(.clear, in: shape)
         }
         else
         {
             self
         }
+    }
+
+    func optionalLiquidGlass(
+        enabled: Bool = true,
+        cornerRadius: CGFloat = 64
+    ) -> some View
+    {
+        optionalLiquidGlass(
+            enabled: enabled,
+            in: RoundedRectangle(cornerRadius: cornerRadius)
+        )
     }
 
     func glassBackground(cornerRadius: CGFloat = 64) -> some View

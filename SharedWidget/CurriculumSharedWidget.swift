@@ -7,6 +7,55 @@
 
 import Foundation
 
+/// 主 App 与课表 Widget 共用的课表行顺序。
+/// 中午、晚上使用保留编号，因而不会破坏教务系统既有的 1–12 节数据。
+enum CurriculumPeriodLayout
+{
+    static let noonPeriod = 13
+    static let eveningPeriod = 14
+
+    static let displayOrder = [
+        1, 2, 3, 4,
+        noonPeriod,
+        5, 6, 7, 8,
+        eveningPeriod,
+        9, 10, 11, 12,
+    ]
+
+    static func isExtraPeriod(_ period: Int) -> Bool
+    {
+        period == noonPeriod || period == eveningPeriod
+    }
+
+    static func displayName(for period: Int) -> String
+    {
+        switch period
+        {
+        case noonPeriod:
+            return "中午"
+        case eveningPeriod:
+            return "傍晚"
+        default:
+            return "第\(period)节"
+        }
+    }
+
+    static func timeAxisTitle(for period: Int) -> String
+    {
+        isExtraPeriod(period) ? displayName(for: period) : "\(period)"
+    }
+
+    static func displayPeriods(start: Int, end: Int) -> [Int]
+    {
+        guard let startIndex = displayOrder.firstIndex(of: start),
+              let endIndex = displayOrder.firstIndex(of: end),
+              startIndex <= endIndex
+        else { return [] }
+
+        return Array(displayOrder[startIndex...endIndex])
+    }
+}
+
 /// 课表 Widget 专属的课程展示模型。
 ///
 /// `Course` 仍然是主 App 的业务模型；主 App 写入 App Group 时，

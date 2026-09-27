@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-
-import SwiftUI
 import WebKit
 
 // 使用 UIViewRepresentable 包装 WKWebView
@@ -36,11 +34,11 @@ struct SchoolBusWeb: UIViewRepresentable
 // 专门用来显示推文的 View
 struct SchoolBusView: View
 {
-    let BusUrl: String = "https://car.hzau.edu.cn/passenger/pages/map"
+    private let busURL = "https://car.hzau.edu.cn/passenger/pages/map"
 
     var body: some View
     {
-        SchoolBusWeb(urlString: BusUrl)
+        SchoolBusWeb(urlString: busURL)
             // 关键点：这里指定忽略 .top，去掉顶部的空白
             .ignoresSafeArea(edges: .top)
             .navigationTitle("校车查询")
