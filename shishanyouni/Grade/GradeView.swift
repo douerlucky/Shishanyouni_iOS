@@ -409,8 +409,8 @@ struct GradeInquiry: View
     @State private var alertTitle   = ""
     @State private var errorRetryAction: (() -> Void)?
 
-    @State var selectedYear = "2025"
-    @State var selectedTerm = "2"
+    @State var selectedYear: String
+    @State var selectedTerm: String
     @AppStorage("gradeQuerySource") private var querySourceRaw = GradeQuerySource.shishanyouni.rawValue
 
     @State private var navigateToAnalysis = false
@@ -422,6 +422,13 @@ struct GradeInquiry: View
     @State private var excludedIDs: Set<String> = []
 
     let gradeService = GradeService()
+
+    init()
+    {
+        let semester = AcademicQuerySemester.forDate(Date())
+        _selectedYear = State(initialValue: semester.year)
+        _selectedTerm = State(initialValue: semester.term)
+    }
 
     private var querySource: GradeQuerySource
     {

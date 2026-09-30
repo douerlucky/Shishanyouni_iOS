@@ -170,33 +170,29 @@ private struct WhatsNewFeatureRow: View
     {
         HStack(spacing: 14)
         {
-            Image(systemName: feature.icon)
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(feature.color)
-                .frame(width: 48, height: 48)
-                .background(feature.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16))
+            if let originalName = feature.previewOriginalName,
+               let shortName = feature.previewShortName
+            {
+                CourseAbbreviationIcon(
+                    originalName: originalName,
+                    shortName: shortName,
+                    color: feature.color
+                )
+            }
+            else
+            {
+                Image(systemName: feature.icon)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(feature.color)
+                    .frame(width: 48, height: 48)
+                    .background(feature.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16))
+            }
 
             VStack(alignment: .leading, spacing: 4)
             {
                 Text(feature.title)
                     .font(.headline)
                     .foregroundStyle(.primary)
-
-                if let originalName = feature.previewOriginalName,
-                   let shortName = feature.previewShortName
-                {
-                    VStack(alignment: .leading, spacing: 1)
-                    {
-                        Text(originalName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Label(shortName, systemImage: "arrow.down")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundStyle(feature.color)
-                    }
-                    .padding(.vertical, 2)
-                }
 
                 Text(feature.message)
                     .font(.footnote)
@@ -208,6 +204,37 @@ private struct WhatsNewFeatureRow: View
         }
         .padding(14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+    }
+}
+
+/// “课程简称”功能的图示：完整课程名向下转换为简称。
+private struct CourseAbbreviationIcon: View
+{
+    let originalName: String
+    let shortName: String
+    let color: Color
+
+    var body: some View
+    {
+        VStack(spacing: 0)
+        {
+            Text(originalName)
+                .font(.system(size: 8, weight: .medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Image(systemName: "arrow.down")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(color)
+
+            Text(shortName)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+                .lineLimit(1)
+        }
+        .frame(width: 64, height: 56)
+        .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

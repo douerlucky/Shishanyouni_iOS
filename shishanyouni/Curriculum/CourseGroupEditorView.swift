@@ -187,6 +187,7 @@ struct CourseGroupEditorView: View
     @State private var courseShortName = ""
     @State private var location = ""
     @State private var teacherName = ""
+    @State private var assessmentMethod = ""
     @State private var selectedColor: Color = .blue
     @State private var hasCustomColor = false
     @State private var timeSlots: [CourseTimeSlotDraft]
@@ -223,6 +224,7 @@ struct CourseGroupEditorView: View
             _courseShortName = State(initialValue: group.courses.first?.shortName ?? "")
             _location = State(initialValue: group.room ?? "")
             _teacherName = State(initialValue: group.teacher ?? "")
+            _assessmentMethod = State(initialValue: group.assessmentMethod ?? "")
             _timeSlots = State(initialValue: group.courses.map(CourseTimeSlotDraft.init))
 
             if let hex = group.courses.first?.customColorHex,
@@ -251,6 +253,13 @@ struct CourseGroupEditorView: View
 
                     TextField("教室（可选）", text: $location)
                     TextField("教师（可选）", text: $teacherName)
+
+                    Picker("课程考查形式", selection: $assessmentMethod)
+                    {
+                        Text("未指定").tag("")
+                        Text("考查").tag("考查")
+                        Text("考试").tag("考试")
+                    }
 
                     HStack
                     {
@@ -718,7 +727,8 @@ struct CourseGroupEditorView: View
                 colorRandom: colorRandom,
                 customColorHex: customColorHex,
                 isManual: source?.isManual ?? true,
-                assessmentMethod: source?.assessmentMethod,
+                // 考查形式属于整门课程，所有时间段保持一致。
+                assessmentMethod: normalizedOptionalText(assessmentMethod),
                 priority: source?.priority
             )
         }

@@ -107,6 +107,10 @@ struct SubscriptionView: View
             }
             .buttonStyle(.plain)
 
+            Text("自定义优惠码请在 App 内使用此入口，或打开兑换链接。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
             NavigationLink
             {
                 ShareRewardRedeemView()
@@ -120,11 +124,28 @@ struct SubscriptionView: View
             {
                 VStack(alignment: .leading, spacing: 10)
                 {
-                    Text("商品信息准备中")
-                        .font(.headline)
-                    Text("当前暂时未读取到可购买的校园通行证商品，请稍后重试。")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+                    if let error = store.productLoadError
+                    {
+                        Label("无法加载 App Store 商品信息", systemImage: "exclamationmark.triangle")
+                            .font(.headline)
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("当前商店：\(store.storefrontCountryCode == "CHN" ? "中国大陆 (CHN)" : (store.storefrontCountryCode ?? "未获取到"))")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+
+                        Button("重新加载")
+                        {
+                            Task { await store.loadProducts() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    else
+                    {
+                        ProgressView("正在获取 App Store 商品信息…")
+                            .font(.headline)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(18)

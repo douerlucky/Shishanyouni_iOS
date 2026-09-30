@@ -13,10 +13,28 @@ import SwiftUI
 import UIKit
 
 let curriculumCellHeight: CGFloat = 58
+let curriculumTimeColumnWidth: CGFloat = 60
+let curriculumGridPadding: CGFloat = 10
+
+/// 课表与设置预览共用的基础字号，教室和老师允许最多两行。
+enum CurriculumTypography
+{
+    static let courseName: CGFloat = 11
+    static let courseDetail: CGFloat = 9
+    static let periodTitle: CGFloat = 15
+    static let extraPeriodTitle: CGFloat = 12
+    static let periodTime: CGFloat = 11
+}
+
+/// 同一个显示比例同时控制格子高度和格内文字，避免设置预览与真实课表不一致。
+private func curriculumDisplayScale(_ value: Double) -> CGFloat
+{
+    CGFloat(min(max(value, 0.65), 1.5))
+}
 
 func curriculumCellHeight(for fontScale: Double) -> CGFloat
 {
-    curriculumCellHeight * CGFloat(max(1.0, fontScale))
+    curriculumCellHeight * curriculumDisplayScale(fontScale)
 }
 
 struct AddCourseContext: Identifiable
@@ -265,7 +283,7 @@ struct CurriculumView: View
                             fontScale: curriculumFontScale,
                             visiblePeriods: visiblePeriods
                         )
-                            .frame(width: 60)
+                            .frame(width: curriculumTimeColumnWidth)
                             .opacity(scheduleContentOpacity)
 
                         CourseGridView(
@@ -291,7 +309,7 @@ struct CurriculumView: View
                         )
                         .opacity(scheduleContentOpacity)
                     }
-                    .padding(10)
+                    .padding(curriculumGridPadding)
                     .padding(.bottom, 140)
                 }
                 .gesture(
@@ -931,16 +949,36 @@ struct CourseGridView: View
                     Label("添加课程", systemImage: "plus.circle")
                 }
             } preview: {
-                VStack(spacing: 4)
-                {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.largeTitle)
-                        .foregroundColor(.blue)
-                    Text("周\(weekdayNames[day - 1]) \(CurriculumClassSchedule.displayName(for: period))")
-                        .font(.headline)
-                }
-                .padding(20)
+                emptyCellPreview(day: day, period: period)
             }
+    }
+
+    @ViewBuilder
+    private func emptyCellPreview(day: Int, period: Int) -> some View
+    {
+        if #available(iOS 26.0, *)
+        {
+            emptyCellPreviewContent(day: day, period: period)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        else
+        {
+            emptyCellPreviewContent(day: day, period: period)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
+
+    private func emptyCellPreviewContent(day: Int, period: Int) -> some View
+    {
+        VStack(spacing: 4)
+        {
+            Image(systemName: "plus.circle.fill")
+                .font(.largeTitle)
+                .foregroundColor(.blue)
+            Text("周\(weekdayNames[day - 1]) \(CurriculumClassSchedule.displayName(for: period))")
+                .font(.headline)
+        }
+        .padding(20)
     }
 
     // MARK: - 课程卡片（同一层级，无 ZStack，用 .background 实现背景色）
@@ -962,53 +1000,60 @@ struct CourseGridView: View
         let cellHeight = curriculumCellHeight(for: fontScale)
         let cardHeight = spans * cellHeight + (spans - 1) * 2
         let color = courseColor(for: course)
+        let scale = curriculumDisplayScale(fontScale)
 
-        VStack(spacing: 4)
+        VStack(spacing: 4 * scale)
         {
-            Spacer(minLength: 2)
+            Spacer(minLength: 2 * scale)
 
 
             let shortName = course.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
             Text(shortName.isEmpty ? course.name : shortName)
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: CurriculumTypography.courseName * scale, weight: .bold))
                 .foregroundColor(.white)
                 .lineLimit(4)
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
 
-            if let room = course.room
+            // 极紧凑的单节格优先保留课程名；完整信息仍可在长按预览中查看。
+            if cardHeight >= 55, let room = course.room
             {
-                HStack(alignment: .center, spacing: 2)
+                HStack(alignment: .center, spacing: 2 * scale)
                 {
                     Image(systemName: "location.fill")
+                        // 图标随缩小比例变化，放大时最多保持 100% 的尺寸。
+                        .font(.system(size: CurriculumTypography.courseDetail * min(scale, 1)))
                     Text(room)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                        .multilineTextAlignment(.leading)
+                        .minimumScaleFactor(0.6)
+                        .multilineTextAlignment(.center)
                 }
-                .font(.system(size: 8))
+                .font(.system(size: CurriculumTypography.courseDetail * scale))
                 .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
 
-            if let teacher = course.teacher
+            if cardHeight >= 55, let teacher = course.teacher
             {
-                HStack(alignment: .center, spacing: 2)
+                HStack(alignment: .center, spacing: 2 * scale)
                 {
                     Image(systemName: "person.fill")
-
+                        .font(.system(size: CurriculumTypography.courseDetail * min(scale, 1)))
                     Text(teacher)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                        .multilineTextAlignment(.leading)
+                        .minimumScaleFactor(0.6)
+                        .multilineTextAlignment(.center)
                 }
-                .font(.system(size: 8))
+                .font(.system(size: CurriculumTypography.courseDetail * scale))
                 .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            Spacer(minLength: 2)
+            Spacer(minLength: 2 * scale)
         }
 
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 2)
         .frame(maxWidth: .infinity)
         .frame(height: cardHeight)
 
@@ -1020,11 +1065,11 @@ struct CourseGridView: View
             if !conflicts.isEmpty
             {
                 Text("\(conflicts.count + 1)")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.system(size: CurriculumTypography.courseDetail * scale, weight: .bold))
                     .foregroundColor(.white)
-                    .frame(width: 16, height: 16)
+                    .frame(width: 16 * scale, height: 16 * scale)
                     .background(Circle().fill(Color.orange))
-                    .padding(4)
+                    .padding(4 * scale)
             }
         }
 
@@ -1131,7 +1176,29 @@ struct CourseCardPreview: View
 
     private let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
+    @ViewBuilder
     var body: some View
+    {
+        // 系统菜单保持原生样式，只为自定义预览提供对应系统的玻璃背景。
+        if #available(iOS 26.0, *)
+        {
+            previewContent
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        else
+        {
+            previewContent
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
+
+    private var previewContent: some View
+    {
+        VStack(spacing: 0) { previewRows }
+    }
+
+    @ViewBuilder
+    private var previewRows: some View
     {
         HStack(spacing: 16)
         {
@@ -1205,7 +1272,6 @@ struct CourseCardPreview: View
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .frame(width: 320)
-        .background(Color(.systemBackground))
 
         // 被压住的冲突课程列表
         if !conflicts.isEmpty
@@ -1292,7 +1358,6 @@ struct CourseCardPreview: View
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
                 .frame(width: 320)
-                .background(Color(.systemBackground))
             }
         }
     }
@@ -1439,12 +1504,15 @@ struct TimeCurriculumView: View
     private func periodRow(_ period: ClassPeriod) -> some View
     {
         let isCurrent = currentPeriodNumber == period.periodNumber
+        let scale = curriculumDisplayScale(fontScale)
 
-        VStack(spacing: 2)
+        VStack(spacing: 2 * scale)
         {
             Text(period.title)
                 .font(.system(
-                    size: CurriculumClassSchedule.isExtraPeriod(period.periodNumber) ? 11 : 14,
+                    size: (CurriculumClassSchedule.isExtraPeriod(period.periodNumber)
+                        ? CurriculumTypography.extraPeriodTitle
+                        : CurriculumTypography.periodTitle) * scale,
                     weight: isCurrent ? .bold : .medium,
                     design: .rounded
                 ))
@@ -1452,10 +1520,10 @@ struct TimeCurriculumView: View
                 .minimumScaleFactor(0.75)
                 .foregroundColor(isCurrent ? .white : .secondary)
             Text(period.startTime)
-                .font(.system(size: 10, weight: .regular, design: .rounded))
+                .font(.system(size: CurriculumTypography.periodTime * scale, weight: .regular, design: .rounded))
                 .foregroundColor(isCurrent ? .white : .secondary)
             Text(period.endTime)
-                .font(.system(size: 10, weight: .regular, design: .rounded))
+                .font(.system(size: CurriculumTypography.periodTime * scale, weight: .regular, design: .rounded))
                 .foregroundColor(isCurrent ? .white : .secondary)
         }
         .frame(

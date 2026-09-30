@@ -28,6 +28,8 @@ final class IAPStore: ObservableObject
     @Published private(set) var activeProductID: String?
     @Published private(set) var activeExpirationDate: Date?
     @Published private(set) var isLoadingProducts = false
+    @Published private(set) var productLoadError: String?
+    @Published private(set) var storefrontCountryCode: String?
     @Published private(set) var isPurchasing = false
     @Published var statusMessage = "正在加载校园通行证商品..."
 
@@ -38,6 +40,7 @@ final class IAPStore: ObservableObject
         IAPStore.halfYearProductID,
     ]
     private var updatesTask: Task<Void, Never>?
+    private var activeProductLoadID: UUID?
     init(autoload: Bool = true)
     {
         guard autoload else { return }
@@ -57,35 +60,69 @@ final class IAPStore: ObservableObject
 
     func bootstrap() async
     {
-        await refreshEntitlements()
-        await loadProducts()
+        // 两条 StoreKit 请求互不依赖；商品读取即使卡住，也能按时显示重试入口。
+        async let entitlements: Void = refreshEntitlements()
+        async let availableProducts: Void = loadProducts()
+        _ = await (entitlements, availableProducts)
     }
 
     func loadProducts() async
     {
+        guard !isLoadingProducts else { return }
+
+        let loadID = UUID()
+        activeProductLoadID = loadID
         isLoadingProducts = true
-        defer { isLoadingProducts = false }
+        productLoadError = nil
+        storefrontCountryCode = nil
+        let startedAt = Date()
+
+        // StoreKit 偶尔不会及时返回；超时只切换页面状态，迟到的结果仍可正常更新。
+        let timeoutTask = Task
+        {
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard !Task.isCancelled, activeProductLoadID == loadID, isLoadingProducts else { return }
+            isLoadingProducts = false
+            productLoadError = "连接 App Store 超时，请稍后重试。"
+            statusMessage = productLoadError ?? ""
+            print("[StoreKit] product request timed out after 15s, storefront=\(storefrontCountryCode ?? "nil")")
+        }
+        defer { timeoutTask.cancel() }
 
         do
         {
+            let storefront = await Storefront.current
+            guard activeProductLoadID == loadID else { return }
+            storefrontCountryCode = storefront?.countryCode
+
             let fetchedProducts = try await Product.products(for: productIDs)
+            guard activeProductLoadID == loadID else { return }
+
+            isLoadingProducts = false
             products = fetchedProducts.sorted
             { lhs, rhs in
                 productOrder(for: lhs.id) < productOrder(for: rhs.id)
             }
+            print("[StoreKit] elapsed=\(Date().timeIntervalSince(startedAt))s, storefront=\(storefront?.countryCode ?? "nil") (\(storefront?.id ?? "nil")), requested=\(productIDs), returned=\(products.map(\.id))")
 
             if products.isEmpty
             {
-                statusMessage = "暂时没有读取到校园通行证商品，请检查 ASC 商品是否已配置完成。"
+                productLoadError = "App Store 当前未返回校园通行证商品，请确认“媒体与购买项目”的账户及商店地区后重试。"
+                statusMessage = productLoadError ?? ""
             }
             else
             {
+                productLoadError = nil
                 statusMessage = hasActiveSubscription ? "已读取商品，并检测到当前有效的校园通行证权益。" : "已读取校园通行证商品。"
             }
         }
         catch
         {
+            guard activeProductLoadID == loadID else { return }
+            isLoadingProducts = false
+            productLoadError = "商品加载失败：\(error.localizedDescription)"
             statusMessage = "商品加载失败：\(error.localizedDescription)"
+            print("[StoreKit] elapsed=\(Date().timeIntervalSince(startedAt))s, storefront=\(storefrontCountryCode ?? "nil"), requested=\(productIDs), error=\(error)")
         }
     }
 

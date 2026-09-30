@@ -11,6 +11,23 @@ import Foundation
 
 struct shishanyouniTests {
 
+    @Test func academicQuerySemesterChangesAtFebruaryAndSeptember() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+
+        for (year, month, day, expectedYear, expectedTerm) in [
+            (2027, 1, 31, "2026", "1"),
+            (2027, 2, 1, "2026", "2"),
+            (2027, 8, 31, "2026", "2"),
+            (2027, 9, 1, "2027", "1"),
+        ] {
+            let date = try #require(calendar.date(from: DateComponents(year: year, month: month, day: day)))
+            let semester = AcademicQuerySemester.forDate(date, calendar: calendar)
+            #expect(semester.year == expectedYear)
+            #expect(semester.term == expectedTerm)
+        }
+    }
+
     @Test func parsesSchoolCalendarPageEntries() throws {
         let html = """
         var rc=[];

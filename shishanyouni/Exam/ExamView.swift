@@ -27,8 +27,8 @@ struct ExamView: View
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaSendCodeAction: (() async -> String?)?
 
-    @State var selectedYear = "2025"
-    @State var selectedTerm = "2"
+    @State var selectedYear: String
+    @State var selectedTerm: String
     @AppStorage("examQuerySource") private var querySourceRaw = ExamQuerySource.cas.rawValue
 
     private var querySource: ExamQuerySource
@@ -40,6 +40,13 @@ struct ExamView: View
     // 声明查询工具
     private let scheduleQuery = ScheduleQuery()
     private let examQuery = ExamQuery.shared
+
+    init()
+    {
+        let semester = AcademicQuerySemester.forDate(Date())
+        _selectedYear = State(initialValue: semester.year)
+        _selectedTerm = State(initialValue: semester.term)
+    }
 
     private var lastQueryText: String?
     {
@@ -720,7 +727,12 @@ struct ExamBottomControlBar: View
     let examQuery: ExamQuery
     let onQuerySuccess: () -> Void
 
-    let years = ["2023", "2024", "2025", "2026"]
+    private var years: [String]
+    {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let enrollmentYear = Int(userinfo.username.prefix(4)) ?? max(2022, currentYear - 4)
+        return (enrollmentYear...max(enrollmentYear, currentYear)).map(String.init)
+    }
     let terms = [("第一学期", "1"), ("第二学期", "2")]
 
     var body: some View

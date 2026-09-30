@@ -261,6 +261,13 @@ struct CourseGroup: Identifiable
         courses.first?.shortName
     }
 
+    /// 一门课程的各时间段共用考查形式；旧数据没有该字段时显示“未指定”。
+    var assessmentMethod: String?
+    {
+        courses.compactMap(\.assessmentMethod)
+            .first { $0 == "考查" || $0 == "考试" }
+    }
+
     init(id: CourseGroupKey, courses: [Course])
     {
         precondition(!courses.isEmpty)

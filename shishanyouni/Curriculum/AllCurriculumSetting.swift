@@ -379,6 +379,15 @@ struct AllCurriculumSetting: View
                     number: index + 1
                 )
             }
+
+            if let assessment = group.assessmentMethod,!assessment.isEmpty
+            {
+                courseDetailRow(
+                    systemImage: "checkmark.seal.fill",
+                    caption: "考查形式",
+                    text: assessment
+                )
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

@@ -100,7 +100,7 @@ enum PreferenceKey
     static let semesterStartDateTimestamp = "semesterStartDateTimestamp"
     /// 课表背景图片文件名 - CurriculumView / CurriculumSettingView / AllCurriculumSetting / Widget
     static let scheduleBackgroundImageFilename = "scheduleBackgroundImageFilename"
-    /// 课表显示字体缩放比例 - CurriculumFontSettingView / CurriculumView
+    /// 课表格子高度与格内文字共用的显示比例；保留旧 key 以兼容已保存的设置。
     static let curriculumFontScale = "curriculumFontScale"
     /// 课表背景不透明度（0.0 ~ 1.0） - CurriculumView / CurriculumSettingView / AllCurriculumSetting
     static let scheduleBackgroundOpacity = "scheduleBackgroundOpacity"

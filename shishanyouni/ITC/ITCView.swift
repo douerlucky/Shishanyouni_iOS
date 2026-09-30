@@ -7,7 +7,6 @@ struct ITCView: View
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var searchText = ""
-    @FocusState private var isSearchFocused: Bool
 
     private var filteredCourses: [ITC_Course]
     {
@@ -69,61 +68,31 @@ struct ITCView: View
                 }
                 else
                 {
-                    ZStack
+                    ScrollView
                     {
-                        ScrollView
+                        LazyVGrid(columns: columns, spacing: 12)
                         {
-                            LazyVGrid(columns: columns, spacing: 12)
-                            {
-                                ForEach(filteredCourses)
-                                { course in
-                                    NavigationLink(destination: AssignmentsView(courseID: course.courseID, courseName: course.name))
-                                    {
-                                        CourseCard(course: course)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
-                        }
-                        .refreshable { await loadCourses() }
-                        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 90) }
-
-                        // 与 AllCourseView 完全一致的底部悬浮搜索栏布局
-                        VStack(spacing: 12)
-                        {
-                            Spacer()
-
-                            HStack
-                            {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.secondary)
-
-                                TextField("搜索课程", text: $searchText)
-                                    .focused($isSearchFocused)
-                                    .submitLabel(.search)
-                                    .onSubmit { isSearchFocused = false }
-
-                                if !searchText.isEmpty
+                            ForEach(filteredCourses)
+                            { course in
+                                NavigationLink(destination: AssignmentsView(courseID: course.courseID, courseName: course.name))
                                 {
-                                    Button(action: { searchText = "" })
-                                    {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundColor(.secondary)
-                                    }
+                                    CourseCard(course: course)
                                 }
+                                .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .glassBackground(cornerRadius: 32)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 25)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                     }
+                    .refreshable { await loadCourses() }
                 }
             }
             .navigationTitle("ITC 课程")
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "搜索课程"
+            )
             .toolbar
             {
                 if !courses.isEmpty
