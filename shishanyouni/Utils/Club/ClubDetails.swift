@@ -5,25 +5,7 @@
 
 import SwiftUI
 
-// MARK: - Model
-
-struct ClubDetail: Identifiable, Decodable
-{
-    let id: Int
-    let name: String
-    let avatar: String
-    let introduction: String?
-    let contact: [String]?
-    let nameIndex: String?
-}
-
-struct ClubDetailResponse: Decodable
-{
-    let msg: String
-    let code: Int
-    let data: ClubDetail
-    let success: Bool
-}
+// 社团接口模型位于 API/Models/ClubAPIModels.swift。
 
 // MARK: - ViewModel
 
@@ -36,7 +18,7 @@ class ClubDetailViewModel: ObservableObject
 
     func fetch(id: Int) async
     {
-        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/club/getbyid?id=\(id)") else { return }
+        guard let url = URL(string: "\(ShishanyouniAPI.clubDetailURL)?id=\(id)") else { return }
         do
         {
             let (data, _) = try await URLSession.shared.data(from: url)

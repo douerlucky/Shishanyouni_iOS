@@ -7,47 +7,7 @@
 
 import Foundation
 
-enum SearchType: String, Encodable
-{
-    case anyWord = "wrd"
-    case title = "wti"
-    case author = "wau"
-}
-
-struct BookListRequest: Encodable
-{
-    let kw: String
-    let searchType: SearchType
-    let page: Int
-}
-
-struct BookListResponse: Decodable
-{
-    let msg: String // 返回消息
-    let code: Int // 错误码
-    let data: BookListResult? // 返回的结构体
-}
-
-struct BookListResult: Decodable
-{
-    let bookList: [Book] // 书籍列表(为空则代表没有下一页)
-    let page: Int // 页码
-    let totalCnt: Int // 总数量
-}
-
-struct Book: Decodable, Identifiable
-{
-    let name: String
-    let author: String
-    let publish: String
-    let rd: String
-    let no: String
-
-    var id: String
-    {
-        "\(rd)-\(no)"
-    }
-}
+// 馆藏接口模型位于 API/Models/LibraryAPIModels.swift。
 
 enum LibraryCatalogError: LocalizedError
 {
@@ -73,7 +33,6 @@ enum LibraryCatalogError: LocalizedError
 
 class LibraryCatalogSearch
 {
-    private static let listURL = "https://lion.hzau.edu.cn/app/ios/library/bookList"
 
     private func makeSearchRequest(
         keyword: String,
@@ -81,7 +40,7 @@ class LibraryCatalogSearch
         page: Int
     ) throws -> URLRequest //一封即将发给服务器的请求
     {
-        guard let url = URL(string: Self.listURL)
+        guard let url = URL(string: ShishanyouniAPI.bookListURL)
         else
         {
             throw URLError(.badURL)

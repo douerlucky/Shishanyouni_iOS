@@ -7,8 +7,7 @@ struct LibraryFlowView: View
 
     var body: some View
     {
-        LibraryAdaptiveWeb(urlString: "https://libseat.hzau.edu.cn/self")
-            .ignoresSafeArea(edges: .top)
+        LibraryAdaptiveWeb(urlString: SchoolDirectAPI.librarySeatURL)
             .navigationTitle("座位预约")
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)

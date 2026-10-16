@@ -6,24 +6,7 @@
 import SwiftUI
 import WebKit
 
-// MARK: - 数据模型
-
-struct GuideDetail: Codable
-{
-    let id: Int
-    let name: String
-    let icon: String?
-    let context: String?
-    let author: String?
-    let time: String?
-}
-
-struct GuideDetailResponse: Codable
-{
-    let msg: String
-    let code: Int
-    let data: GuideDetail?
-}
+// 攻略接口模型位于 API/Models/GuideAPIModels.swift。
 
 // MARK: - ViewModel
 
@@ -35,7 +18,7 @@ class StrategyDetailViewModel: ObservableObject
 
     func fetchDetail(id: Int)
     {
-        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/guide/findbyid?id=\(id)") else { return }
+        guard let url = URL(string: "\(ShishanyouniAPI.guideDetailURL)?id=\(id)") else { return }
         isLoading = true
         errorMessage = nil
 
@@ -118,7 +101,7 @@ struct DynamicHTMLView: UIViewRepresentable {
     func updateUIView(_ wv: WKWebView, context: Context) {
         if context.coordinator.lastLoadedHTML != wrapped {
             context.coordinator.lastLoadedHTML = wrapped
-            wv.loadHTMLString(wrapped, baseURL: URL(string: "https://lion.hzau.edu.cn"))
+            wv.loadHTMLString(wrapped, baseURL: URL(string: ShishanyouniAPI.origin))
         }
     }
 

@@ -2,7 +2,7 @@
 //  Curriculum.swift
 //  shishanyouni
 //
-//  课表网络服务（数据结构已迁移至 Data/UserData.swift）
+//  课表网络服务；接口模型位于 API/Models/CurriculumAPIModels.swift
 //
 
 import Foundation
@@ -12,17 +12,6 @@ import SwiftUI
 
 struct CurriculumService
 {
-    private static let apiURL = "https://lion.hzau.edu.cn/app/ios/timetable"
-
-    struct FetchRequest: Encodable
-    {
-        let username: String
-        let password: String
-        let token: String?
-        let type: Int = 0
-        let year: String
-        let term: String
-    }
 
     static func fetchCourses(
         username: String,
@@ -32,9 +21,9 @@ struct CurriculumService
         term: String
     ) async throws -> (courses: [Course], startDate: Date?)
     {
-        guard let url = URL(string: apiURL) else { throw CurriculumError.invalidURL }
+        guard let url = URL(string: ShishanyouniAPI.timetableURL) else { throw CurriculumError.invalidURL }
 
-        let body = FetchRequest(username: username, password: password,
+        let body = TimetableRequest(username: username, password: password,
                                 token: token.isEmpty ? nil : token,
                                 year: year, term: term)
 
@@ -84,28 +73,7 @@ struct CurriculumService
 
 // MARK: - 课程考核方式（考试 / 考查）
 
-/// 教务「我的课表（学生）」接口中的单条课次。
-///
-/// 这个接口与狮山有你自己的课表接口不同：它带有 `khfsmc`，因此只用来
-/// 补充考核方式，不参与课程时间、地点等主数据的解析。
-private struct CurriculumAssessmentItem: Decodable
-{
-    let courseName: String?
-    let teachingClassName: String?
-    let assessmentMethod: String?
-
-    private enum CodingKeys: String, CodingKey
-    {
-        case courseName = "kcmc"
-        case teachingClassName = "jxbmc"
-        case assessmentMethod = "khfsmc"
-    }
-}
-
-private struct CurriculumAssessmentResponse: Decodable
-{
-    let kbList: [CurriculumAssessmentItem]?
-}
+// 考核方式接口模型位于 API/Models/CurriculumAPIModels.swift。
 
 enum CurriculumAssessmentError: LocalizedError
 {
@@ -133,8 +101,6 @@ enum CurriculumAssessmentError: LocalizedError
 /// 通过当前账号的教务 Cookie 查询整学期考核方式。
 enum CurriculumAssessmentService
 {
-    private static let endpoint = "http://byjxyt.hzau.edu.cn/kbcx/xskbcxMobile_cxXsKb.html"
-    private static let referer = "http://byjxyt.hzau.edu.cn/kbcx/xskbcxMobile_cxTimeTableIndex.html?gnmkdm=N2190&layout=default"
 
     /// `CurriculumSettingView` 使用狮山接口的学期码 1/2；教务课表接口使用 3/12。
     static func academicTermCode(from appTerm: String) -> String
@@ -150,7 +116,7 @@ enum CurriculumAssessmentService
         appTerm: String
     ) async throws -> [String: String]
     {
-        guard let url = URL(string: endpoint) else
+        guard let url = URL(string: SchoolDirectAPI.timetableURL) else
         {
             throw CurriculumAssessmentError.invalidURL
         }
@@ -161,8 +127,8 @@ enum CurriculumAssessmentService
         request.setValue("application/json, text/javascript, */*; q=0.01", forHTTPHeaderField: "Accept")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148", forHTTPHeaderField: "User-Agent")
-        request.setValue(referer, forHTTPHeaderField: "Referer")
-        request.setValue("http://byjxyt.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        request.setValue(SchoolDirectAPI.timetableReferer, forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.academicOrigin, forHTTPHeaderField: "Origin")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
 
         // 关键：不传 `zs`，这样教务系统会返回整学期，而不是只返回某一周。

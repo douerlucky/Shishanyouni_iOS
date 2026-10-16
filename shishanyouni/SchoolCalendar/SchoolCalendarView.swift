@@ -36,6 +36,7 @@ struct SchoolCalendarView: View
     @EnvironmentObject var userinfo: userInfo
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     @State private var currentMonth: Date
     @State private var selectedDate: Date
@@ -53,7 +54,6 @@ struct SchoolCalendarView: View
     private let calendar = Calendar.current
     private let scheduleQuery = ScheduleQuery()
     private let calendarFetcher = SchoolCalendarFetcher.shared
-    private let schoolCalendarURL = "https://open.work.weixin.qq.com/wwopen/mpnews?mixuin=lu0DCgAABwCtk1udAAAUAA&mfid=WW0330-Z_3nCwAABwA3LVBi1SETCAdPydka6&idx=0&sn=31fb6968b113196aeff1db5776c0fcc2&version=5.0.9.6029&platform=win"
 
     private var isGuestMode: Bool
     {
@@ -88,10 +88,13 @@ struct SchoolCalendarView: View
                         selectedDate: $selectedDate
                     )
                     .padding(16)
-                    .background(Color(.secondarySystemGroupedBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 20))
+                    .background(Color(.secondarySystemGroupedBackground).opacity(pagePanelOpacity(base: 0.72, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 20))
                     .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
                     .opacity(scheduleContentOpacity)
                     .padding(.horizontal, 12)
+                    .monthSwipe { monthOffset in
+                        moveMonth(by: monthOffset)
+                    }
                     
                     schoolEventsForSelectedDateSection
                         .opacity(scheduleContentOpacity)
@@ -153,7 +156,7 @@ struct SchoolCalendarView: View
     {
         NavigationLink
         {
-            SchoolCalendarOriginalWebView(urlString: schoolCalendarURL)
+            SchoolCalendarOriginalWebView(urlString: SchoolDirectAPI.schoolCalendarArticleURL)
         }
         label:
         {
@@ -183,7 +186,7 @@ struct SchoolCalendarView: View
                     .foregroundColor(Color(.systemGray3))
             }
             .padding(16)
-            .background(Color(.secondarySystemGroupedBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 20))
+            .background(Color(.secondarySystemGroupedBackground).opacity(pagePanelOpacity(base: 0.72, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 20))
             .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
@@ -309,6 +312,26 @@ struct SchoolCalendarView: View
         return fmt.string(from: selectedDate)
     }
 
+    private func moveMonth(by offset: Int)
+    {
+        guard let month = calendar.date(byAdding: .month, value: offset, to: currentMonth)
+        else { return }
+
+        let monthStart = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: month)
+        ) ?? month
+        let daysInMonth = calendar.range(of: .day, in: .month, for: monthStart)?.count ?? 28
+        let day = min(calendar.component(.day, from: selectedDate), daysInMonth)
+        var components = calendar.dateComponents([.year, .month], from: monthStart)
+        components.day = day
+
+        withAnimation(.easeInOut(duration: 0.28))
+        {
+            currentMonth = monthStart
+            selectedDate = calendar.startOfDay(for: calendar.date(from: components) ?? monthStart)
+        }
+    }
+
     private func syncSchoolCalendar()
     {
         guard !isGuestMode else
@@ -386,6 +409,7 @@ private struct SchoolCalendarEmptyState: View
 {
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     let systemImage: String
     let title: String
@@ -409,7 +433,7 @@ private struct SchoolCalendarEmptyState: View
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
         .padding(.horizontal, 16)
-        .background(Color(.secondarySystemBackground).opacity(0.55), in: RoundedRectangle(cornerRadius: 18))
+        .background(Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.55, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 18))
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
         .opacity(scheduleContentOpacity)
         .padding(.horizontal, 16)
@@ -422,6 +446,7 @@ struct SchoolEventRow: View
 {
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     let event: SchoolCalendarEvent
 
@@ -464,7 +489,7 @@ struct SchoolEventRow: View
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Color(.secondarySystemBackground).opacity(0.72), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.72, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 16))
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
         .opacity(scheduleContentOpacity)
     }

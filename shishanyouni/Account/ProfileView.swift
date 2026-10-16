@@ -13,8 +13,14 @@ struct ProfileView: View
     @EnvironmentObject var iapStore: IAPStore
     @State private var navigateToSubscription = false
     @State private var showWhatsNew = false
+    @State private var backgroundImage: UIImage?
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect)
+    private var enableLiquidGlassEffect: Bool = true
     @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
     @AppStorage(PreferenceKey.showCampusPassCard) private var showCampusPassCard = true
+    @AppStorage(PreferenceKey.scheduleBackgroundImageFilename) private var backgroundImageFilename = ""
+    @AppStorage(PreferenceKey.scheduleBackgroundOpacity) private var backgroundOpacity: Double = 0.2
+    @AppStorage(PreferenceKey.profileBackgroundEnabled) private var profileBackgroundEnabled = false
 
     private var hidesCampusPassContent: Bool
     {
@@ -43,8 +49,16 @@ struct ProfileView: View
 
     var body: some View
     {
-        List
+        ZStack
         {
+            PageBackgroundView(
+                image: backgroundImage,
+                isEnabled: profileBackgroundEnabled,
+                opacity: backgroundOpacity
+            )
+
+            List
+            {
             VStack(spacing: 16)
             {
                 if userinfo.username.isEmpty
@@ -139,6 +153,10 @@ struct ProfileView: View
             {
             Section
             {
+                let cardShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+                let iconShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+                let campusPassTint = Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255)
+
                 Button
                 {
                     navigateToSubscription = true
@@ -149,13 +167,14 @@ struct ProfileView: View
                         {
                             ZStack
                             {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.14))
+                                iconShape
+                                    .fill(campusPassTint.opacity(0.14))
                                     .frame(width: 52, height: 52)
+                                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: iconShape)
 
                                 Image(systemName: iapStore.hasActiveSubscription ? "checkmark.shield.fill" : "crown.fill")
                                     .font(.system(size: 22, weight: .semibold))
-                                    .foregroundColor(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                                    .foregroundColor(campusPassTint)
                             }
 
                             VStack(alignment: .leading, spacing: 8)
@@ -166,7 +185,7 @@ struct ProfileView: View
 
                                 Text(
                                     iapStore.hasActiveSubscription
-                                    ? "狮山有你iOS校园通行证用户，可使用狮山有你全部功能"
+                                    ? "狮山有你iOS校园通行证用户，可使用狮山有你iOS全部功能"
                                     : "订阅狮山有你iOS校园通行证，畅享所有功能"
                                 )
                                 .font(.system(size: 13))
@@ -179,30 +198,26 @@ struct ProfileView: View
 
                         Text(iapStore.hasActiveSubscription ? "已开通" : "立即开通")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(iapStore.hasActiveSubscription ? Color.green : Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                            .foregroundColor(iapStore.hasActiveSubscription ? Color.green : campusPassTint)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
-                                (iapStore.hasActiveSubscription ? Color.green : Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255))
+                                (iapStore.hasActiveSubscription ? Color.green : campusPassTint)
                                     .opacity(0.12),
                                 in: Capsule()
                             )
+                            .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: Capsule())
                     }
+                    // 原来的白边 inset 已经在下面通过 listRowInsets 清零；
+                    // 这里把蓝色底的 padding 补齐到原白边的宽度，让蓝色铺满整行。
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(18)
-                    .background(
-                        RoundedRectangle(cornerRadius: 22)
-                            .fill(Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.06))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .stroke(
-                                Color(red: 23 / 255, green: 144 / 255, blue: 204 / 255).opacity(0.12),
-                                lineWidth: 1
-                            )
-                    )
+                    .background(campusPassTint.opacity(0.2), in: cardShape)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: cardShape)
                 }
                 .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
             }
 
@@ -304,8 +319,11 @@ struct ProfileView: View
                 }
             }
         }
-        .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .listStyle(.insetGrouped)
+        }
         .navigationTitle("我的")
+        .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $navigateToSubscription)
         {
             SubscriptionView()
@@ -328,6 +346,19 @@ struct ProfileView: View
                     .padding()
             }
         }
+        .onAppear
+        {
+            loadProfileBackgroundImage()
+        }
+        .onChange(of: backgroundImageFilename)
+        { _ in
+            loadProfileBackgroundImage()
+        }
+    }
+
+    private func loadProfileBackgroundImage()
+    {
+        backgroundImage = BackgroundImageStore.loadImage(named: backgroundImageFilename)
     }
 }
 

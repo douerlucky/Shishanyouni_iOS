@@ -117,38 +117,7 @@ enum CASMFADebug {
     }
 }
 
-struct CASMFADetectResponse: Decodable {
-    let code: Int
-    let data: CASMFADetectData?
-}
-
-struct CASMFADetectData: Decodable {
-    let need: Bool
-    let state: String?
-    let mfaTypeSecurePhone: Bool?
-}
-
-struct CASMFAInitResponse: Decodable {
-    let code: Int
-    let data: CASMFAInitData?
-}
-
-struct CASMFAInitData: Decodable {
-    let gid: String
-    let securePhone: String?
-    let attestServerUrl: String
-}
-
-struct CASMFACommonResponse: Decodable {
-    let code: Int
-    let data: CASMFACommonData?
-    let message: String?
-}
-
-struct CASMFACommonData: Decodable {
-    let result: String?
-    let status: Int?
-}
+// CAS 安全验证接口模型位于 API/Models/AccountAPIModels.swift。
 
 enum CASMFAError: LocalizedError {
     case needCodeInput

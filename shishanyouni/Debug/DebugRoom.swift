@@ -24,7 +24,7 @@ struct DebugRoom: View
 
     @EnvironmentObject var userinfo: userInfo
 
-    private let loginURL = URL(string: "https://cas-paas.hzau.edu.cn/cas/login?service=https://portal-paas.hzau.edu.cn/")!
+    private let loginURL = URL(string: SchoolDirectAPI.casPortalLoginURL)!
 
     var body: some View
     {

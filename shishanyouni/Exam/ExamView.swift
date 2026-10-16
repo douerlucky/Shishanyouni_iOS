@@ -168,8 +168,9 @@ struct ExamView: View
                 onQuerySuccess: { }
             )
         }
-        .navigationTitle("我的考试")
+        .navigationTitle("考试查询")
         .toolbar(.hidden, for: .tabBar)
+        .navigationBarTitleDisplayMode(.large)
         .alert(alertTitle, isPresented: $showAlert)
         {
             if let retry = errorRetryAction {
@@ -495,7 +496,7 @@ struct ExamCard: View
     private var examLocation: String
     {
         let room = (exam.cdmc ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return room.isEmpty ? "华中农业大学" : "华中农业大学\(room)"
+        return room
     }
 
     private func requestCalendarAccess(_ store: EKEventStore) async throws -> Bool
@@ -735,55 +736,34 @@ struct ExamBottomControlBar: View
     }
     let terms = [("第一学期", "1"), ("第二学期", "2")]
 
+    private var selectionTitle: String
+    {
+        "\(formatYearAbbreviation(selectedYear)) · \(termShortName(selectedTerm))"
+    }
+
     var body: some View
     {
-        HStack(spacing: 15)
+        HStack(spacing: 8)
         {
-            QuerySourcePickerButton(selection: $querySource)
+            DataSourceSelector(
+                selection: $querySource,
+                fontSize: 13,
+                horizontalPadding: 10,
+                verticalPadding: 10
+            )
             { source in
                 switchSource(to: source)
             }
 
-            // 学期选择器
-            Button(action: { showPicker = true })
-            {
-                HStack
-                {
-                    Text("\(formatYearAbbreviation(selectedYear)) \(termShortName(selectedTerm))")
-                        .font(.system(size: 14, weight: .bold))
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 10, weight: .bold))
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color(.systemBackground).opacity(0.9))
-                .clipShape(Capsule())
-            }
-            .optionalLiquidGlass()
+            SemesterSelector(title: selectionTitle, action: { showPicker = true })
+            .disabled(isLoading)
 
             // 查询按钮
-            Button(action: {
-                fetchExamData()
-            })
-            {
-                HStack(spacing: 6)
-                {
-                    Image(systemName: "magnifyingglass")
-                    Text("查询")
-                }
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 10)
-                .background(Color.blue)
-                .clipShape(Capsule())
-            }
-            .optionalLiquidGlass()
+            SearchButton("查询") { fetchExamData() }
+            .frame(width: 82)
+            .disabled(isLoading)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 15)
-        .glassBackground(cornerRadius: 64)
-        .padding(.bottom, 25)
+        .queryBottomIndicatorBar()
 
         .sheet(isPresented: $showPicker)
         {
@@ -821,17 +801,7 @@ struct ExamBottomControlBar: View
                     .pickerStyle(.wheel)
                 }
 
-                Button(action: { showPicker = false })
-                {
-                    Text("确定")
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                }
-                .optionalLiquidGlass()
+                AcceptButton("确定") { showPicker = false }
                 .padding(.horizontal, 25)
                 .padding(.bottom, 20)
             }

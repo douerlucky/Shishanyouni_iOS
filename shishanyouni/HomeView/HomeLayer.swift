@@ -226,14 +226,19 @@ private struct HomeFeatureGlassIcon: View
     let icon: String
     let color: Color
     let glassEnabled: Bool
+    @AppStorage(PreferenceKey.pageBackgroundOpacity)
+    private var pageBackgroundOpacity: Double = 0.35
 
     var body: some View
     {
         ZStack
         {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(color.opacity(0.18))
+                .fill(color.opacity(0.18 * min(max(pageBackgroundOpacity / 0.35, 0), 1)))
                 .frame(width: 60, height: 60)
+                // iOS 26 的玻璃效果会读取形状本身的 alpha；将它放在
+                // optionalLiquidGlass 之前，才能让开关和“背景不透明度”同时生效。
+                .opacity(min(max(pageBackgroundOpacity / 0.35, 0), 1))
                 .optionalLiquidGlass(enabled: glassEnabled, cornerRadius: 16)
 
             Image(systemName: icon)
@@ -251,6 +256,13 @@ private struct HomeFeatureGlassIcon: View
 /// 负责把 UIKit 的事件翻译回 SwiftUI/HomeLayer。
 struct HomeFavoriteGridView: UIViewRepresentable
 {
+    private static let itemHeight: CGFloat = 126
+    private static let lineSpacing: CGFloat = 16
+    private static let topInset: CGFloat = 10
+    // 最后一排的标题和玻璃卡片不能贴着 UICollectionView 的底部边界，
+    // 否则 UIKit 会在 cell 还没完全布局完时把它裁掉。
+    private static let bottomInset: CGFloat = 64
+
     let features: [HomeFeatureItem]
     let isEditing: Bool
     let onSelect: (HomeFeatureItem) -> Void
@@ -264,7 +276,10 @@ struct HomeFavoriteGridView: UIViewRepresentable
         guard count > 0 else { return 0 }
 
         let rows = max(1, Int(ceil(Double(count) / 3.0)))
-        return 10 + CGFloat(rows) * 110 + CGFloat(max(0, rows - 1)) * 20
+        return Self.topInset
+            + CGFloat(rows) * Self.itemHeight
+            + CGFloat(max(0, rows - 1)) * Self.lineSpacing
+            + Self.bottomInset
     }
 
     func makeCoordinator() -> Coordinator
@@ -274,15 +289,21 @@ struct HomeFavoriteGridView: UIViewRepresentable
 
     func makeUIView(context: Context) -> UICollectionView
     {
-        // Grid 的视觉规格：三列、每格 110pt 高、行距 20pt。
-        let layout = UICollectionViewFlowLayout()
+        // Grid 的视觉规格：三列、每格 126pt 高，给两行标题留出完整空间。
+        let layout = ThreeColumnFlowLayout()
         layout.minimumInteritemSpacing = 0
-        layout.minimumLineSpacing = 20
-        layout.sectionInset = UIEdgeInsets(top: 10, left: 0, bottom: 0, right: 0)
+        layout.minimumLineSpacing = Self.lineSpacing
+        layout.sectionInset = UIEdgeInsets(
+            top: Self.topInset,
+            left: 0,
+            bottom: Self.bottomInset,
+            right: 0
+        )
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
         collectionView.clipsToBounds = false
+        collectionView.contentInsetAdjustmentBehavior = .never
         collectionView.isScrollEnabled = false
         collectionView.alwaysBounceVertical = false
         collectionView.dragInteractionEnabled = false
@@ -308,10 +329,18 @@ struct HomeFavoriteGridView: UIViewRepresentable
         context.coordinator.parent = self
         context.coordinator.currentFeatures = features
 
-        // 拖动中 reloadData 会中断手势，因此只在非拖动状态刷新数据。
-        if !context.coordinator.isInteractivelyMoving
+        let featureKeys = features.map(\.key)
+        let needsReload = featureKeys != context.coordinator.renderedFeatureKeys
+            || isEditing != context.coordinator.renderedIsEditing
+
+        // 揭示动画会频繁重绘父视图，但收藏内容没有变化时不应 reloadData。
+        // 反复 reload 会让 UICollectionView 的三列布局闪动，并中断长按手势。
+        if needsReload, !context.coordinator.isInteractivelyMoving
         {
             collectionView.reloadData()
+            collectionView.collectionViewLayout.invalidateLayout()
+            context.coordinator.renderedFeatureKeys = featureKeys
+            context.coordinator.renderedIsEditing = isEditing
         }
     }
 
@@ -322,6 +351,8 @@ struct HomeFavoriteGridView: UIViewRepresentable
 
         var parent: HomeFavoriteGridView
         var currentFeatures: [HomeFeatureItem]
+        var renderedFeatureKeys: [HomeFeatureKey]
+        var renderedIsEditing: Bool
         weak var collectionView: UICollectionView?
         private let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
         var isInteractivelyMoving = false
@@ -330,6 +361,8 @@ struct HomeFavoriteGridView: UIViewRepresentable
         {
             self.parent = parent
             currentFeatures = parent.features
+            renderedFeatureKeys = parent.features.map(\.key)
+            renderedIsEditing = parent.isEditing
             super.init()
             feedbackGenerator.prepare()
         }
@@ -380,12 +413,6 @@ struct HomeFavoriteGridView: UIViewRepresentable
             parent.onReorder(currentFeatures.map(\.key))
         }
 
-        func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize
-        {
-            let width = floor(collectionView.bounds.width / 3)
-            return CGSize(width: width, height: 110)
-        }
-
         @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer)
         {
             guard let collectionView, currentFeatures.count > 1 else { return }
@@ -412,11 +439,40 @@ struct HomeFavoriteGridView: UIViewRepresentable
                 collectionView.endInteractiveMovement()
                 isInteractivelyMoving = false
                 collectionView.reloadData()
+                renderedFeatureKeys = currentFeatures.map(\.key)
+                renderedIsEditing = parent.isEditing
             default:
                 collectionView.cancelInteractiveMovement()
                 isInteractivelyMoving = false
                 collectionView.reloadData()
+                renderedFeatureKeys = currentFeatures.map(\.key)
+                renderedIsEditing = parent.isEditing
             }
+        }
+    }
+
+    /// 固定三列的布局，避免拖动动画或宽度短暂变化时出现两列/三列跳变。
+    final class ThreeColumnFlowLayout: UICollectionViewFlowLayout
+    {
+        override func prepare()
+        {
+            super.prepare()
+
+            guard let collectionView else { return }
+            let availableWidth = collectionView.bounds.width
+                - sectionInset.left
+                - sectionInset.right
+                - minimumInteritemSpacing * 2
+
+            itemSize = CGSize(
+                width: max(floor(max(availableWidth, 0) / 3), 1),
+                height: HomeFavoriteGridView.itemHeight
+            )
+        }
+
+        override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
+        {
+            true
         }
     }
 
@@ -450,7 +506,7 @@ struct HomeFavoriteGridView: UIViewRepresentable
 
         func configure(feature: HomeFeatureItem, isEditing: Bool, canRemove: Bool, accessoryAction: @escaping () -> Void)
         {
-            let glassEnabled = UserDefaults.standard.bool(forKey: "enableLiquidGlassEffect")
+            let glassEnabled = UserDefaults.standard.object(forKey: PreferenceKey.enableLiquidGlassEffect) as? Bool ?? true
 
             updateIcon(icon: feature.icon, color: feature.color, glassEnabled: glassEnabled)
             titleLabel.text = feature.title

@@ -613,16 +613,16 @@ private extension SubscriptionView
     {
         [
             ComparisonRow(title: "所有狮山有你小程序功能", normalUserAvailable: true, passUserAvailable: true),
-            ComparisonRow(title: "私人行程与日程", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "私人日程与行程管理", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "成绩详情、学期分析与 GPA", normalUserAvailable: false, passUserAvailable: true),
             ComparisonRow(title: "体测查询", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "ITC平台查询", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "图书馆预约", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "桌面小组件", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "学期分析", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "GPA分析", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "选课", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "课程上课提醒", normalUserAvailable: false, passUserAvailable: true),
-            ComparisonRow(title: "后续iOS版专属功能更新", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "ITC 作业平台", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "选课功能", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "图书馆座位预约", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "课程简称与中午/傍晚时段", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "课程提醒", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "桌面/锁屏小组件", normalUserAvailable: false, passUserAvailable: true),
+            ComparisonRow(title: "后续iOS版本专属功能", normalUserAvailable: false, passUserAvailable: true),
         ]
     }
 }
@@ -660,7 +660,7 @@ private struct ShareRewardRedeemView: View
                     Text("分享应用领取兑换码")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
 
-                    Text("如果你觉得狮山有你 iOS 好用，可以把它分享给更多华农同学，审核通过后免费领取 3 个月校园通行证兑换码。")
+                    Text("如果你觉得狮山有你 iOS 好用，可以把它分享给更多同学，审核通过后免费领取 3 个月校园通行证兑换码。")
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -698,7 +698,7 @@ private struct ShareRewardRedeemView: View
             Text("活动规则")
                 .font(.title3.bold())
 
-            Text("在任意公开社交平台发布 1 张 App 使用截图，并带上 #华中农业大学 #狮山有你iOS 两个话题。发布后进入反馈群提交截图与链接，审核通过后可获得 3 个月校园通行证兑换码。")
+            Text("在任意公开社交平台发布 1 张 App 使用截图，并带上 #狮山有你 #狮山有你iOS 两个话题。发布后进入反馈群提交截图与链接，审核通过后可获得 3 个月校园通行证兑换码。")
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .lineSpacing(4)

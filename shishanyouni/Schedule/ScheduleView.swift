@@ -35,18 +35,11 @@ struct ScheduleView: View
     {
         ZStack
         {
-            Color(.systemGroupedBackground)
-                .opacity(scheduleBackgroundEnabled ? 0 : 1)
-                .ignoresSafeArea()
-
-            if scheduleBackgroundEnabled, let backgroundImage
-            {
-                Image(uiImage: backgroundImage)
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .opacity(backgroundOpacity)
-            }
+            PageBackgroundView(
+                image: backgroundImage,
+                isEnabled: scheduleBackgroundEnabled,
+                opacity: backgroundOpacity
+            )
 
             VStack(spacing: 0)
             {
@@ -61,10 +54,9 @@ struct ScheduleView: View
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 8)
+                    .padding(.top, 4)
+                    .padding(.bottom, 6)
                     .opacity(scheduleContentOpacity)
-                    .padding(.horizontal, 12)
                 }
 
                 Group
@@ -78,7 +70,6 @@ struct ScheduleView: View
                     }
                 }
             }
-            .padding(.top, scheduleBackgroundEnabled ? 72 : 0)
             .ignoresSafeArea(.container, edges: .bottom)
         }
         .navigationTitle(showPersonalSchedule ? "日程" : "校历")

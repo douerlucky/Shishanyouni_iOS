@@ -8,17 +8,7 @@
 
 import Foundation
 
-// MARK: - API Response
-
-struct ClassroomResponse: Decodable
-{
-    let msg: String?
-    let code: Int?
-    let data: [[Int]]?      // 二维数组：外层是教室列表，内层是5个时间段状态(0空闲/1占用)
-    let timestamp: Int64?
-    let success: Bool?
-    let fail: Bool?
-}
+// 空教室接口响应位于 API/Models/ClassroomAPIModels.swift。
 
 // MARK: - 渲染模型
 
@@ -35,7 +25,6 @@ struct RoomStatus: Identifiable
 
 class ClassroomService
 {
-    private let baseURL = "https://lion.hzau.edu.cn/app/ios/freeroom/getToday"
 
     /// 获取空教室数据，转换为 RoomStatus（arrayIndex 为 0-based）
     func fetchEmptyRooms(dateStr: String, siteName: String) async throws -> [RoomStatus]
@@ -49,7 +38,7 @@ class ClassroomService
     /// 获取原始 data 二维数组（供 FavoriteClassroomStore 直接按下标取值用）
     func fetchRawData(dateStr: String, siteName: String) async throws -> [[Int]]
     {
-        var components = URLComponents(string: baseURL)!
+        var components = URLComponents(string: ShishanyouniAPI.classroomURL)!
         components.queryItems = [
             URLQueryItem(name: "dateStr",  value: dateStr),
             URLQueryItem(name: "siteName", value: siteName)

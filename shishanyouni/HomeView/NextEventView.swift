@@ -320,13 +320,13 @@ private func isDayAfterTomorrow(_ date: Date) -> Bool
 
 struct NextEventView: View
 {
-    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
-    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.scheduleContentOpacity) private var scheduleContentOpacity: Double = 1.0
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect: Bool = true
     @StateObject private var vm = NextEventViewModel()
 
     private var cardOpacity: Double
     {
-        max(scheduleContentOpacity, 0.92)
+        scheduleContentOpacity
     }
 
     var body: some View
@@ -370,29 +370,26 @@ struct NextEventView: View
 
     private func emptyCard(width: CGFloat) -> some View
     {
-        HStack(spacing: 14)
+        LiquidGlassCard(enabled: enableLiquidGlassEffect)
         {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 26))
-                .foregroundColor(.green)
-
-            VStack(alignment: .leading, spacing: 4)
+            HStack(spacing: 14)
             {
-                Text("接下来 3 天暂无安排")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.primary)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 26))
+                    .foregroundColor(.green)
 
+                VStack(alignment: .leading, spacing: 4)
+                {
+                    Text("接下来 3 天暂无安排")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                }
+
+                Spacer(minLength: 0)
             }
-
-            Spacer(minLength: 0)
+            .padding(16)
+            .frame(width: width, height: 120, alignment: .leading)
         }
-        .padding(16)
-        .frame(width: width, height: 120, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground).opacity(0.82))
-        )
-        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
         .overlay(
             RoundedRectangle(cornerRadius: 20)
                 .stroke(Color(.separator).opacity(0.12), lineWidth: 1)
@@ -403,16 +400,22 @@ struct NextEventView: View
     @ViewBuilder
     private func eventCard(_ event: NextEventItem) -> some View
     {
-        HStack(spacing: 14)
+        LiquidGlassCard(enabled: enableLiquidGlassEffect)
         {
+            HStack(spacing: 14)
+            {
             // 左侧：图标 + 类型标签
             VStack(spacing: 6)
             {
                 ZStack
                 {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(event.type.color.opacity(0.15))
+                    let iconShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    iconShape
+                        .fill(event.type.color.opacity(0.12))
                         .frame(width: 48, height: 48)
+                        .background(.ultraThinMaterial, in: iconShape)
+                        .clipShape(iconShape)
+                        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: iconShape)
 
                     Image(systemName: event.type.icon)
                         .font(.system(size: 20, weight: .semibold))
@@ -424,15 +427,17 @@ struct NextEventView: View
                     .foregroundColor(event.type.color)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(event.type.color.opacity(0.12))
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .background(event.type.color.opacity(0.10), in: Capsule())
                     .clipShape(Capsule())
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: Capsule())
             }
 
             // 中间文字
             VStack(alignment: .leading, spacing: 3)
             {
                 Text(event.title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 16, weight: .bold))
                     .lineLimit(1)
 
                 if let sub = event.subtitle, !sub.isEmpty
@@ -457,19 +462,12 @@ struct NextEventView: View
             }
 
             Spacer(minLength: 0)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 132)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 132)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground).opacity(0.82))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(event.type.color.opacity(0.06))
-                )
-        )
-        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
+        .background(event.type.color.opacity(0.05), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20)
                 .stroke(event.type.color.opacity(0.10), lineWidth: 1)

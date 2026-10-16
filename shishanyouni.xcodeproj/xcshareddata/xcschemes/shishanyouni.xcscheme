@@ -15,6 +15,20 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FE4D98222F330FB60087BCAE"
+               BuildableName = "shishanyouniTests.xctest"
+               BlueprintName = "shishanyouniTests"
+               ReferencedContainer = "container:shishanyouni.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "FE4D982C2F330FB60087BCAE"
                BuildableName = "shishanyouniUITests.xctest"
                BlueprintName = "shishanyouniUITests"
@@ -58,6 +72,15 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
       <Testables>
+         <TestableReference skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FE4D98222F330FB60087BCAE"
+               BuildableName = "shishanyouniTests.xctest"
+               BlueprintName = "shishanyouniTests"
+               ReferencedContainer = "container:shishanyouni.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
          <TestableReference skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"

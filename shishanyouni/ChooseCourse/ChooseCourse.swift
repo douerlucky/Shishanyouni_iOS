@@ -503,12 +503,10 @@ final class SelectedCourseQuery
 {
     static let shared = SelectedCourseQuery()
 
-    private let selectedCoursesURL = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbChoosedDisplay.html?gnmkdm=N253512"
-    private let selectedCoursesReferer = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbIndex.html?gnmkdm=N253512&layout=default"
 
     func fetchSelectedCourses(cookie: String, semester: SelectedCourseSemester) async throws -> [SelectedCourse]
     {
-        guard let url = URL(string: selectedCoursesURL) else
+        guard let url = URL(string: SchoolDirectAPI.selectedCoursesURL) else
         {
             throw SelectedCourseQueryError.invalidURL
         }
@@ -518,8 +516,8 @@ final class SelectedCourseQuery
         request.setValue("application/x-www-form-urlencoded;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json, text/javascript, */*; q=0.01", forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue("http://byjxyt.hzau.edu.cn", forHTTPHeaderField: "Origin")
-        request.setValue(selectedCoursesReferer, forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.academicOrigin, forHTTPHeaderField: "Origin")
+        request.setValue(SchoolDirectAPI.courseSelectionIndexURL, forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")

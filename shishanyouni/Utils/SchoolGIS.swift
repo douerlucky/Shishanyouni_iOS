@@ -33,11 +33,9 @@ struct SchoolGISWeb: UIViewRepresentable
 // 专门用来显示地理信息
 struct SchoolGISView: View
 {
-    let url: String = "http://gis.hzau.edu.cn/index.shtml"
-
     var body: some View
     {
-        SchoolGISWeb(urlString: url)
+        SchoolGISWeb(urlString: SchoolDirectAPI.campusMapURL)
 
             .navigationTitle("校园地图")
             .toolbar(.hidden, for: .tabBar)

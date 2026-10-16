@@ -7,58 +7,7 @@
 
 import Foundation
 
-/// 狮山有你后端绑定接口返回结构。
-struct ShishanyouniBindResponse {
-    let msg: String? //返回处理消息(失败时返回对应错误信息)
-    let code: Int? //响应编码(200是成功，其它都是失败)
-    let data: ShishanyouniBindData? //需要短信验证码时包含手机号和 sessionId
-    let success: Bool? // v1 绑定的成功标志
-
-    init(json: [String: Any])
-    {
-        msg = json["msg"] as? String
-        code = Self.intValue(from: json["code"])
-        success = json["success"] as? Bool
-
-        if let dataJSON = json["data"] as? [String: Any]
-        {
-            data = ShishanyouniBindData(json: dataJSON)
-        }
-        else
-        {
-            data = nil
-        }
-    }
-
-    static func intValue(from value: Any?) -> Int?
-    {
-        if let intValue = value as? Int
-        {
-            return intValue
-        }
-        if let stringValue = value as? String
-        {
-            return Int(stringValue)
-        }
-        if let numberValue = value as? NSNumber
-        {
-            return numberValue.intValue
-        }
-        return nil
-    }
-}
-
-/// 狮山有你绑定需要短信验证码时返回的 data。
-struct ShishanyouniBindData {
-    let phone: String?
-    let sessionId: String?
-
-    init(json: [String: Any])
-    {
-        phone = json["phone"] as? String
-        sessionId = json["sessionId"] as? String
-    }
-}
+// 登录、绑定接口模型位于 API/Models/AccountAPIModels.swift。
 
 /// 狮山有你后端绑定过程中可能出现的错误。
 enum ShishanyouniBindError: LocalizedError {
@@ -87,12 +36,9 @@ enum ShishanyouniBindError: LocalizedError {
 
 /// 只负责调用狮山有你服务器的账号绑定接口。
 class ShishanyouniBinder {
-    private let bindURL = "https://lion.hzau.edu.cn/app/ios/bind"
-    private let sendCodeURL = "https://lion.hzau.edu.cn/app/ios/sendCode"
-    private let submitCodeURL = "https://lion.hzau.edu.cn/app/ios/submitCode"
 
     func bind(username: String, password: String, type: Int = 0) async throws {
-        guard let url = URL(string: bindURL) else {
+        guard let url = URL(string: ShishanyouniAPI.bindURL) else {
             throw ShishanyouniBindError.invalidURL
         }
 
@@ -160,7 +106,7 @@ class ShishanyouniBinder {
     }
 
     func sendCode(sessionId: String) async throws {
-        var components = URLComponents(string: sendCodeURL)
+        var components = URLComponents(string: ShishanyouniAPI.sendCodeURL)
         components?.queryItems = [URLQueryItem(name: "sessionId", value: sessionId)]
         guard let url = components?.url else {
             throw ShishanyouniBindError.invalidURL
@@ -175,7 +121,7 @@ class ShishanyouniBinder {
     }
 
     func submitCode(sessionId: String, smsCode: String) async throws -> String {
-        var components = URLComponents(string: submitCodeURL)
+        var components = URLComponents(string: ShishanyouniAPI.submitCodeURL)
         components?.queryItems = [
             URLQueryItem(name: "sessionId", value: sessionId),
             URLQueryItem(name: "smsCode", value: smsCode)
@@ -214,19 +160,6 @@ class ShishanyouniBinder {
     }
 }
 
-struct ShishanyouniCodeResponse {
-    let msg: String?
-    let code: Int?
-    let data: String?
-
-    init(json: [String: Any])
-    {
-        msg = json["msg"] as? String
-        code = ShishanyouniBindResponse.intValue(from: json["code"])
-        data = json["data"] as? String
-    }
-}
-
 enum CASBindResult {
     case success
     case failure(message: String)
@@ -234,9 +167,6 @@ enum CASBindResult {
 
 /// 只负责学校 CAS 登录校验和短信 MFA 流程。
 class CASBinder: NSObject, URLSessionTaskDelegate {
-    private let loginURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https://portal-paas.hzau.edu.cn/"
-    private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
-    private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
     
     // 手动存储 cookies
     private var cookieJar: [String: String] = [:]
@@ -262,7 +192,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
                 partialResult[key] = value
             }
         }
-        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: loginURL)!)
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: SchoolDirectAPI.casPortalLoginURL)!)
         for cookie in cookies {
             cookieJar[cookie.name] = cookie.value
             print("保存 Cookie: \(cookie.name)")
@@ -297,13 +227,13 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
             return ""
         }
 
-        var detectRequest = URLRequest(url: URL(string: mfaDetectURL)!)
+        var detectRequest = URLRequest(url: URL(string: SchoolDirectAPI.mfaDetectURL)!)
         detectRequest.httpMethod = "POST"
         detectRequest.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         detectRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         detectRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        detectRequest.setValue(loginURL, forHTTPHeaderField: "Referer")
-        detectRequest.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        detectRequest.setValue(SchoolDirectAPI.casPortalLoginURL, forHTTPHeaderField: "Referer")
+        detectRequest.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         detectRequest.httpBody = [
             "username=\(formEncode(username))",
             "password=\(formEncode(password))",
@@ -335,7 +265,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
             throw CASMFAError.needCodeInput
         }
 
-        var initComponents = URLComponents(string: mfaInitSecurePhoneURL)!
+        var initComponents = URLComponents(string: SchoolDirectAPI.mfaInitSecurePhoneURL)!
         initComponents.queryItems = [URLQueryItem(name: "state", value: state)]
         var initRequest = URLRequest(url: initComponents.url!)
         initRequest.httpMethod = "GET"
@@ -355,7 +285,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         let sendCodeAction: () async -> String? = {
             do
             {
-                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + SchoolDirectAPI.securePhoneSendPath)!)
                 sendRequest.httpMethod = "POST"
                 sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
                 sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
@@ -386,7 +316,7 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
             throw CASMFAError.cancelled
         }
 
-        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/valid")!)
+        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + SchoolDirectAPI.securePhoneVerifyPath)!)
         validRequest.httpMethod = "POST"
         validRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         validRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
@@ -414,9 +344,9 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         
         // ===== Step 1: GET 获取 Execution =====
         print("Step 1: GET 获取 Execution")
-        print("URL: \(loginURL)")
+        print("URL: \(SchoolDirectAPI.casPortalLoginURL)")
         
-        var request1 = URLRequest(url: URL(string: loginURL)!)
+        var request1 = URLRequest(url: URL(string: SchoolDirectAPI.casPortalLoginURL)!)
         request1.httpMethod = "GET"
         request1.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
         request1.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
@@ -451,14 +381,14 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         
         // ===== Step 2: POST 提交表单 =====
         print("\nStep 2: POST 提交表单")
-        print("URL: \(loginURL)")
+        print("URL: \(SchoolDirectAPI.casPortalLoginURL)")
         
-        var request2 = URLRequest(url: URL(string: loginURL)!)
+        var request2 = URLRequest(url: URL(string: SchoolDirectAPI.casPortalLoginURL)!)
         request2.httpMethod = "POST"
         request2.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request2.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
-        request2.setValue(loginURL, forHTTPHeaderField: "Referer")
-        request2.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        request2.setValue(SchoolDirectAPI.casPortalLoginURL, forHTTPHeaderField: "Referer")
+        request2.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         
         // 手动添加 Cookie header
         let cookieHeader = getCookieHeader()

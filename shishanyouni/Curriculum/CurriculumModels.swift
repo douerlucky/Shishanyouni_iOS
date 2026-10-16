@@ -2,92 +2,12 @@
 //  CurriculumModels.swift
 //  shishanyouni
 //
-//  课表接口模型与 App 内课程模型。
+//  App 内课程模型、分组规则与接口数据转换。
 //
 
 import Foundation
 
-// MARK: - 课表接口响应
-
-/// 服务端课表单条记录。
-///
-/// 这个类型只负责兼容不同接口字段名；转换成 App 中使用的 `Course` 后，
-/// 其余界面不应再依赖服务端字段细节。
-struct TimetableModel: Decodable
-{
-    let name: String
-    let room: String?
-    let teacher: String?
-    let weekList: [Int]
-    let start: Int
-    let step: Int
-    let day: Int
-    let term: String?
-    let colorRandom: Int
-    let weeks: String?
-    let time: String?
-    /// 教务接口可能直接返回的考核方式（考试、考查或未安排）。
-    let assessmentMethod: String?
-
-    private enum CodingKeys: String, CodingKey
-    {
-        case name, room, teacher, weekList, weeks, week
-        case start, period, step, length, day, term, colorRandom, time, khfsmc
-    }
-
-    init(from decoder: Decoder) throws
-    {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        name = try container.decode(String.self, forKey: .name)
-        room = try container.decodeIfPresent(String.self, forKey: .room)
-        teacher = try container.decodeIfPresent(String.self, forKey: .teacher)
-        weekList = try container.decodeIfPresent([Int].self, forKey: .weekList) ?? []
-        start = try container.decodeIfPresent(Int.self, forKey: .start)
-            ?? container.decodeIfPresent(Int.self, forKey: .period) ?? 1
-        step = try container.decodeIfPresent(Int.self, forKey: .step)
-            ?? container.decodeIfPresent(Int.self, forKey: .length) ?? 1
-        day = try container.decode(Int.self, forKey: .day)
-        term = try container.decodeIfPresent(String.self, forKey: .term)
-        colorRandom = try container.decodeIfPresent(Int.self, forKey: .colorRandom) ?? abs(name.hashValue % 32)
-        weeks = try container.decodeIfPresent(String.self, forKey: .week)
-        time = try container.decodeIfPresent(String.self, forKey: .time)
-        assessmentMethod = try container.decodeIfPresent(String.self, forKey: .khfsmc)
-    }
-}
-
-/// 课表接口的数据体；兼容 `timetableModels` 与旧字段 `timeTable`。
-struct TimetableData: Decodable
-{
-    let timetableModels: [TimetableModel]
-    let others: [String]?
-    let startDate: String?
-    let loadTime: Int64?
-
-    private enum CodingKeys: String, CodingKey
-    {
-        case timetableModels, timeTable, others, startDate, loadTime
-    }
-
-    init(from decoder: Decoder) throws
-    {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        timetableModels = try container.decodeIfPresent([TimetableModel].self, forKey: .timetableModels)
-            ?? container.decodeIfPresent([TimetableModel].self, forKey: .timeTable) ?? []
-        others = try container.decodeIfPresent([String].self, forKey: .others)
-        startDate = try container.decodeIfPresent(String.self, forKey: .startDate)
-        loadTime = try container.decodeIfPresent(Int64.self, forKey: .loadTime)
-    }
-}
-
-/// 课表接口顶层响应。
-struct TimetableResponse: Decodable
-{
-    let msg: String?
-    let code: Int
-    let data: TimetableData?
-
-    var isSuccess: Bool { code == 200 || code == 2 }
-}
+// 课表接口模型位于 API/Models/CurriculumAPIModels.swift。
 
 // MARK: - App 课程模型
 

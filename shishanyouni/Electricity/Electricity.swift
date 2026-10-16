@@ -1,102 +1,11 @@
 import Foundation
 
-// MARK: - 电费响应数据结构
-
-struct ElectricityResponse: Decodable
-{
-    let code: Int
-    let msg: String
-    let data: ElectricityPageData?
-}
-
-struct ElectricityPageData: Decodable
-{
-    let records: [ElectricityRecord]
-}
-
-struct ElectricityRecord: Identifiable, Decodable
-{
-    var id: String { roomId }
-
-    let roomId: String // 房间ID
-    let roomName: String // 房间名 (如: 荟01-101)
-    let accountAddress: String // 详细地址 (如: 荟01栋-101)
-    let balance: String // 余额 (核心字段)
-    let eleAmount: String? // 电费单价/金额相关
-    let roomTypeName: String? // 房间类型 (如: 本科生)
-
-    // 嵌套的电表详情
-    let baseMeterList: [MeterDetail]?
-
-    // 计算属性：获取最新的读数时间
-    var lastUpdate: String
-    {
-        baseMeterList?.first?.lastReadingTime ?? "未知"
-    }
-}
-
-struct MeterDetail: Decodable
-{
-    let meterCode: String // 电表号
-    let lastReading: Double? // 最后一次抄表读数
-    let lastReadingTime: String? // 抄表时间
-}
-
-// MARK: - 通用选择器模型 (用于楼栋、楼层、房间列表)
-
-struct BuildingLevelRoomResponse: Decodable
-{
-    let code: Int
-    let msg: String
-    let data: PickerData?
-
-    // 有些接口直接返回 data 数组，有些返回 data 对象里包含 records
-    enum PickerData: Decodable
-    {
-        case array([PickerItem])
-        case object(PageRecords)
-
-        init(from decoder: Decoder) throws
-        {
-            let container = try decoder.singleValueContainer()
-            if let array = try? container.decode([PickerItem].self)
-            {
-                self = .array(array)
-            }
-            else if let object = try? container.decode(PageRecords.self)
-            {
-                self = .object(object)
-            }
-            else
-            {
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to decode PickerData")
-            }
-        }
-    }
-
-    struct PageRecords: Decodable
-    {
-        let records: [PickerItem]
-    }
-}
-
-struct PickerItem: Decodable, Identifiable
-{
-    var id: String { value }
-    let label: String // 显示文本 (如: 荟01栋, 1层, 101)
-    let value: String // 传参值 (如: 1770694614656974850)
-}
+// 电费接口模型位于 API/Models/ElectricityAPIModels.swift。
 
 // MARK: - 电费系统登录查询类
 
 class ElectricityQuery: NSObject, URLSessionTaskDelegate
 {
-    private let ssoLoginURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https%3A%2F%2Fsdgl.hzau.edu.cn%2Fapi%2Fsso%2Fmobile%2Fcallback%3FtargetUrl%3Dhttps%3A%2F%2Fsdgl.hzau.edu.cn%2Fapi%2Fsso%2Fmobile%2Fcallback"
-    private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
-    private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
-
-    private let apiBase = "https://sdgl.hzau.edu.cn/api/base"
-
     private var cookieJar: [String: String] = [:]
 
     private lazy var session: URLSession = {
@@ -123,7 +32,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
                 partialResult[key] = value
             }
         }
-        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: ssoLoginURL)!)
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: SchoolDirectAPI.casElectricityLoginURL)!)
         for cookie in cookies {
             cookieJar[cookie.name] = cookie.value
         }
@@ -239,7 +148,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        request.setValue("https://sdgl.hzau.edu.cn", forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.electricityOrigin, forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
@@ -275,7 +184,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     private func standardHeaders(
         token: String,
-        referer: String = "https://sdgl.hzau.edu.cn/mobile/pages/module/search-meter",
+        referer: String = SchoolDirectAPI.electricitySearchMeterReferer,
         includeCookies: Bool = false
     ) -> [String: String]
     {
@@ -320,13 +229,13 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
             return ""
         }
 
-        var detectRequest = URLRequest(url: URL(string: mfaDetectURL)!)
+        var detectRequest = URLRequest(url: URL(string: SchoolDirectAPI.mfaDetectURL)!)
         detectRequest.httpMethod = "POST"
         detectRequest.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         detectRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         detectRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        detectRequest.setValue(ssoLoginURL, forHTTPHeaderField: "Referer")
-        detectRequest.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        detectRequest.setValue(SchoolDirectAPI.casElectricityLoginURL, forHTTPHeaderField: "Referer")
+        detectRequest.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         detectRequest.httpBody = [
             "username=\(formEncode(username))",
             "password=\(formEncode(password))",
@@ -358,7 +267,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.needCodeInput
         }
 
-        var initComponents = URLComponents(string: mfaInitSecurePhoneURL)!
+        var initComponents = URLComponents(string: SchoolDirectAPI.mfaInitSecurePhoneURL)!
         initComponents.queryItems = [URLQueryItem(name: "state", value: state)]
         var initRequest = URLRequest(url: initComponents.url!)
         initRequest.httpMethod = "GET"
@@ -378,7 +287,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         let sendCodeAction: () async -> String? = {
             do
             {
-                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + SchoolDirectAPI.securePhoneSendPath)!)
                 sendRequest.httpMethod = "POST"
                 sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
                 sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
@@ -408,7 +317,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.cancelled
         }
 
-        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/valid")!)
+        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + SchoolDirectAPI.securePhoneVerifyPath)!)
         validRequest.httpMethod = "POST"
         validRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         validRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
@@ -436,7 +345,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         cookieJar.removeAll()
 
         // --- Step 1: GET 获取 execution ---
-        var request1 = URLRequest(url: URL(string: ssoLoginURL)!)
+        var request1 = URLRequest(url: URL(string: SchoolDirectAPI.casElectricityLoginURL)!)
         request1.httpMethod = "GET"
         request1.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
 
@@ -462,12 +371,12 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         let mfaState = try await performMFAIfNeeded(username: username, password: rsaPassword, mfaCodeProvider: mfaCodeProvider)
 
         // --- Step 2: POST 提交登录表单 ---
-        var request2 = URLRequest(url: URL(string: ssoLoginURL)!)
+        var request2 = URLRequest(url: URL(string: SchoolDirectAPI.casElectricityLoginURL)!)
         request2.httpMethod = "POST"
         request2.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request2.allHTTPHeaderFields = standardHeaders(token: "", includeCookies: true) // 初始化时 Token 为空
-        request2.setValue(ssoLoginURL, forHTTPHeaderField: "Referer")
-        request2.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        request2.setValue(SchoolDirectAPI.casElectricityLoginURL, forHTTPHeaderField: "Referer")
+        request2.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         request2.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
 
         let bodyString = [
@@ -521,7 +430,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         var request4 = URLRequest(url: URL(string: location4)!)
         request4.httpMethod = "GET"
         request4.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        request4.setValue("https://sdgl.hzau.edu.cn", forHTTPHeaderField: "Referer")
+        request4.setValue(SchoolDirectAPI.electricityOrigin, forHTTPHeaderField: "Referer")
 
         var reachedMobilePage = false
 
@@ -557,7 +466,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
                     var request5 = URLRequest(url: mobileURL)
                     request5.httpMethod = "GET"
                     request5.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-                    request5.setValue("https://sdgl.hzau.edu.cn", forHTTPHeaderField: "Referer")
+                    request5.setValue(SchoolDirectAPI.electricityOrigin, forHTTPHeaderField: "Referer")
 
                     let (data5, response5) = try await session.data(for: request5)
                     if let httpResponse5 = response5 as? HTTPURLResponse
@@ -600,11 +509,11 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     func fetchBuildingList(token: String) async throws -> [PickerItem]
     {
-        let url = "\(apiBase)/baseBuildings/getBuildList?size=999&current=1"
+        let url = SchoolDirectAPI.electricityBuildingListURL
         var request = URLRequest(url: URL(string: url)!)
         request.allHTTPHeaderFields = standardHeaders(
             token: token,
-            referer: "https://sdgl.hzau.edu.cn/mobile/pages/module/search?url=%2Fpages%2FbindingAccount%2Faccountbind"
+            referer: SchoolDirectAPI.electricityBindingSearchReferer
         )
         print("[Electricity][API] getBuildList，Cookie 已附加=\(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
@@ -627,11 +536,11 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     func fetchFloorList(token: String, buildingId: String) async throws -> [PickerItem]
     {
-        let url = "\(apiBase)/rooms/getAllFoolNumByBuildId?buildingId=\(buildingId)"
+        let url = "\(SchoolDirectAPI.electricityFloorListURL)?buildingId=\(buildingId)"
         var request = URLRequest(url: URL(string: url)!)
         request.allHTTPHeaderFields = standardHeaders(
             token: token,
-            referer: "https://sdgl.hzau.edu.cn/mobile/pages/module/search?url=%2Fpages%2FbindingAccount%2Faccountbind"
+            referer: SchoolDirectAPI.electricityBindingSearchReferer
         )
         print("[Electricity][API] getFloorList，Cookie 已附加=\(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
@@ -654,11 +563,11 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     func fetchRoomList(token: String, buildingId: String, floorNum: String) async throws -> [PickerItem]
     {
-        let url = "\(apiBase)/rooms/getRoomListByBuildIdAndFloor?floorNum=\(floorNum)&buildingId=\(buildingId)"
+        let url = "\(SchoolDirectAPI.electricityRoomListURL)?floorNum=\(floorNum)&buildingId=\(buildingId)"
         var request = URLRequest(url: URL(string: url)!)
         request.allHTTPHeaderFields = standardHeaders(
             token: token,
-            referer: "https://sdgl.hzau.edu.cn/mobile/pages/module/search?url=%2Fpages%2FbindingAccount%2Faccountbind"
+            referer: SchoolDirectAPI.electricityBindingSearchReferer
         )
         print("[Electricity][API] getRoomList，Cookie 已附加=\(request.value(forHTTPHeaderField: "Cookie") != nil)")
 
@@ -681,7 +590,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
 
     func fetchElectricityAccount(token: String, roomId: String) async throws -> [ElectricityRecord]
     {
-        let queryURL = "\(apiBase)/rooms/queryRoomList"
+        let queryURL = SchoolDirectAPI.electricityRoomQueryURL
         var components = URLComponents(string: queryURL)!
         components.queryItems = [
             URLQueryItem(name: "size", value: "10"),
@@ -693,7 +602,7 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         var request = URLRequest(url: components.url!)
         request.allHTTPHeaderFields = standardHeaders(
             token: token,
-            referer: "https://sdgl.hzau.edu.cn/mobile/pages/bindingAccount/accountbind"
+            referer: SchoolDirectAPI.electricityBindingPageURL
         )
         print("[Electricity][API] queryRoomList，Cookie 已附加=\(request.value(forHTTPHeaderField: "Cookie") != nil)")
 

@@ -2,7 +2,7 @@
 //  BackgroundSettingView.swift
 //  shishanyouni
 //
-//  统一样式背景设置页面：控制课表、首页、日程的背景/透明度/液态玻璃
+//  统一样式背景设置页面：控制课表、首页、日程、我的的背景/透明度/液态玻璃
 //
 
 import SwiftUI
@@ -20,20 +20,26 @@ private let pageConfigs: [PageBackgroundConfig] = [
     PageBackgroundConfig(key: "curriculumBackgroundEnabled", label: "课表", icon: "calendar"),
     PageBackgroundConfig(key: "homeBackgroundEnabled", label: "首页", icon: "house.fill"),
     PageBackgroundConfig(key: "scheduleBackgroundEnabled", label: "日程", icon: "calendar.badge.clock"),
+    PageBackgroundConfig(key: "profileBackgroundEnabled", label: "我的", icon: "person.fill"),
 ]
 
 struct BackgroundSettingView: View
 {
     // 共享参数
-    @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename: String = ""
-    @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
-    @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
-    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.scheduleBackgroundImageFilename) private var backgroundImageFilename: String = ""
+    /// 只控制用户选择的图片，不会让文字或卡片一起变淡。
+    @AppStorage(PreferenceKey.backgroundImageOpacity) private var backgroundImageOpacity: Double = 0.2
+    /// 只控制页面文字和内容，和背景图片、液态玻璃容器分开。
+    @AppStorage(PreferenceKey.textOpacity) private var textOpacity: Double = 1.0
+    /// 控制页面容器背景的实底/玻璃浓度；数值越低越能透出图片。
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect: Bool = true
 
     // 各页面单独开关
     @AppStorage("curriculumBackgroundEnabled") private var curriculumEnabled = true
     @AppStorage("homeBackgroundEnabled") private var homeEnabled = false
     @AppStorage("scheduleBackgroundEnabled") private var scheduleEnabled = false
+    @AppStorage(PreferenceKey.profileBackgroundEnabled) private var profileEnabled = false
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showCropper = false
@@ -137,16 +143,26 @@ struct BackgroundSettingView: View
             Section
             {
                 VStack(alignment: .leading) {
-                    Text("背景不透明度: \(Int(backgroundOpacity * 100))%")
+                    Text("个性化背景图片不透明度: \(Int(backgroundImageOpacity * 100))%")
                         .font(.subheadline)
-                    Slider(value: $backgroundOpacity, in: 0.0...1.0, step: 0.05)
+                    Slider(value: $backgroundImageOpacity, in: 0.0...1.0, step: 0.05)
                 }
                 .padding(.vertical, 4)
 
                 VStack(alignment: .leading) {
-                    Text("内容不透明度: \(Int(scheduleContentOpacity * 100))%")
+                    Text("文字/内容不透明度: \(Int(textOpacity * 100))%")
                         .font(.subheadline)
-                    Slider(value: $scheduleContentOpacity, in: 0.0...1.0, step: 0.05)
+                    Slider(value: $textOpacity, in: 0.0...1.0, step: 0.05)
+                }
+                .padding(.vertical, 4)
+
+                VStack(alignment: .leading) {
+                    Text("页面背景不透明度: \(Int(pageBackgroundOpacity * 100))%")
+                        .font(.subheadline)
+                    Text("包括课表、功能面板和液态玻璃容器的背景浓度")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Slider(value: $pageBackgroundOpacity, in: 0.0...1.0, step: 0.05)
                 }
                 .padding(.vertical, 4)
 
@@ -180,6 +196,7 @@ struct BackgroundSettingView: View
         case "curriculumBackgroundEnabled": return $curriculumEnabled
         case "homeBackgroundEnabled": return $homeEnabled
         case "scheduleBackgroundEnabled": return $scheduleEnabled
+        case "profileBackgroundEnabled": return $profileEnabled
         default: return .constant(false)
         }
     }
@@ -200,7 +217,7 @@ struct BackgroundSettingView: View
             backgroundImageFilename = filename
             // 选择图片就是明确要使用它；默认先应用到课表，其他页面仍由用户单独开关。
             curriculumEnabled = true
-            CurriculumWidgetSync.saveBackgroundMetadata(filename: filename, opacity: backgroundOpacity)
+            CurriculumWidgetSync.saveBackgroundMetadata(filename: filename, opacity: backgroundImageOpacity)
         }
         catch { print("Failed to save background image: \(error)") }
     }

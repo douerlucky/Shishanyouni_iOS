@@ -34,13 +34,10 @@ struct SchoolBusWeb: UIViewRepresentable
 // 专门用来显示推文的 View
 struct SchoolBusView: View
 {
-    private let busURL = "https://car.hzau.edu.cn/passenger/pages/map"
 
     var body: some View
     {
-        SchoolBusWeb(urlString: busURL)
-            // 关键点：这里指定忽略 .top，去掉顶部的空白
-            .ignoresSafeArea(edges: .top)
+        SchoolBusWeb(urlString: SchoolDirectAPI.campusBusURL)
             .navigationTitle("校车查询")
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)

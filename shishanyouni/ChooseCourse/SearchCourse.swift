@@ -748,24 +748,6 @@ enum CourseSelectionServiceError: LocalizedError
     }
 }
 
-enum CourseSelectionEndpoint
-{
-    static let origin = "http://byjxyt.hzau.edu.cn"
-    static let index = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbIndex.html?gnmkdm=N253512&layout=default"
-    static let display = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbDisplay.html"
-    static let catalog = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZzxkYzbPartDisplay.html?gnmkdm=N253512"
-    static let parentClass = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxJxbWithKchZzxkYzb.html?gnmkdm=N253512"
-    static let childDialog = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkZyZzxkYzbZjxb.html?gnmkdm=N253512"
-    static let childDisplay = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkZyDisplayZzxkYzbZjxb.html?gnmkdm=N253512"
-    static let select = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkBcZyZzxkYzb.html?gnmkdm=N253512"
-    static let dropCheck = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkJcInXksjZzxkYzb.html?gnmkdm=N253512"
-    static let drop = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_tuikBcZzxkYzb.html?gnmkdm=N253512"
-    static let preferenceSync = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_xkBcZypxZzxkYzb.html?gnmkdm=N253512"
-    /// 已选主教学班对应的实验 / 子教学班明细。请求参数由当前账号的已选课程与
-    /// 选课页面上下文动态组成，不能缓存其它账号的 jxb_ids。
-    static let selectedClassSchedules = "http://byjxyt.hzau.edu.cn/xsxk/zzxkyzb_cxZkcZzxkYzb.html?gnmkdm=N253512"
-}
-
 /// 统一处理教务请求头、表单编码和会话失效检查。
 /// 写请求调用时会传 `retryCount: 0`，确保网络超时也不会把选/退课重复提交。
 enum CourseSelectionHTTP
@@ -810,8 +792,8 @@ enum CourseSelectionHTTP
         request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue(CourseSelectionEndpoint.origin, forHTTPHeaderField: "Origin")
-        request.setValue(CourseSelectionEndpoint.index, forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.academicOrigin, forHTTPHeaderField: "Origin")
+        request.setValue(SchoolDirectAPI.courseSelectionIndexURL, forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
@@ -906,7 +888,7 @@ enum CourseSelectionHTTP
     {
         text.contains("统一身份认证")
             || text.contains("用户登录")
-            || text.contains("cas-paas.hzau.edu.cn/cas/login")
+            || text.contains(SchoolDirectAPI.casLoginResponseMarker)
             || text.contains("name=\"execution\"")
     }
 }
@@ -922,7 +904,7 @@ enum CourseSelectionPageLoader
     {
         ChooseCourseDebug.info("开始加载选课页上下文：\(semester.displayName)")
         let (indexData, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.index,
+            urlString: SchoolDirectAPI.courseSelectionIndexURL,
             method: "GET",
             cookie: cookie,
             accept: "text/html, */*; q=0.01",
@@ -967,7 +949,7 @@ enum CourseSelectionPageLoader
             ("jspage", "0")
         ]
         let (displayData, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.display,
+            urlString: SchoolDirectAPI.courseSelectionDisplayURL,
             method: "POST",
             cookie: cookie,
             parameters: displayParameters,
@@ -1045,7 +1027,7 @@ final class SearchCourse
         parameters.append(contentsOf: searchBoxParameters(for: normalizedKeyword))
 
         let (data, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.catalog,
+            urlString: SchoolDirectAPI.courseSelectionCatalogURL,
             method: "POST",
             cookie: cookie,
             parameters: parameters,
@@ -1120,7 +1102,7 @@ final class SearchCourse
             }
         }
         let (data, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.catalog,
+            urlString: SchoolDirectAPI.courseSelectionCatalogURL,
             method: "POST",
             cookie: cookie,
             parameters: parameters,
@@ -1207,7 +1189,7 @@ final class SearchCourse
             ("time", String(Int(Date().timeIntervalSince1970 * 1000)))
         ]
         let dialogURL = try CourseSelectionHTTP.urlByAppendingQueryItems(
-            CourseSelectionEndpoint.childDialog,
+            SchoolDirectAPI.courseSelectionChildDialogURL,
             parameters: dialogParameters
         )
         let (dialogData, _) = try await CourseSelectionHTTP.send(
@@ -1229,7 +1211,7 @@ final class SearchCourse
         displayParameters.append(("jxbzls", String(course.classLevels)))
         displayParameters.append(("syqz", dialogContext.value("syqz").isEmpty ? "100" : dialogContext.value("syqz")))
         let (displayData, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.childDisplay,
+            urlString: SchoolDirectAPI.courseSelectionChildDisplayURL,
             method: "POST",
             cookie: cookie,
             parameters: displayParameters,
@@ -1363,7 +1345,7 @@ final class SearchCourse
             }
             parameters.append(("kch_id", course.courseID))
             let (data, _) = try await CourseSelectionHTTP.send(
-                urlString: CourseSelectionEndpoint.parentClass,
+                urlString: SchoolDirectAPI.courseSelectionParentClassURL,
                 method: "POST",
                 cookie: cookie,
                 parameters: parameters,

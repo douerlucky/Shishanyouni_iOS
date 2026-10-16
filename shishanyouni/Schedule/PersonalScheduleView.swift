@@ -38,6 +38,7 @@ struct PersonalScheduleView: View
     @EnvironmentObject var iapStore: IAPStore
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     @State private var currentMonth: Date
     @State private var selectedDate: Date
@@ -59,7 +60,7 @@ struct PersonalScheduleView: View
 
     private var scheduleCardOpacity: Double
     {
-        max(scheduleContentOpacity, 0.9)
+        scheduleContentOpacity
     }
 
     private var dateRange: ClosedRange<Date>
@@ -138,10 +139,13 @@ struct PersonalScheduleView: View
                             selectedDate: $selectedDate
                         )
                         .padding(16)
-                        .background(Color(.secondarySystemGroupedBackground).opacity(0.88), in: RoundedRectangle(cornerRadius: 20))
+                        .background(Color(.secondarySystemGroupedBackground).opacity(pagePanelOpacity(base: 0.88, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 20))
                         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 20)
                         .opacity(scheduleCardOpacity)
                         .padding(.horizontal, 12)
+                        .monthSwipe { monthOffset in
+                            moveMonth(by: monthOffset)
+                        }
 
                         if isSubscribed
                         {
@@ -266,6 +270,26 @@ struct PersonalScheduleView: View
         }
     }
 
+    private func moveMonth(by offset: Int)
+    {
+        guard let month = calendar.date(byAdding: .month, value: offset, to: currentMonth)
+        else { return }
+
+        let monthStart = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: month)
+        ) ?? month
+        let daysInMonth = calendar.range(of: .day, in: .month, for: monthStart)?.count ?? 28
+        let day = min(calendar.component(.day, from: selectedDate), daysInMonth)
+        var components = calendar.dateComponents([.year, .month], from: monthStart)
+        components.day = day
+
+        withAnimation(.easeInOut(duration: 0.28))
+        {
+            currentMonth = monthStart
+            selectedDate = calendar.startOfDay(for: calendar.date(from: components) ?? monthStart)
+        }
+    }
+
     private var quickAddBar: some View
     {
         HStack(spacing: 8)
@@ -294,7 +318,7 @@ struct PersonalScheduleView: View
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(.secondarySystemBackground).opacity(0.82), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.82, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 16))
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
         .padding(.horizontal, 12)
     }
@@ -640,6 +664,7 @@ private struct ScheduleEmptyState: View
 {
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     let systemImage: String
     let title: String
@@ -647,7 +672,7 @@ private struct ScheduleEmptyState: View
 
     private var cardOpacity: Double
     {
-        max(scheduleContentOpacity, 0.92)
+        scheduleContentOpacity
     }
 
     var body: some View
@@ -668,7 +693,7 @@ private struct ScheduleEmptyState: View
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
         .padding(.horizontal, 16)
-        .background(Color(.secondarySystemBackground).opacity(0.88), in: RoundedRectangle(cornerRadius: 18))
+        .background(Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.88, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 18))
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
         .opacity(cardOpacity)
         .padding(.horizontal, 16)
@@ -681,13 +706,14 @@ private struct PersonalEventRow: View
 {
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     let event: Event
     @Binding var completed: Bool
 
     private var cardOpacity: Double
     {
-        max(scheduleContentOpacity, 0.92)
+        scheduleContentOpacity
     }
 
     var body: some View
@@ -756,7 +782,7 @@ private struct PersonalEventRow: View
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Color(.secondarySystemBackground).opacity(0.9), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.9, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 16))
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
         .opacity(cardOpacity)
     }
@@ -766,6 +792,8 @@ private struct PersonalEventRow: View
 
 private struct EventContextPreview: View
 {
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
+
     let event: Event
     let completed: Bool
 
@@ -854,7 +882,7 @@ private struct EventContextPreview: View
         }
         .padding(16)
         .frame(width: 280)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 1, setting: pageBackgroundOpacity)), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

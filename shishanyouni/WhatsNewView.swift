@@ -6,78 +6,28 @@ struct WhatsNewView: View
 
     private let features: [WhatsNewFeature] = [
         WhatsNewFeature(
-            title: "同一课程多个时间段",
-            message: "同一门课程会合并展示全部上课时间段，编辑时也可继续添加或删除时间段。",
-            icon: "clock.badge.checkmark.fill",
-            color: .blue
-        ),
-        WhatsNewFeature(
-            title: "图书馆馆藏搜索",
-            message: "支持按任意词、书名或作者搜索馆藏，并查看在架状态、所在房间和详细位置。",
-            icon: "books.vertical.fill",
-            color: .purple
-        ),
-        WhatsNewFeature(
-            title: "中午与傍晚时段",
-            message: "课表新增中午、傍晚两个时段，可在课表设置中按需开启或关闭。校园通行证用户专属。",
-            icon: "sun.and.horizon.fill",
-            color: .orange
-        ),
-        WhatsNewFeature(
-            title: "课程简称",
-            message: "编辑课程时可填写简称；填写后课表、提醒和小组件会优先显示简称。校园通行证用户专属。",
-            icon: "textformat.abc",
-            color: .indigo,
-            previewOriginalName: "线性代数",
-            previewShortName: "线代"
-        ),
-        WhatsNewFeature(
-            title: "成绩分数详情查看",
-            message: "使用教务系统查询时，可以查看每门课程的详细分数。校园通行证用户专属。",
-            icon: "list.bullet.rectangle.portrait.fill",
+            title: "首页UI交互优化",
+            message: "重构首页UI,首页上滑呼出全部功能更丝滑，全部功能现按照分类来进行归类，使用功能更加方便。",
+            icon: "rectangle.roundedtop.fill",
             color: .cyan
         ),
         WhatsNewFeature(
-            title: "期末考核类型",
-            message: "所有课程现在都能查看期末考核是考试还是考查。",
-            icon: "checkmark.seal.fill",
-            color: .teal
-        ),
-        WhatsNewFeature(
-            title: "成绩长图下载",
-            message: "成绩查询现在支持一键下载长图。校园通行证用户专属。",
-            icon: "arrow.down.doc.fill",
+            title: "查询前授权说明",
+            message: "进入成绩、考试、体测、选课等账号功能前，会明确说明数据是通过狮山有你接口还是直接访问学校系统查询；可选择下次不再提醒。",
+            icon: "checkmark.shield.fill",
             color: .blue
         ),
         WhatsNewFeature(
-            title: "冲突课程优先显示",
-            message: "课程时间冲突时，可长按课程选择优先显示的课程。",
-            icon: "arrow.up.arrow.down.circle.fill",
-            color: .pink
-        ),
-        WhatsNewFeature(
-            title: "全新小组件",
-            message: "现在共有课表、近期日程、下节课和锁屏下节课 4 个小组件；桌面支持大、中、小样式。校园通行证用户专属。",
-            icon: "widget.large.badge.plus",
+            title: "UI统一、交互优化",
+            message: "在日程和校历的日历卡片上左右滑动，即可切换上一周或下一周，并带有轻微触感反馈。",
+            icon: "hand.draw.fill",
             color: .purple
         ),
         WhatsNewFeature(
-            title: "“我的”页面重新分类",
-            message: "重新整理设置分类，并可根据自己的喜好自定义展示功能。",
-            icon: "slider.horizontal.3",
-            color: .mint
-        ),
-        WhatsNewFeature(
-            title: "锁屏下节课",
-            message: "锁定屏幕也能添加小组件，显示下一节课。校园通行证用户专属。",
-            icon: "lock.fill",
-            color: .indigo
-        ),
-        WhatsNewFeature(
-            title: "课程导入系统日历",
-            message: "支持一键导入所有课程，也可一键删除；不会删除你自己创建的日程。校园通行证用户专属。",
-            icon: "calendar.badge.plus",
-            color: .orange
+            title: "空教室查询周次快捷栏",
+            message: "空教室查询底部常驻显示第几周和星期；单箭头切换前后一天，双箭头切换前后整周。",
+            icon: "calendar.badge.clock",
+            color: .green
         ),
     ]
 
@@ -104,7 +54,7 @@ struct WhatsNewView: View
                         Text("狮山有你更新啦")
                             .font(.system(size: 28, weight: .black, design: .rounded))
 
-                        Text("课程、成绩、小组件与日历功能更新")
+                        Text("首页、授权说明、日程与空教室查询体验优化")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -136,6 +86,7 @@ struct WhatsNewView: View
                         ),
                         in: Capsule()
                     )
+                    .optionalLiquidGlass(in: Capsule())
             }
             .buttonStyle(.plain)
         }
@@ -181,11 +132,13 @@ private struct WhatsNewFeatureRow: View
             }
             else
             {
+                let iconShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
                 Image(systemName: feature.icon)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(feature.color)
                     .frame(width: 48, height: 48)
-                    .background(feature.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16))
+                    .background(feature.color.opacity(0.14), in: iconShape)
+                    .optionalLiquidGlass(in: iconShape)
             }
 
             VStack(alignment: .leading, spacing: 4)
@@ -203,7 +156,8 @@ private struct WhatsNewFeatureRow: View
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .optionalLiquidGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }
 
@@ -234,7 +188,8 @@ private struct CourseAbbreviationIcon: View
                 .lineLimit(1)
         }
         .frame(width: 64, height: 56)
-        .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16))
+        .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .optionalLiquidGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

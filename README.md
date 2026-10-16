@@ -1,12 +1,12 @@
 # 狮山有你 iOS
 
-华中农业大学校园服务 App。项目把课程、成绩、考试和校园生活信息集中到一个入口，帮助同学在日常学习和生活中少切换几个系统、少重复查几次资料。
+由独立开发者维护的校园学习与生活工具，非学校官方应用。项目把课程、成绩、考试和校园生活信息集中到一个入口，帮助同学在日常学习和生活中少切换几个系统、少重复查几次资料。相关信息请以学校官方网站为准。
 
 狮山有你已经在 App Store 正式上架；[点击查看 App Store 页面](https://apps.apple.com/cn/app/%E7%8B%AE%E5%B1%B1%E6%9C%89%E4%BD%A0/id6760356908)。本仓库保留 iOS 客户端工程和主要功能实现，适合了解一个真实校园 App 如何从需求、交互到发布落地。
 
-| 代码 | 产品页面 | 产品演进 |
-|---|---|---|
-| [Shishanyouni_iOS](https://github.com/douerlucky/Shishanyouni_iOS) | [App Store](https://apps.apple.com/cn/app/%E7%8B%AE%E5%B1%B1%E6%9C%89%E4%BD%A0/id6760356908) | [知途 CampusPath](https://github.com/douerlucky/campusPath) |
+| 代码 | 产品页面 |
+|---|---|
+| [Shishanyouni_iOS](https://github.com/douerlucky/Shishanyouni_iOS) | [App Store](https://apps.apple.com/cn/app/%E7%8B%AE%E5%B1%B1%E6%9C%89%E4%BD%A0/id6760356908) |
 
 ## 项目定位
 
@@ -29,36 +29,11 @@
 
 上图为 App Store 公开页面截图，展示了正式上架的产品信息和实际预览图。登录、校园账号和个性化数据需要在真实校园环境中使用，仓库不会包含任何个人账号、密码或服务端密钥。
 
-## 从狮山有你走向知途 CampusPath
-
-狮山有你和知途 CampusPath 是同一条产品线的两个阶段：
-
-- **狮山有你**：当前已经落地的校园服务入口，重点是把分散的校园信息查出来、用起来。
-- **知途 CampusPath**：在已有校园数据和服务基础上的下一阶段目标，重点是把课程、经历、能力和计划组织成一条可以持续更新的成长路径。
-
-知途不是把狮山有你重新做一遍，也不代表狮山有你当前已经完整具备设计稿里的全部能力。它要回答的是更长线的问题：学生已经修过什么、还缺什么、下一步适合做什么，以及这些经历如何逐步形成自己的方向。
-
-下面的图片来自知途 CampusPath 的作品材料，用来说明产品演进方向，不代表狮山有你当前版本的线上界面。
-
-| 知途方向 | 说明 |
-|---|---|
-| 知我首页 | 汇总学分进度、能力信息和今日待办 |
-| 成长树 | 把课程主线和竞赛、科研等经历组织成可回看的路径 |
-| 智能对话 | 基于个人档案和校园上下文给出建议，并把建议转成待办 |
-
-![知我首页、成长树和智能对话](docs/images/campuspath-home.png)
-
-![成长树方向](docs/images/campuspath-growth-tree.png)
-
-![智能对话方向](docs/images/campuspath-dialog.png)
-
-完整的 CampusPath 代码和作品说明见 [campusPath 仓库](https://github.com/douerlucky/campusPath)。
-
 ## 项目成果
 
 - 狮山有你 iOS 版已在 App Store 正式上架。
 - 支持游客模式、校园信息聚合、个人课程服务、桌面小组件和系统日历联动。
-- 项目由华中农业大学沸点工作室移动 App 开发组持续维护。
+- 项目由独立开发者与沸点工作室移动 App 开发组持续维护，非学校官方发布或运营的应用。
 
 ## 代码与构建
 
@@ -82,4 +57,4 @@ docs/images/           项目展示图片
 
 ## 说明
 
-App Store 页面中的功能和版本会随发布迭代变化；README 只描述产品方向和仓库中已经公开的能力，不把 CampusPath 的规划功能写成狮山有你当前版本的承诺。
+App Store 页面中的功能和版本会随发布迭代变化；README 只描述狮山有你的产品方向和仓库中已经公开的能力。

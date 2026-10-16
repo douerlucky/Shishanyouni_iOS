@@ -336,12 +336,11 @@ struct NanhuRunQueryButton: View
     {
         HStack(spacing: 20)
         {
-            QuerySourcePickerButton(
+            DataSourceSelector(
                 selection: $querySource,
                 fontSize: 15,
                 horizontalPadding: 18,
-                verticalPadding: 12,
-                background: Color(uiColor: .systemBackground).opacity(0.92)
+                verticalPadding: 12
             )
 
             Button(action: {

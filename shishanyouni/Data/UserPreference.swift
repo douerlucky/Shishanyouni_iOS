@@ -90,6 +90,8 @@ enum PreferenceKey
     static let showCampusPassCard = "show_campus_pass_card"
     /// 已展示的新功能版本标记 - MainTabView
     static let lastShownWhatsNewVersion = "last_shown_whats_new_version"
+    /// 已同意的使用声明修订号；独立于 App 版本，普通升级无需重复确认。
+    static let acceptedAppDisclaimerRevision = "accepted_app_disclaimer_revision"
     /// 已应用本次默认开启迁移 - App/UserInfo
     static let didApplyDefaultEnabledMigration = "did_apply_default_enabled_migration"
     /// 登录绑定数据源选择 - LoginView
@@ -102,10 +104,16 @@ enum PreferenceKey
     static let scheduleBackgroundImageFilename = "scheduleBackgroundImageFilename"
     /// 课表格子高度与格内文字共用的显示比例；保留旧 key 以兼容已保存的设置。
     static let curriculumFontScale = "curriculumFontScale"
-    /// 课表背景不透明度（0.0 ~ 1.0） - CurriculumView / CurriculumSettingView / AllCurriculumSetting
+    /// 自定义背景图片不透明度（0.0 ~ 1.0） - 四个主 Tab / Widget
     static let scheduleBackgroundOpacity = "scheduleBackgroundOpacity"
+    /// 自定义背景图片不透明度的语义别名；保留旧 key，兼容已有用户设置。
+    static let backgroundImageOpacity = scheduleBackgroundOpacity
     /// 课表内容不透明度（0.0 ~ 1.0） - CurriculumView / CurriculumSettingView / AllCurriculumSetting
     static let scheduleContentOpacity = "scheduleContentOpacity"
+    /// 页面文字和内容不透明度的语义别名；保留旧 key，避免迁移数据。
+    static let textOpacity = scheduleContentOpacity
+    /// 页面容器背景不透明度（包括液态玻璃面板）。
+    static let pageBackgroundOpacity = "pageBackgroundOpacity"
     /// 液态玻璃效果开关 - CurriculumView / CurriculumSettingView / AllCurriculumSetting
     static let enableLiquidGlassEffect = "enableLiquidGlassEffect"
     /// 首页单独控制背景 - HomeView
@@ -114,6 +122,8 @@ enum PreferenceKey
     static let scheduleBackgroundEnabled = "scheduleBackgroundEnabled"
     /// 课表单独控制背景 - CurriculumView
     static let curriculumBackgroundEnabled = "curriculumBackgroundEnabled"
+    /// “我的”页面单独控制背景 - ProfileView
+    static let profileBackgroundEnabled = "profileBackgroundEnabled"
     /// 上课提前提醒分钟数（Int，默认 10 分钟） - CurriculumSettingView / CurriculumNotificationManager
     static let scheduleNotificationMinutes = "scheduleNotificationMinutes"
     /// 已开启提醒的课程 ID 数组 - CurriculumNotificationManager
@@ -178,6 +188,8 @@ enum PreferenceDefaults
             PreferenceKey.showCampusPassFeatures: true,
             PreferenceKey.showCampusPassCard: true,
             PreferenceKey.enableLiquidGlassEffect: true,
+            PreferenceKey.pageBackgroundOpacity: 0.35,
+            PreferenceKey.profileBackgroundEnabled: false,
         ])
     }
 

@@ -15,6 +15,7 @@ struct shishanyouniApp: App
     @StateObject private var userinfo = userInfo()
     @StateObject private var iapStore = IAPStore.shared
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(PreferenceKey.acceptedAppDisclaimerRevision) private var acceptedDisclaimerRevision = ""
 
     init()
     {
@@ -27,7 +28,13 @@ struct shishanyouniApp: App
             return
         }
 
-        requestNotificationPermission()
+        #if DEBUG
+        // UI 测试按真实首次启动流程验证同意/拒绝，不影响发布版本。
+        if ProcessInfo.processInfo.arguments.contains("--reset-app-disclaimer")
+        {
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.acceptedAppDisclaimerRevision)
+        }
+        #endif
         ElectricityBGTaskManager.shared.register()
     }
 
@@ -44,21 +51,36 @@ struct shishanyouniApp: App
     {
         WindowGroup
         {
-            MainTabView()
-                .environmentObject(userinfo)
-                .environmentObject(iapStore)
-                // 首次安装前没有历史写入时，以及 Widget 被系统延后刷新时，主动补一次。
-                .onAppear
+            Group
+            {
+                if acceptedDisclaimerRevision == AppUsageDisclaimer.revision
                 {
-                    PersonalScheduleWidgetSync.sync()
-                    NextCourseSync.sync()
+                    MainTabView()
+                        .onAppear
+                        {
+                            // 先完成声明确认，再请求系统权限，避免首次启动弹窗互相抢占。
+                            requestNotificationPermission()
+                            PersonalScheduleWidgetSync.sync()
+                            NextCourseSync.sync()
+                        }
                 }
-                .onChange(of: scenePhase)
-                { newPhase in
-                    guard newPhase == .active else { return }
-                    PersonalScheduleWidgetSync.sync()
-                    NextCourseSync.sync()
+                else
+                {
+                    AppDisclaimerWelcomeView
+                    {
+                        acceptedDisclaimerRevision = AppUsageDisclaimer.revision
+                    }
                 }
+            }
+            .environmentObject(userinfo)
+            .environmentObject(iapStore)
+            .onChange(of: scenePhase)
+            { newPhase in
+                guard newPhase == .active,
+                      acceptedDisclaimerRevision == AppUsageDisclaimer.revision else { return }
+                PersonalScheduleWidgetSync.sync()
+                NextCourseSync.sync()
+            }
         }
     }
 }

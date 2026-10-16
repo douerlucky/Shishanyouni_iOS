@@ -27,12 +27,20 @@ struct MainTabView: View
 
     init()
     {
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.systemBackground
+        // iOS 26 使用系统 Liquid Glass Tab Bar；旧系统继续使用不透明背景。
+        if #available(iOS 26.0, *)
+        {
+            // 保留系统默认外观，才能显示滚动时的玻璃和边缘模糊。
+        }
+        else
+        {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor.systemBackground
 
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
     }
 
     var body: some View
@@ -85,8 +93,7 @@ struct MainTabView: View
             .tag(3)
         }
         .accentColor(.blue)
-        .toolbarBackground(.visible, for: .tabBar)
-        .toolbarBackground(Color(uiColor: .systemBackground), for: .tabBar)
+        .modifier(MainTabBarBehavior())
         .onChange(of: scenePhase)
         { phase in
             guard phase == .active else { return }
@@ -175,6 +182,25 @@ struct MainTabView: View
         .environmentObject(IAPStore.preview(hasActiveSubscription: false))
 }
 
+/// 保持 Tab Bar 始终展开，避免各页面滚动时 Tab Bar 缩到左侧，
+/// 也避免叠层手势区域随着系统 Tab Bar 动态改变高度。
+private struct MainTabBarBehavior: ViewModifier
+{
+    func body(content: Content) -> some View
+    {
+        if #available(iOS 26.0, *)
+        {
+            content.tabBarMinimizeBehavior(.never)
+        }
+        else
+        {
+            content
+                .toolbarBackground(.visible, for: .tabBar)
+                .toolbarBackground(Color(uiColor: .systemBackground), for: .tabBar)
+        }
+    }
+}
+
 extension View
 {
     /// 在支持的系统上，为指定形状应用 Liquid Glass。
@@ -207,47 +233,56 @@ extension View
 
     func glassBackground(cornerRadius: CGFloat = 64) -> some View
     {
-        modifier(GlassBackground(cornerRadius: cornerRadius))
+        modifier(GlassBackground(shape: RoundedRectangle(cornerRadius: cornerRadius)))
+    }
+
+    /// 与 glassBackground(cornerRadius:) 完全相同的玻璃材质和浓度，
+    /// 仅形状可自定义；用于圆形等非 RoundedRectangle 容器，保持浓度一致。
+    func glassBackground<S: InsettableShape>(in shape: S) -> some View
+    {
+        modifier(GlassBackground(shape: shape))
     }
 }
 
-struct GlassBackground: ViewModifier
+struct GlassBackground<S: InsettableShape>: ViewModifier
 {
-    var cornerRadius: CGFloat = 64
+    var shape: S
+    @AppStorage(PreferenceKey.pageBackgroundOpacity)
+    private var pageBackgroundOpacity: Double = 0.35
 
     func body(content: Content) -> some View
     {
         content
-            .background(
+            .background
+            {
                 Group
                 {
                     if #available(iOS 26.0, *)
                     {
                         Color.clear
                             .glassEffect(.regular)
-                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                            .clipShape(shape)
                     }
                     else
                     {
                         ZStack
                         {
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .fill(.ultraThinMaterial)
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .strokeBorder(
-                                    LinearGradient(
-                                    colors: [
-                                        AdaptiveColors.glassStroke,
-                                        AdaptiveColors.glassStrokeBottom,
-                                    ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
+                            shape.fill(.ultraThinMaterial)
+                            shape.strokeBorder(
+                                LinearGradient(
+                                colors: [
+                                    AdaptiveColors.glassStroke,
+                                    AdaptiveColors.glassStrokeBottom,
+                                ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.5
+                            )
                         }
                     }
                 }
-            )
+                .opacity(pageBackgroundOpacity)
+            }
     }
 }

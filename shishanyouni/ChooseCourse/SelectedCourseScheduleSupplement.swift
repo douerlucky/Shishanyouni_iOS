@@ -380,7 +380,7 @@ final class SelectedCourseScheduleQuery
             do
             {
                 let (data, _) = try await CourseSelectionHTTP.send(
-                    urlString: CourseSelectionEndpoint.selectedClassSchedules,
+                    urlString: SchoolDirectAPI.selectedClassSchedulesURL,
                     method: "POST",
                     cookie: cookie,
                     parameters: parameters,

@@ -70,7 +70,7 @@ struct ClassroomView: View
                     {
                         ProgressView()
                             .scaleEffect(1.5)
-                            .tint(.blue)
+                            .tint(appActionBlue)
                         Text("正在查询...")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
@@ -194,6 +194,7 @@ struct FavoritesSectionView: View
                     }
                 }
                 .padding(.horizontal, 4)
+                .frame(maxWidth: .infinity)
 
                 ForEach(favoritesStore.favorites)
                 { fav in
@@ -203,6 +204,7 @@ struct FavoritesSectionView: View
         }
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .cornerRadius(16)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -226,6 +228,8 @@ struct FavoriteRoomRowView: View
                 Text(fav.displayName)
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
                     .frame(width: 52)
                     .frame(height: cellHeight)
                     .padding(.leading, 4)
@@ -235,6 +239,8 @@ struct FavoriteRoomRowView: View
                 Text(fav.displayName)
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
                     .frame(width: 52)
                     .frame(height: cellHeight)
                     .padding(.leading, 4)
@@ -250,6 +256,7 @@ struct FavoriteRoomRowView: View
             .padding(.leading, 6)
         }
         .padding(.trailing, 4)
+        .frame(maxWidth: .infinity)
         .contextMenu
         {
             Button(role: .destructive)
@@ -318,6 +325,8 @@ struct ClassroomRowView: View
                 Text(name)
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(isFav ? .orange : .secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
                     .frame(width: 52)
                     .frame(height: cellHeight)
                     .padding(.leading, 4)
@@ -337,6 +346,8 @@ struct ClassroomRowView: View
                 Text(name)
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(isFav ? .orange : .secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
                     .frame(width: 52)
                     .frame(height: cellHeight)
                     .padding(.leading, 4)
@@ -375,8 +386,10 @@ struct ClassroomRowView: View
                 }
             }
             .padding(.leading, 6)
+            .frame(maxWidth: .infinity)
         }
         .padding(.trailing, 4)
+        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .contextMenu
         {
@@ -477,6 +490,7 @@ struct ClassroomMatrixView: View
                             }
                         }
                         .padding(.horizontal, 4)
+                        .frame(maxWidth: .infinity)
 
                         // 按行渲染
                         VStack(spacing: 0)
@@ -512,8 +526,12 @@ struct ClassroomMatrixView: View
                     .background(Color(uiColor: .secondarySystemGroupedBackground))
                     .cornerRadius(16)
                     .padding(10)
-                    .padding(.bottom, 140)
+                    .frame(maxWidth: .infinity)
                 }
+            }
+            .safeAreaInset(edge: .bottom)
+            {
+                Color.clear.frame(height: 100)
             }
         }
     }
@@ -539,7 +557,6 @@ struct BottomClassroomButtonView: View
     let classroomService: ClassroomService
 
     let buildings = ["一教", "二教", "三教", "四教", "襄阳校区二教"]
-
     var availableWings: [String]
     {
         if selectedBuilding == "一教" || selectedBuilding == "二教" || selectedBuilding == "襄阳校区二教" { return ["无"] }
@@ -574,69 +591,103 @@ struct BottomClassroomButtonView: View
         return formatter.string(from: selectedDate)
     }
 
+    private var semesterStartDate: Date
+    {
+        CurriculumStore.shared.loadSemesterStartDate() ?? Date()
+    }
+
+    private var selectedWeek: Int
+    {
+        var cal = Calendar.current
+        cal.firstWeekday = 2
+
+        let startComponents = cal.dateComponents(
+            [.yearForWeekOfYear, .weekOfYear],
+            from: semesterStartDate
+        )
+        let selectedComponents = cal.dateComponents(
+            [.yearForWeekOfYear, .weekOfYear],
+            from: selectedDate
+        )
+        guard let startMonday = cal.date(from: startComponents),
+              let selectedMonday = cal.date(from: selectedComponents)
+        else { return 1 }
+
+        let difference = cal.dateComponents(
+            [.weekOfYear],
+            from: startMonday,
+            to: selectedMonday
+        ).weekOfYear ?? 0
+        return max(difference + 1, 1)
+    }
+
+    private var selectedWeekday: String
+    {
+        let weekday = Calendar.current.component(.weekday, from: selectedDate)
+        let names = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        return names[weekday - 1]
+    }
+
     var body: some View
     {
-        HStack(spacing: 8)
+        VStack(spacing: 8)
         {
-            HStack(spacing: 0)
+            HStack(spacing: 4)
             {
+                NextButton(systemImage: "chevron.left.2", size: 26)
+                {
+                    shiftDate(by: -7)
+                }
+
+                NextButton(systemImage: "chevron.left", size: 26)
+                {
+                    shiftDate(by: -1)
+                }
+
+                VStack(spacing: 1)
+                {
+                    Text("第 \(selectedWeek) 周")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(appActionBlue)
+                    Text(selectedWeekday)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(minWidth: 70)
+
+                NextButton(systemImage: "chevron.right", size: 26)
+                {
+                    shiftDate(by: 1)
+                }
+
+                NextButton(systemImage: "chevron.right.2", size: 26)
+                {
+                    shiftDate(by: 7)
+                }
+
+                Spacer(minLength: 8)
+
                 DatePicker("", selection: $selectedDate, displayedComponents: .date)
                     .labelsHidden()
+                    .tint(appActionBlue)
+                    .frame(width: 96)
+                    .scaleEffect(0.8)
+
+                Spacer(minLength: 0)
             }
-            .background(Color(.systemBackground).opacity(0.9))
-            .clipShape(Capsule())
-            .optionalLiquidGlass()
+            .frame(maxWidth: .infinity)
 
-            Spacer(minLength: 4)
-
-            Button(action: { showPicker = true })
+            HStack(spacing: 8)
             {
-                HStack(spacing: 4)
-                {
-                    if(displayLocation.count >= 8)
-                    {
-                        Text(displayLocation)
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                TeachingBuildingSelector(title: displayLocation) { showPicker = true }
+                    .frame(maxWidth: .infinity)
 
-                    }
-                    else
-                    {
-                        Text(displayLocation)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                SearchButton("搜索", action: performSearch)
+                    .frame(width: 82)
             }
-            .background(Color(.systemBackground).opacity(0.9))
-            .clipShape(Capsule())
-            .optionalLiquidGlass()
-
-            Button(action: performSearch)
-            {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(10)
-                    .background(Color.blue)
-                    .clipShape(Circle())
-            }
-            .optionalLiquidGlass()
+            .frame(maxWidth: .infinity)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 12)
-        .glassBackground(cornerRadius: 64)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 25)
+        .queryBottomIndicatorBar(cornerRadius: 24)
         .sheet(isPresented: $showPicker)
         {
             PickerSheetView(
@@ -687,6 +738,15 @@ struct BottomClassroomButtonView: View
                 }
             }
         }
+    }
+
+    private func shiftDate(by days: Int)
+    {
+        guard let date = Calendar.current.date(byAdding: .day, value: days, to: selectedDate)
+        else { return }
+
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        selectedDate = Calendar.current.startOfDay(for: date)
     }
 }
 

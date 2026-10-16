@@ -7,24 +7,7 @@
 
 import SwiftUI
 
-// MARK: - 数据模型
-
-struct Guide: Codable, Identifiable
-{
-    let id: Int
-    let name: String
-    let icon: String?
-    let context: String?
-    let author: String?
-    let time: String?
-}
-
-struct GuideResponse: Codable
-{
-    let msg: String
-    let code: Int
-    let data: [Guide]?
-}
+// 攻略接口模型位于 API/Models/GuideAPIModels.swift。
 
 // MARK: - ViewModel
 
@@ -36,7 +19,7 @@ class AllStrategyViewModel: ObservableObject
 
     func fetchGuides()
     {
-        guard let url = URL(string: "https://lion.hzau.edu.cn/app/ios/guide/getinfo") else { return }
+        guard let url = URL(string: ShishanyouniAPI.guideListURL) else { return }
 
         isLoading = true
         errorMessage = nil

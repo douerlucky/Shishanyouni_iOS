@@ -123,10 +123,6 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
 {
     static let shared = ITCFetch()
 
-    private let casServiceURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https%3A%2F%2Fitc.hzau.edu.cn%2F"
-    private let courseListURL = "https://itc.hzau.edu.cn/courselist.jsp?courseID=0"
-    private let baseURL = "https://itc.hzau.edu.cn"
-
     private var cookieJar: [String: String] = [:]
 
     private lazy var session: URLSession = {
@@ -162,7 +158,7 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
                 partialResult[key] = value
             }
         }
-        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: casServiceURL)!)
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: SchoolDirectAPI.casITCLoginURL)!)
         for cookie in cookies
         {
             cookieJar[cookie.name] = cookie.value
@@ -183,7 +179,7 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
 
     private func makeRequest(_ path: String) -> URLRequest
     {
-        var request = URLRequest(url: URL(string: "\(baseURL)\(path)")!)
+        var request = URLRequest(url: URL(string: "\(SchoolDirectAPI.itcOrigin)\(path)")!)
         request.httpMethod = "GET"
         request.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
@@ -198,7 +194,7 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
     {
         cookieJar = [:]
 
-        var request1 = URLRequest(url: URL(string: casServiceURL)!)
+        var request1 = URLRequest(url: URL(string: SchoolDirectAPI.casITCLoginURL)!)
         request1.httpMethod = "GET"
         request1.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
         request1.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
@@ -231,12 +227,12 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
         }
         let execution = String(matchedText[valueStart.upperBound ..< valueEnd.lowerBound])
 
-        var request2 = URLRequest(url: URL(string: casServiceURL)!)
+        var request2 = URLRequest(url: URL(string: SchoolDirectAPI.casITCLoginURL)!)
         request2.httpMethod = "POST"
         request2.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request2.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-        request2.setValue(casServiceURL, forHTTPHeaderField: "Referer")
-        request2.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        request2.setValue(SchoolDirectAPI.casITCLoginURL, forHTTPHeaderField: "Referer")
+        request2.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
 
         let cookieHeader = getCookieHeader()
         if !cookieHeader.isEmpty
@@ -306,8 +302,8 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
 
     func fetchCourseList() async throws -> [ITC_Course]
     {
-        var request = makeRequest("/courselist.jsp?courseID=0")
-        request.setValue(casServiceURL, forHTTPHeaderField: "Referer")
+        var request = makeRequest("\(SchoolDirectAPI.itcCourseListPath)?courseID=0")
+        request.setValue(SchoolDirectAPI.casITCLoginURL, forHTTPHeaderField: "Referer")
 
         let (data, response) = try await redirectSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
@@ -354,10 +350,10 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
     {
         guard isLoggedIn else { throw ITCError.notLoggedIn }
 
-        _ = try? await session.data(for: makeRequest("/courselist.jsp?courseID=\(courseID)"))
+        _ = try? await session.data(for: makeRequest("\(SchoolDirectAPI.itcCourseListPath)?courseID=\(courseID)"))
 
-        var request = makeRequest("/assignment/index.jsp")
-        request.setValue("https://cas-paas.hzau.edu.cn/", forHTTPHeaderField: "Referer")
+        var request = makeRequest(SchoolDirectAPI.itcAssignmentPath)
+        request.setValue(SchoolDirectAPI.casRootURL, forHTTPHeaderField: "Referer")
 
         let (data, response) = try await redirectSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
@@ -431,8 +427,8 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
     {
         guard isLoggedIn else { throw ITCError.notLoggedIn }
 
-        var request = makeRequest("/assignment/index.jsp?courseID=\(courseID)&assignID=\(assignID)")
-        request.setValue("https://cas-paas.hzau.edu.cn/", forHTTPHeaderField: "Referer")
+        var request = makeRequest("\(SchoolDirectAPI.itcAssignmentPath)?courseID=\(courseID)&assignID=\(assignID)")
+        request.setValue(SchoolDirectAPI.casRootURL, forHTTPHeaderField: "Referer")
 
         let (data, response) = try await redirectSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,

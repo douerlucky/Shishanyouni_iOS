@@ -26,83 +26,7 @@ enum CourseQuerySource: String, QuerySourceOption
     }
 }
 
-// MARK: - CAS 响应模型
-
-struct AllCourseResponse: Decodable
-{
-    let items: [CourseInfo]
-}
-
-struct CourseClassResponse: Decodable
-{
-    let kbList: [CourseClassInfo]
-}
-
-// MARK: - 狮山有你响应模型
-
-private struct LionRubKeywordResponse: Decodable
-{
-    let msg: String?
-    let code: Int
-    let data: [LionRubKeywordItem]?
-    let success: Bool?
-
-    var isSuccess: Bool
-    {
-        success == true || code == 2 || code == 200
-    }
-}
-
-private struct LionRubKeywordItem: Decodable
-{
-    let id: Int
-    let weekday: String?
-    let classTime: String?
-    let week: String?
-    let cno: String?
-    let cname: String
-    let tname: String?
-    let siteName: String?
-    let courseNature: String?
-    let className: String?
-    let classCode: String
-    let courseId: String?
-    let schoolYear: String
-    let schoolTerm: String
-    let type: Int?
-    let teacherNum: Int?
-}
-
-private struct LionRubDetailResponse: Decodable
-{
-    let msg: String?
-    let code: Int
-    let data: LionRubDetailData?
-    let success: Bool?
-
-    var isSuccess: Bool
-    {
-        success == true || code == 2 || code == 200
-    }
-}
-
-private struct LionRubDetailData: Decodable
-{
-    let rubList: [LionRubKeywordItem]?
-    let tableRes: [LionRubTableItem]?
-}
-
-private struct LionRubTableItem: Decodable
-{
-    let day: Int
-    let period: Int
-    let length: Int
-    let name: String?
-    let room: String?
-    let teacher: String?
-    let week: String?
-    let weeks: [Int]?
-}
+// 课程检索接口模型位于 API/Models/CourseAPIModels.swift。
 
 enum AllCourseQueryError: LocalizedError
 {
@@ -340,13 +264,11 @@ class AllCourseQuery
 {
     static let shared = AllCourseQuery()
 
-    private let lionKeywordURL = "https://lion.hzau.edu.cn/app/ios/rub/keyword"
-    private let lionDetailURL = "https://lion.hzau.edu.cn/app/ios/rub/getByClassCode"
 
     /// 获取课程列表
     func fetchAllCourses(cookie: String, xnm: String, xqm: String, kch: String) async throws -> [CourseInfo]
     {
-        let urlString = "http://byjxyt.hzau.edu.cn/kbdy/kckbdy_cxKckbdyList.html?gnmkdm=N214520"
+        let urlString = SchoolDirectAPI.courseSearchURL
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -369,7 +291,7 @@ class AllCourseQuery
 
     func fetchLionCourses(keyword: String) async throws -> [CourseInfo]
     {
-        var components = URLComponents(string: lionKeywordURL)
+        var components = URLComponents(string: ShishanyouniAPI.courseSearchURL)
         components?.queryItems = [URLQueryItem(name: "keyword", value: keyword)]
         guard let url = components?.url else
         {
@@ -399,7 +321,7 @@ class AllCourseQuery
     /// 获取指定课程的教学班列表
     func fetchCourseClasses(cookie: String, xnm: String, xqm: String, kch_id: String) async throws -> [CourseClassInfo]
     {
-        let urlString = "http://byjxyt.hzau.edu.cn/kbdy/kckbdy_cxKcKb.html?gnmkdm=N214520"
+        let urlString = SchoolDirectAPI.courseDetailURL
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -420,7 +342,7 @@ class AllCourseQuery
 
     func fetchLionCourseClasses(classCode: String) async throws -> [CourseClassInfo]
     {
-        var components = URLComponents(string: lionDetailURL)
+        var components = URLComponents(string: ShishanyouniAPI.courseDetailURL)
         components?.queryItems = [URLQueryItem(name: "classCode", value: classCode)]
         guard let url = components?.url else
         {
@@ -497,7 +419,7 @@ class AllCourseQuery
         request.setValue("application/x-www-form-urlencoded;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue("http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.academicTimetableReferer, forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")

@@ -30,7 +30,7 @@ struct WebView: UIViewRepresentable
         private var didOpenJWGL = false
 
         // 你要“种 Cookie”的 jwgl 页面（随便一个 jwgl 页面都行）
-        private let gradePage = URL(string: "http://jwgl.hzau.edu.cn/sso/hnyyxyiotlogin")!
+        private let gradePage = URL(string: SchoolDirectAPI.teachingSystemSSOURL)!
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!)
         {
@@ -41,7 +41,7 @@ struct WebView: UIViewRepresentable
             //    你日志里就是 https://portal-paas.hzau.edu.cn/main.html
             if !didOpenJWGL,
                let host = webView.url?.host,
-               host.contains("portal-paas.hzau.edu.cn"),
+               host.contains(SchoolDirectAPI.portalHost),
                current.contains("/main.html")
             {
                 didOpenJWGL = true

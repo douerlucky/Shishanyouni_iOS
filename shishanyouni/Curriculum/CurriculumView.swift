@@ -16,6 +16,39 @@ let curriculumCellHeight: CGFloat = 58
 let curriculumTimeColumnWidth: CGFloat = 60
 let curriculumGridPadding: CGFloat = 10
 
+/// 课表页统一的“底色 + 液态玻璃”面板配方。
+///
+/// 底色浓度和玻璃材质与空白格子、课程卡片、时间轴完全一致：
+/// 顶部星期条、底部周数条和旁边的收起按钮都复用它，同一页面上只会有一个
+/// “浓度”。
+private struct CurriculumGlassPanel<S: InsettableShape>: ViewModifier
+{
+    let shape: S
+    let enabled: Bool
+
+    @AppStorage(PreferenceKey.pageBackgroundOpacity)
+    private var pageBackgroundOpacity: Double = 0.35
+
+    func body(content: Content) -> some View
+    {
+        content
+            .background(
+                Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.5, setting: pageBackgroundOpacity)),
+                in: shape
+            )
+            .optionalLiquidGlass(enabled: enabled, in: shape)
+    }
+}
+
+extension View
+{
+    /// 给课表页的玻璃容器套上和格子同浓度的面板背景。
+    func curriculumGlassPanel<S: InsettableShape>(in shape: S, enabled: Bool) -> some View
+    {
+        modifier(CurriculumGlassPanel(shape: shape, enabled: enabled))
+    }
+}
+
 /// 课表与设置预览共用的基础字号，教室和老师允许最多两行。
 enum CurriculumTypography
 {
@@ -87,6 +120,7 @@ struct CurriculumView: View
     // Key 名称不变，只是集中在 PreferenceKey 管理；已保存的设置会继续生效。
     @AppStorage(PreferenceKey.scheduleBackgroundImageFilename) private var backgroundImageFilename: String = ""
     @AppStorage(PreferenceKey.scheduleBackgroundOpacity) private var backgroundOpacity: Double = 0.2
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
     @AppStorage(PreferenceKey.scheduleContentOpacity) private var scheduleContentOpacity: Double = 1.0
     @AppStorage(PreferenceKey.curriculumFontScale) private var curriculumFontScale: Double = 1.0
     @AppStorage(PreferenceKey.showNoonPeriod) private var showNoonPeriod = false
@@ -171,8 +205,7 @@ struct CurriculumView: View
                 )
             }
             .opacity(scheduleContentOpacity)
-            .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
-            .background(Color(.secondarySystemBackground).opacity(0.5))
+            .curriculumGlassPanel(in: Capsule(), enabled: enableLiquidGlassEffect)
             .clipShape(Capsule())
             .padding(.horizontal, 10)
             .padding(.top, 10)
@@ -182,14 +215,11 @@ struct CurriculumView: View
         }
         .background
         {
-            if curriculumBackgroundEnabled, let backgroundImage = backgroundImage
-            {
-                Image(uiImage: backgroundImage)
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .opacity(backgroundOpacity)
-            }
+            PageBackgroundView(
+                image: backgroundImage,
+                isEnabled: curriculumBackgroundEnabled,
+                opacity: backgroundOpacity
+            )
         }
         .onChange(of: backgroundImageFilename)
         { _ in
@@ -356,20 +386,17 @@ struct CurriculumView: View
             // 1. 核心课表控制区
             HStack(spacing: 4)
             {
-                Button(action: {
+                WeekStepButton(
+                    systemName: "chevron.left",
+                    isDisabled: nowDisplayWeek <= minWeek
+                )
+                {
                     isWeekFieldFocused = false
                     inputWeek = ""
                     nowDisplayWeek -= 1
                     updateDatesForDisplayWeek()
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
-                })
-                {
-                    Image(systemName: "chevron.left.circle.fill")
-                        .font(.system(size: 36))
-                        .foregroundColor(nowDisplayWeek <= minWeek ? .gray : .blue)
                 }
-                .disabled(nowDisplayWeek <= minWeek)
-                .optionalLiquidGlass()
 
                 VStack(spacing: 4)
                 {
@@ -386,7 +413,7 @@ struct CurriculumView: View
                             {
                                 Text("第")
                                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(appActionBlue)
 
                                 TextField("", text: weekBinding)
                                     .font(.system(size: 16, weight: .bold, design: .rounded))
@@ -395,7 +422,7 @@ struct CurriculumView: View
                                     .frame(width: 24, height: 16)
                                     .background(Color(.systemGray6))
                                     .clipShape(Capsule())
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(appActionBlue)
                                     .focused($isWeekFieldFocused)
                                     .textFieldStyle(.plain)
                                     .toolbar
@@ -409,7 +436,7 @@ struct CurriculumView: View
                                                 handleWeekJump()
                                                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                                             }
-                                            .foregroundColor(.blue)
+                                            .foregroundColor(appActionBlue)
                                         }
                                     }
                                     .onTapGesture { inputWeek = "" }
@@ -417,7 +444,7 @@ struct CurriculumView: View
 
                                 Text("周")
                                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(appActionBlue)
                             }
                         }
                         else
@@ -430,32 +457,32 @@ struct CurriculumView: View
                         {
                             Text("本周")
                                 .font(.caption2)
+                                .foregroundColor(appActionBlue)
                                 .padding(.horizontal, 6)
-                                .background(Color.blue.opacity(0.2))
-                                .cornerRadius(4)
+                                .background(
+                                    appActionBlue.opacity(0.05),
+                                    in: Capsule()
+                                )
                         }
                     }
                 }
                 .frame(width: 80)
 
-                Button(action: {
+                WeekStepButton(
+                    systemName: "chevron.right",
+                    isDisabled: nowDisplayWeek >= maxWeek
+                )
+                {
                     isWeekFieldFocused = false
                     inputWeek = ""
                     nowDisplayWeek += 1
                     updateDatesForDisplayWeek()
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
-                })
-                {
-                    Image(systemName: "chevron.right.circle.fill")
-                        .font(.system(size: 36))
-                        .foregroundColor(nowDisplayWeek >= maxWeek ? .gray : .blue)
                 }
-                .disabled(nowDisplayWeek >= maxWeek)
-                .optionalLiquidGlass()
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 8)
-            .glassBackground(cornerRadius: 64)
+            .curriculumGlassPanel(in: Capsule(), enabled: enableLiquidGlassEffect)
             .overlay(alignment: .trailing)
             {
                 // 右侧的小尾巴：“本周” & “开学周”
@@ -473,7 +500,7 @@ struct CurriculumView: View
                                 .font(.system(size: 12, weight: .medium, design: .rounded))
                                 .foregroundColor(.white)
                                 .frame(width: 44, height: 28)
-                                .background(Color.blue)
+                                .background(appActionBlue)
                                 .clipShape(Capsule())
                         }
                         .optionalLiquidGlass()
@@ -516,19 +543,18 @@ struct CurriculumView: View
             .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showBottomControls) // 显式绑定动画
 
             // 2. 永远可见的 Toggle 悬浮小按键，站C位！
+            // 和下方“第N周”条用同一个课表玻璃配方，确保浓度一致。
             Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 showBottomControls.toggle()
             })
             {
                 Image(systemName: showBottomControls ? "chevron.down" : "chevron.up")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(showBottomControls ? .secondary : .blue)
+                    .foregroundColor(showBottomControls ? .secondary : appActionBlue)
                     .frame(width: 32, height: 32)
-                    .background(Color(.systemBackground).opacity(0.5))
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             }
-            .optionalLiquidGlass()
+            .curriculumGlassPanel(in: Circle(), enabled: enableLiquidGlassEffect)
             .offset(x: showBottomControls ? -130 : 0)
             .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showBottomControls)
         }
@@ -655,6 +681,28 @@ struct CurriculumView: View
     }
 }
 
+/// 底部控制条里“上一周 / 下一周”共用的同一枚按钮。
+///
+/// 左右两枚只差一个方向和一个禁用条件，抽成同一个组件后样式只有一处定义。
+/// 使用统一的 NextButton，图标只使用 chevron 本身，圆形外观完全由按钮组件提供。
+private struct WeekStepButton: View
+{
+    let systemName: String
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View
+    {
+        NextButton(
+            systemImage: systemName,
+            tint: isDisabled ? .secondary.opacity(0.35) : appActionBlue,
+            size: 34,
+            action: action
+        )
+        .disabled(isDisabled)
+    }
+}
+
 // 星期头
 
 struct WeekHeaderView: View
@@ -662,6 +710,8 @@ struct WeekHeaderView: View
     let weekDays = ["一", "二", "三", "四", "五", "六", "日"]
     @Binding var weekDatesCurWeek: [Date]
     @Binding var datesCurWeek: [Int]
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     var body: some View
     {
@@ -681,7 +731,20 @@ struct WeekHeaderView: View
                         .foregroundColor(isToday ? .white : .secondary)
                 }
                 .padding(.vertical, 8)
-                .background(isToday ? Capsule().fill(Color.blue) : Capsule().fill(Color.clear))
+                .background
+                {
+                    // 今日高亮是状态标识，用固定浓度，不跟随“页面背景不透明度”滑块变淡。
+                    if isToday
+                    {
+                        Capsule()
+                            .fill(appActionBlue)
+                            .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: Capsule())
+                    }
+                    else
+                    {
+                        Capsule().fill(Color.clear)
+                    }
+                }
             }
         }
     }
@@ -710,6 +773,7 @@ struct CourseGridView: View
     var onSetCoursePriority: ((Course, [Course]) -> Void)?
     @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
     private let weekdayNames = ["一", "二", "三", "四", "五", "六", "日"]
 
     init(
@@ -933,7 +997,7 @@ struct CourseGridView: View
     {
         
         Color(.systemGray6)
-            .opacity(0.4)
+            .opacity(0.4 * min(max(pageBackgroundOpacity / 0.35, 0), 1))
             .frame(height: curriculumCellHeight(for: fontScale))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:12)
@@ -974,7 +1038,7 @@ struct CourseGridView: View
         {
             Image(systemName: "plus.circle.fill")
                 .font(.largeTitle)
-                .foregroundColor(.blue)
+                .foregroundColor(appActionBlue)
             Text("周\(weekdayNames[day - 1]) \(CurriculumClassSchedule.displayName(for: period))")
                 .font(.headline)
         }
@@ -1057,7 +1121,7 @@ struct CourseGridView: View
         .frame(maxWidth: .infinity)
         .frame(height: cardHeight)
 
-        .background(color.opacity(0.85))
+        .background(color.opacity(pagePanelOpacity(base: 0.85, setting: pageBackgroundOpacity)))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .optionalLiquidGlass(enabled: enableLiquidGlassEffect,cornerRadius:12)
         .overlay(alignment: .topTrailing)
@@ -1387,6 +1451,7 @@ struct TimeCurriculumView: View
     let fontScale: Double
     let visiblePeriods: [Int]
     @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect = false
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     init(
         fontScale: Double = 1.0,
@@ -1483,7 +1548,8 @@ struct TimeCurriculumView: View
             }
         }
         .background(
-            Color(.secondarySystemBackground).opacity(0.5),
+            // 和横排周、课表 cell 保持同一套液态玻璃亮度/透明度基准（base 0.85）。
+            Color(.secondarySystemBackground).opacity(pagePanelOpacity(base: 0.85, setting: pageBackgroundOpacity)),
             in: Capsule()
         )
         .optionalLiquidGlass(
@@ -1534,10 +1600,20 @@ struct TimeCurriculumView: View
         .padding(.horizontal, 2)
         .padding(.vertical, 1)
         // 当前节与整条时间轴共用 Capsule 轮廓，首节和末节不会出现直角边。
-        .background(
-            isCurrent ? Color.blue : Color.clear,
-            in: Capsule()
-        )
+        // 当前节高亮是状态标识，用固定浓度，不跟随“页面背景不透明度”滑块变淡。
+        .background
+        {
+            if isCurrent
+            {
+                Capsule()
+                    .fill(appActionBlue)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: Capsule())
+            }
+            else
+            {
+                Capsule().fill(Color.clear)
+            }
+        }
     }
 }
 

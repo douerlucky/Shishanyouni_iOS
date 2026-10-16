@@ -10,7 +10,6 @@ final class SchoolCalendarFetcher
     static let shared = SchoolCalendarFetcher()
 
     /// 教务系统校历页会将活动内嵌在 `rc.push(...)` 脚本中，而不是返回 JSON。
-    private let pageURL = "http://byjxyt.hzau.edu.cn/pkgl/xlglMobile_cxXlIndexForxs.html"
 
     private static let dateFormatter: DateFormatter =
     {
@@ -39,7 +38,7 @@ final class SchoolCalendarFetcher
     private func fetchPageHTML(cookie: String) async throws -> String
     {
         // 必须复现浏览器成功的基础 GET 请求；该页面不支持 doType=query 这类猜测参数。
-        guard let url = URL(string: pageURL) else
+        guard let url = URL(string: SchoolDirectAPI.schoolCalendarURL) else
         {
             throw URLError(.badURL)
         }

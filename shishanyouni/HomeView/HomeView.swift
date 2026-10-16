@@ -5,7 +5,7 @@ import UIKit
 // 首页职责：
 // 1. 在 allFeatures 定义所有入口及其跳转动作；
 // 2. 通过 HomeLayer 选出首页常用入口；
-// 3. 用 HomeVerticalPager 在“首页概览”和“全部功能”之间上下翻页。
+// 3. 用两段连续的滚动叠层承载收藏和全部功能，避免分页器与嵌套滚动抢手势。
 
 private enum HomeMenuColor
 {
@@ -23,6 +23,45 @@ private enum HomeMenuColor
     static let blue2 = Color.adaptive(light: Color(red: 0.30, green: 0.40, blue: 0.88), dark: Color(red: 0.45, green: 0.52, blue: 0.92))
     static let purple1 = Color.adaptive(light: Color(red: 0.50, green: 0.34, blue: 0.86), dark: Color(red: 0.60, green: 0.48, blue: 0.92))
     static let purple2 = Color.adaptive(light: Color(red: 0.69, green: 0.34, blue: 0.78), dark: Color(red: 0.78, green: 0.48, blue: 0.85))
+}
+
+private enum HomeFeatureDestination
+{
+    case grades
+    case exams
+    case nanhuRun
+    case physicalTest
+    case physicalCalculator
+    case allCourses
+    case chooseCourse
+    case bus
+    case electricity
+    case classroom
+    case strategy
+    case club
+    case gis
+    case library
+    case libraryCatalog
+    case itc
+    case aiAssistant
+    case debug
+
+    var authorizationScope: FeatureAuthorizationScope?
+    {
+        switch self
+        {
+        case .grades: return .grades
+        case .exams: return .exams
+        case .nanhuRun: return .nanhuRun
+        case .physicalTest: return .physicalTest
+        case .allCourses: return .allCourses
+        case .chooseCourse: return .chooseCourse
+        case .electricity: return .electricity
+        case .library: return .libraryReservation
+        case .itc: return .itc
+        default: return nil
+        }
+    }
 }
 
 struct HomeView: View
@@ -47,10 +86,11 @@ struct HomeView: View
     @State private var navigateToLibraryCatalog = false
     @State private var navigateToITC = false
     @State private var navigateToAIAssistant = false
-    @State private var navigateToSubscription = false
-    /// 0 是首页概览，1 是全部功能页；编辑常用入口时会锁住翻页，避免手势冲突。
-    @State private var currentPage = 0
     @State private var isEditingFavorites = false
+    @State private var pendingFeature: HomeFeatureDestination?
+    @State private var pendingAuthorizationScope: FeatureAuthorizationScope?
+    @State private var showSubscriptionSheet = false
+    @State private var authorizationApproved = false
     @State private var backgroundImage: UIImage?
     /// 常用入口的选择/排序状态。必须由 @StateObject 持有，避免首页重绘时丢失编辑状态。
     @StateObject private var homeLayer = HomeLayer()
@@ -59,11 +99,9 @@ struct HomeView: View
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     @EnvironmentObject var iapStore: IAPStore
-
     @AppStorage("scheduleBackgroundImageFilename") private var backgroundImageFilename = ""
     @AppStorage("scheduleBackgroundOpacity") private var backgroundOpacity: Double = 0.2
     @AppStorage("scheduleContentOpacity") private var scheduleContentOpacity: Double = 1.0
-    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
     @AppStorage("homeBackgroundEnabled") private var homeBackgroundEnabled: Bool = false
     @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
 
@@ -96,16 +134,9 @@ struct HomeView: View
 
     private var homeCardOpacity: Double
     {
-        max(scheduleContentOpacity, 0.9)
+        // 文字/内容透明度独立控制；不要再用 0.9 的下限覆盖用户设置。
+        scheduleContentOpacity
     }
-
-    /// 旧的 SwiftUI Grid 配置；当前首页实际使用的是 HomeFavoriteGridView（UICollectionView）。
-    /// 保留它不影响功能，但它不是控制首页入口布局的地方。
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-    ]
 
     private var featuredFeatures: [HomeFeatureItem]
     {
@@ -125,100 +156,71 @@ struct HomeView: View
         if !isGuestMode
         {
             items.append(HomeFeatureItem(key: .grades, title: "成绩查询", icon: "graduationcap.fill", color: HomeMenuColor.red1) {
-                navigateToGrades = true
+                openFeature(.grades)
             })
             items.append(HomeFeatureItem(key: .exams, title: "考试查询", icon: "pencil.line", color: HomeMenuColor.orange1) {
-                navigateToExams = true
+                openFeature(.exams)
             })
             items.append(HomeFeatureItem(key: .allCourses, title: "全校课程查询", icon: "mail.and.text.magnifyingglass", color: HomeMenuColor.yellow1) {
-                navigateToAllCoueseSearch = true
+                openFeature(.allCourses)
             })
             if !hidesCampusPassContent
             {
                 items.append(HomeFeatureItem(key: .chooseCourse, title: "选课(beta)", icon: "checklist", color: HomeMenuColor.yellow2) {
-                    // 选课会实际向教务系统提交选、退课请求，属于通行证内容。
-                    if iapStore.hasActiveSubscription
-                    {
-                        navigateToChooseCourse = true
-                    }
-                    else
-                    {
-                        navigateToSubscription = true
-                    }
+                    openFeature(.chooseCourse)
                 })
             }
         }
 
         items.append(HomeFeatureItem(key: .classroom, title: "空教室查询", icon: "door.left.hand.open", color: HomeMenuColor.green1) {
-            navigateToClassroom = true
+            openFeature(.classroom)
         })
         // 馆藏接口不需要校园账号，因此游客也可以使用此入口。
         items.append(HomeFeatureItem(key: .libraryCatalog, title: "馆藏检索", icon: "books.vertical.fill", color: HomeMenuColor.purple2) {
-            navigateToLibraryCatalog = true
+            openFeature(.libraryCatalog)
         })
 
         if !isGuestMode
         {
             items.append(HomeFeatureItem(key: .nanhuRun, title: "环湖跑查询", icon: "figure.run", color: HomeMenuColor.cyan1) {
-                navigateToNanhuRun = true
+                openFeature(.nanhuRun)
             })
             if !hidesCampusPassContent
             {
                 items.append(HomeFeatureItem(key: .physicalTest, title: "体测查询", icon: "figure.run.square.stack.fill", color: HomeMenuColor.blue1) {
-                    if iapStore.hasActiveSubscription
-                    {
-                        navigateToPhysicalTest = true
-                    }
-                    else
-                    {
-                        navigateToSubscription = true
-                    }
+                    openFeature(.physicalTest)
                 })
             }
         }
 
         items.append(HomeFeatureItem(key: .physicalCalculator, title: "体测计算器", icon: "plus.forwardslash.minus", color: HomeMenuColor.blue2) {
-            navigateToPhysicalTestCalculator = true
+            openFeature(.physicalCalculator)
         })
 
         if !isGuestMode
         {
             if !hidesCampusPassContent
             {
-                items.append(HomeFeatureItem(key: .itc, title: "信息学院ITC平台 \n(beta)", icon: "chevron.left.forwardslash.chevron.right", color: HomeMenuColor.green2) {
-                    if iapStore.hasActiveSubscription
-                    {
-                        navigateToITC = true
-                    }
-                    else
-                    {
-                        navigateToSubscription = true
-                    }
+                items.append(HomeFeatureItem(key: .itc, title: "ITC作业平台\n(beta)", icon: "chevron.left.forwardslash.chevron.right", color: HomeMenuColor.green2) {
+                    openFeature(.itc)
                 })
                 items.append(HomeFeatureItem(key: .library, title: "图书馆预约（beta）", icon: "building.columns.fill", color: HomeMenuColor.cyan2) {
-                    if iapStore.hasActiveSubscription
-                    {
-                        navigateToLibrary = true
-                    }
-                    else
-                    {
-                        navigateToSubscription = true
-                    }
+                    openFeature(.library)
                 })
             }
             items.append(HomeFeatureItem(key: .electricity, title: "宿舍电费", icon: "gauge.with.needle.fill", color: HomeMenuColor.purple1) {
-                navigateElectricity = true
+                openFeature(.electricity)
             })
         }
 
         items.append(HomeFeatureItem(key: .bus, title: "校车查询", icon: "bus", color: HomeMenuColor.red2) {
-            navigateToBus = true
+            openFeature(.bus)
         })
         items.append(HomeFeatureItem(key: .strategy, title: "攻略", icon: "info.bubble", color: HomeMenuColor.orange2) {
-            navigateToStrategy = true
+            openFeature(.strategy)
         })
         items.append(HomeFeatureItem(key: .club, title: "社团", icon: "person.2.fill", color: HomeMenuColor.yellow2) {
-            navigateToClub = true
+            openFeature(.club)
         })
 //        items.append(HomeFeatureItem(key: .aiAssistant, title: "智学助手\n(beta)", icon: "sparkles", color: HomeMenuColor.purple2) {
 //            navigateToAIAssistant = true
@@ -250,142 +252,247 @@ struct HomeView: View
         isEditingFavorites = false
     }
 
+    private func openFeature(_ destination: HomeFeatureDestination)
+    {
+        guard let scope = destination.authorizationScope
+        else
+        {
+            navigate(to: destination)
+            return
+        }
+
+        pendingFeature = destination
+
+        if scope.requiresCampusPass, !iapStore.hasActiveSubscription
+        {
+            showSubscriptionSheet = true
+            return
+        }
+
+        presentAuthorizationIfNeeded(for: destination)
+    }
+
+    private func presentAuthorizationIfNeeded(for destination: HomeFeatureDestination)
+    {
+        guard let scope = destination.authorizationScope
+        else
+        {
+            pendingFeature = nil
+            navigate(to: destination)
+            return
+        }
+
+        if FeatureAuthorizationStore.isAuthorized(scope, account: userinfo.username)
+        {
+            pendingFeature = nil
+            navigate(to: destination)
+        }
+        else
+        {
+            // 先把 sheet 内容准备好，再触发展示，避免 sheet 打开时短暂出现空白页。
+            pendingAuthorizationScope = scope
+        }
+    }
+
+    private func handleSubscriptionDismissal()
+    {
+        guard let destination = pendingFeature,
+              let scope = destination.authorizationScope,
+              scope.requiresCampusPass
+        else { return }
+
+        if iapStore.hasActiveSubscription
+        {
+            presentAuthorizationIfNeeded(for: destination)
+        }
+        else
+        {
+            pendingFeature = nil
+        }
+    }
+
+    private func handleAuthorizationDismissal()
+    {
+        guard authorizationApproved, let destination = pendingFeature
+        else
+        {
+            authorizationApproved = false
+            pendingFeature = nil
+            return
+        }
+
+        authorizationApproved = false
+        pendingFeature = nil
+        DispatchQueue.main.async
+        {
+            navigate(to: destination)
+        }
+    }
+
+    private func navigate(to destination: HomeFeatureDestination)
+    {
+        switch destination
+        {
+        case .grades: navigateToGrades = true
+        case .exams: navigateToExams = true
+        case .nanhuRun: navigateToNanhuRun = true
+        case .physicalTest: navigateToPhysicalTest = true
+        case .physicalCalculator: navigateToPhysicalTestCalculator = true
+        case .allCourses: navigateToAllCoueseSearch = true
+        case .chooseCourse: navigateToChooseCourse = true
+        case .bus: navigateToBus = true
+        case .electricity: navigateElectricity = true
+        case .classroom: navigateToClassroom = true
+        case .strategy: navigateToStrategy = true
+        case .club: navigateToClub = true
+        case .gis: navigateToGIS = true
+        case .library: navigateToLibrary = true
+        case .libraryCatalog: navigateToLibraryCatalog = true
+        case .itc: navigateToITC = true
+        case .aiAssistant: navigateToAIAssistant = true
+        case .debug: navigateDebugRoom = true
+        }
+    }
+
     var body: some View
     {
-        NavigationStack
+        // MainTabView 已经为每个 Tab 提供 NavigationStack，这里直接使用它的安全区。
+        ZStack
         {
-            ZStack
-            {
-                Color(uiColor: .systemGroupedBackground)
-                    .opacity(homeBackgroundEnabled ? 0 : 1)
-                    .ignoresSafeArea()
-
-                if homeBackgroundEnabled, let backgroundImage
-                {
-                    Image(uiImage: backgroundImage)
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea()
-                        .opacity(backgroundOpacity)
-                }
-
-                // 两页共用同一份 allFeatures 和 HomeLayer，因此“添加到首页”会立即反映在第一页。
-                HomeVerticalPager(currentPage: $currentPage, isPagingLocked: isEditingFavorites, pages: [
-                    AnyView(homeOverviewPage),
-                    AnyView(
-                        AllFunctionView(
-                            features: allFeatures,
-                            homeLayer: homeLayer,
-                            isEditing: $isEditingFavorites,
-                            onBack: { currentPage = 0 },
-                            onSelect: { feature in
-                                currentPage = 0
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15)
-                                {
-                                    feature.action()
-                                }
-                            }
-                        )
-                    )
-                ])
-            }
-            .navigationTitle("首页")
-            .navigationBarTitleDisplayMode(.inline)
-            .ignoresSafeArea(edges: .bottom)
-            .onAppear
-            {
-                loadHomeBackgroundImage()
-                // 覆盖“启动时已自动登录”的场景；已有自定义首页时该调用不会改动顺序。
-                homeLayer.applyFirstLoginDefaultsIfNeeded(for: userinfo.username)
-            }
-            .onChange(of: backgroundImageFilename)
-            { _ in
-                loadHomeBackgroundImage()
-            }
-            .onChange(of: userinfo.username)
-            { username in
-                // LoginView 登录成功后会更新 username，此处立即切换首次登录的默认入口。
-                homeLayer.applyFirstLoginDefaultsIfNeeded(for: username)
-            }
-            .toolbar
-            {
-                ToolbarItem(placement: .topBarTrailing)
-                {
-                    Button
-                    {
-                        if isEditingFavorites
-                        {
-                            exitFavoriteEditing()
-                        }
-                        else
-                        {
-                            enterFavoriteEditing()
-                        }
-                    } label: {
-                        Image(systemName: isEditingFavorites ? "checkmark.circle.fill" : "square.and.pencil")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .accessibilityLabel(isEditingFavorites ? "完成编辑" : "编辑常用功能")
-                }
-            }
-            // allFeatures 中的 action 只切换状态，真正的页面路由集中在这里，便于查找和维护。
-            .navigationDestination(isPresented: $navigateToGrades) { GradeInquiry() }
-            .navigationDestination(isPresented: $navigateDebugRoom) { DebugRoom() }
-            .navigationDestination(isPresented: $navigateToExams) { ExamView() }
-            .navigationDestination(isPresented: $navigateToNanhuRun) { NanhuRunView() }
-            .navigationDestination(isPresented: $navigateToPhysicalTest) { PhysicalTestView() }
-            .navigationDestination(isPresented: $navigateToSubscription) { SubscriptionView() }
-            .navigationDestination(isPresented: $navigateToPhysicalTestCalculator) { PhysicalTestCalculatorView() }
-            .navigationDestination(isPresented: $navigateToAllCoueseSearch) { AllCourseView() }
-            .navigationDestination(isPresented: $navigateToChooseCourse) { ChooseCourseView() }
-            .navigationDestination(isPresented: $navigateToBus)
-            { SchoolBusView() }
-            .navigationDestination(isPresented: $navigateElectricity)
-            { ElectricityView() }
-            .navigationDestination(isPresented: $navigateToClassroom)
-            { ClassroomView() }
-            .navigationDestination(isPresented: $navigateToStrategy)
-            { AllStrategy() }
-            .navigationDestination(isPresented: $navigateToClub)
-            { AllClub() }
-            .navigationDestination(isPresented: $navigateToGIS)
-            { SchoolGISView() }
-            .navigationDestination(isPresented: $navigateToLibrary)
-            { LibraryOverviewView() }
-            .navigationDestination(isPresented: $navigateToLibraryCatalog)
-            { LibraryCatalogSearchView() }
-            .navigationDestination(isPresented: $navigateToITC)
-            { ITCView() }
-            .navigationDestination(isPresented: $navigateToAIAssistant)
-            { AIAssistantView() }
+            // 两个页面在同一个滚动容器内，第二层会从下方平滑接入。
+            homeOverviewPage
         }
+        .background
+        {
+            PageBackgroundView(
+                image: backgroundImage,
+                isEnabled: homeBackgroundEnabled,
+                opacity: backgroundOpacity
+            )
+        }
+        .navigationTitle("首页")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear
+        {
+            loadHomeBackgroundImage()
+            // 覆盖“启动时已自动登录”的场景；已有自定义首页时该调用不会改动顺序。
+            homeLayer.applyFirstLoginDefaultsIfNeeded(for: userinfo.username)
+        }
+        .onChange(of: backgroundImageFilename)
+        { _ in
+            loadHomeBackgroundImage()
+        }
+        .onChange(of: userinfo.username)
+        { username in
+            // LoginView 登录成功后会更新 username，此处立即切换首次登录的默认入口。
+            homeLayer.applyFirstLoginDefaultsIfNeeded(for: username)
+        }
+        .sheet(isPresented: $showSubscriptionSheet, onDismiss: handleSubscriptionDismissal)
+        {
+            NavigationStack
+            {
+                SubscriptionView()
+            }
+        }
+        .sheet(item: $pendingAuthorizationScope, onDismiss: handleAuthorizationDismissal)
+        { scope in
+            FeatureAuthorizationSheet(scope: scope)
+            { remember in
+                if remember
+            {
+                    FeatureAuthorizationStore.rememberAuthorization(
+                        scope,
+                        account: userinfo.username
+                    )
+                }
+                authorizationApproved = true
+            }
+        }
+        .toolbar
+        {
+            ToolbarItem(placement: .topBarTrailing)
+            {
+                Button
+                {
+                    if isEditingFavorites
+                    {
+                        exitFavoriteEditing()
+                    }
+                    else
+                    {
+                        enterFavoriteEditing()
+                    }
+                } label: {
+                    Image(systemName: isEditingFavorites ? "checkmark.circle.fill" : "square.and.pencil")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .accessibilityLabel(isEditingFavorites ? "完成编辑" : "编辑常用功能")
+            }
+        }
+        // allFeatures 中的 action 只切换状态，真正的页面路由集中在这里，便于查找和维护。
+        .navigationDestination(isPresented: $navigateToGrades)
+        { GradeInquiry() }
+        .navigationDestination(isPresented: $navigateDebugRoom) { DebugRoom() }
+        .navigationDestination(isPresented: $navigateToExams)
+        { ExamView() }
+        .navigationDestination(isPresented: $navigateToNanhuRun)
+        { NanhuRunView() }
+        .navigationDestination(isPresented: $navigateToPhysicalTest)
+        { PhysicalTestView() }
+        .navigationDestination(isPresented: $navigateToPhysicalTestCalculator) { PhysicalTestCalculatorView() }
+        .navigationDestination(isPresented: $navigateToAllCoueseSearch)
+        { AllCourseView() }
+        .navigationDestination(isPresented: $navigateToChooseCourse)
+        { ChooseCourseView() }
+        .navigationDestination(isPresented: $navigateToBus)
+        { SchoolBusView() }
+        .navigationDestination(isPresented: $navigateElectricity)
+        { ElectricityView() }
+        .navigationDestination(isPresented: $navigateToClassroom)
+        { ClassroomView() }
+        .navigationDestination(isPresented: $navigateToStrategy)
+        { AllStrategy() }
+        .navigationDestination(isPresented: $navigateToClub)
+        { AllClub() }
+        .navigationDestination(isPresented: $navigateToGIS)
+        { SchoolGISView() }
+        .navigationDestination(isPresented: $navigateToLibrary)
+        { LibraryOverviewView() }
+        .navigationDestination(isPresented: $navigateToLibraryCatalog)
+        { LibraryCatalogSearchView() }
+        .navigationDestination(isPresented: $navigateToITC)
+        { ITCView() }
+        .navigationDestination(isPresented: $navigateToAIAssistant)
+        { AIAssistantView() }
     }
 
     private var homeOverviewPage: some View
     {
-        GeometryReader
+        HomeStackContainer
         {
-            proxy in
-            ScrollView
-            {
+                // 第一层：收藏内容默认完整占据当前屏幕，第二层不会提前露出。
                 VStack(alignment: .leading, spacing: 0)
                 {
                     VStack(alignment: .leading, spacing: 8)
                     {
-                        HStack(alignment: .center)
+                        HStack(alignment: .top, spacing: 12)
                         {
                             if userinfo.showClock
                             {
-                                VStack(alignment: .leading, spacing: 2)
+                                HomeHeaderGlassCard
                                 {
-                                    Text(dateAndWeekString)
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.secondary)
+                                    VStack(alignment: .leading, spacing: 2)
+                                    {
+                                        Text(dateAndWeekString)
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.secondary)
 
-                                    Text(timeString)
-                                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                                        .monospacedDigit()
+                                        Text(timeString)
+                                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                                            .monospacedDigit()
+                                    }
                                 }
+                                .frame(width: 168)
                                 .onReceive(timer)
                                 { input in
                                     currentTime = input
@@ -397,13 +504,11 @@ struct HomeView: View
                             // 入学天数圆环
                             if let days = userinfo.daysSinceEnrollment, userinfo.showEnrollmentDays
                             {
-                                VStack(spacing: 3)
+                                HomeHeaderGlassCard
                                 {
                                     DaysRing(days: days)
-                                    Text("在华农天数")
-                                        .font(.system(size: 9, weight: .medium))
-                                        .foregroundColor(.secondary)
                                 }
+                                .frame(width: 88)
                             }
                         }
                         .padding(.horizontal)
@@ -418,7 +523,7 @@ struct HomeView: View
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.secondary)
 
-                                Text("欢迎使用狮山有你！\n来一起探索华中农业大学吧！")
+                                Text("欢迎使用狮山有你！\n来一起探索校园生活吧！")
                                     .font(.system(size: 24, weight: .bold, design: .rounded))
                                     .foregroundColor(.primary)
 
@@ -438,8 +543,9 @@ struct HomeView: View
                         VStack(alignment: .leading)
                         {
                             Text("下一个安排")
-                                .font(.system(size: 17, weight: .bold))
-                                .padding(.horizontal, 16)
+                                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                                .padding(16)
+
                             NextEventView()
                                 .padding(.vertical, 4)
                         }
@@ -449,6 +555,18 @@ struct HomeView: View
                     // 首页的常用功能入口 Grid：由 HomeLayer 的偏好决定内容和顺序。
                     VStack(alignment: .leading, spacing: 14)
                     {
+                        Text("常用功能")
+                            .font(.system(size: 24, weight: .heavy, design: .rounded))
+                            .padding(.horizontal, 16)
+
+                        if featuredFeatures.isEmpty
+                        {
+                            Text("从全部功能添加常用入口")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 16)
+                        }
+
                         HomeFavoriteGridView(
                             features: featuredFeatures,
                             isEditing: isEditingFavorites,
@@ -468,169 +586,70 @@ struct HomeView: View
                         .frame(height: HomeFavoriteGridView.height(for: featuredFeatures.count))
                         .padding(.horizontal, 16)
                     }
+                    .padding(.top, 20)
                     .opacity(homeCardOpacity)
 
-                    Spacer(minLength: 20)
-
-                    HomeFloatingPagerButton(direction: "chevron.down", enableLiquidGlassEffect: enableLiquidGlassEffect)
-                        .frame(maxWidth: .infinity)
-                        .onTapGesture
-                    {
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        currentPage = 1
-                    }
-                        .padding(.bottom, 24)
                 }
-                .frame(minHeight: proxy.size.height, alignment: .top)
             }
-            .scrollIndicators(.hidden)
-        }
+            allFunctionsContent:
+            {
+                AllFunctionView(
+                    features: allFeatures,
+                    homeLayer: homeLayer,
+                    isEditing: $isEditingFavorites,
+                    onSelect: { feature in
+                        feature.action()
+                    }
+                )
+            }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.clear)
     }
+
 }
 
-struct HomeFloatingPagerButton: View
+/// 首页顶部的时钟/日期和在华农天数共用同一套液态玻璃卡片规格。
+/// 固定高度和内边距后，两张卡片能保持顶边、底边对齐，避免内容变化时跳动。
+private struct HomeHeaderGlassCard<Content: View>: View
 {
-    let direction: String
-    let enableLiquidGlassEffect: Bool
+    let content: Content
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect)
+    private var enableLiquidGlassEffect: Bool = true
+    @AppStorage(PreferenceKey.pageBackgroundOpacity)
+    private var pageBackgroundOpacity: Double = 0.35
+    private let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
+    /// 两张首页信息卡共用固定高度，内容只负责在卡片内排版。
+    static var fixedHeight: CGFloat { 72 }
+
+    init(@ViewBuilder content: () -> Content)
+    {
+        self.content = content()
+    }
 
     var body: some View
     {
-        Image(systemName: direction)
-            .font(.system(size: 16, weight: .bold))
-            .foregroundColor(.blue)
-            .frame(width: 32, height: 32)
-            .background(Color(.systemBackground).opacity(0.5))
-            .clipShape(Circle())
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-            .optionalLiquidGlass(enabled: enableLiquidGlassEffect)
+        content
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .frame(height: Self.fixedHeight, alignment: .center)
+            .frame(maxWidth: .infinity)
+            .background
+            {
+                shape
+                    .fill(.ultraThinMaterial)
+                    .opacity(min(max(pageBackgroundOpacity * 0.7, 0.12), 0.28))
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: shape)
+            }
+            .clipShape(shape)
     }
 }
 
-/// 使用 UIPageViewController 做纵向分页。
-/// SwiftUI 没有直接等价的纵向分页组件；编辑常用功能时会禁用其内部滚动，
-/// 防止长按拖拽与页面翻动抢手势。
-private struct HomeVerticalPager: UIViewControllerRepresentable
-{
-    @Binding var currentPage: Int
-    let isPagingLocked: Bool
-    let pages: [AnyView]
-
-    func makeCoordinator() -> Coordinator
-    {
-        Coordinator(self)
-    }
-
-    func makeUIViewController(context: Context) -> UIPageViewController
-    {
-        let controller = UIPageViewController(
-            transitionStyle: .scroll,
-            navigationOrientation: .vertical
-        )
-        controller.view.backgroundColor = .clear
-
-        // 每个 SwiftUI 页面放进一个 UIHostingController，交给 UIKit 分页控制器管理。
-        let viewControllers = pages.map
-        {
-            let hostingController = UIHostingController(rootView: $0)
-            hostingController.view.backgroundColor = .clear
-            return hostingController
-        }
-        context.coordinator.controllers = viewControllers
-
-        if let first = viewControllers.first
-        {
-            controller.setViewControllers([first], direction: .forward, animated: false)
-        }
-
-        controller.dataSource = context.coordinator
-        controller.delegate = context.coordinator
-        context.coordinator.setPagingEnabled(!isPagingLocked, in: controller)
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: UIPageViewController, context: Context)
-    {
-        context.coordinator.parent = self
-        context.coordinator.updatePages(pages)
-        context.coordinator.setPagingEnabled(!isPagingLocked, in: uiViewController)
-
-        guard context.coordinator.controllers.indices.contains(currentPage) else { return }
-        guard context.coordinator.visibleIndex != currentPage else { return }
-
-        let direction: UIPageViewController.NavigationDirection = currentPage >= context.coordinator.visibleIndex ? .forward : .reverse
-        context.coordinator.visibleIndex = currentPage
-        uiViewController.setViewControllers(
-            [context.coordinator.controllers[currentPage]],
-            direction: direction,
-            animated: true
-        )
-    }
-
-    /// 维护 UIKit 页面控制器与 SwiftUI 的 currentPage 双向同步。
-    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate
-    {
-        var parent: HomeVerticalPager
-        var controllers: [UIHostingController<AnyView>] = []
-        var visibleIndex = 0
-        private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
-
-        init(_ parent: HomeVerticalPager)
-        {
-            self.parent = parent
-            super.init()
-            feedbackGenerator.prepare()
-        }
-
-        func updatePages(_ pages: [AnyView])
-        {
-            guard controllers.count == pages.count else { return }
-
-            for (index, page) in pages.enumerated()
-            {
-                controllers[index].rootView = page
-                controllers[index].view.backgroundColor = .clear
-            }
-        }
-
-        func setPagingEnabled(_ isEnabled: Bool, in pageViewController: UIPageViewController)
-        {
-            pageViewController.view.subviews.compactMap { $0 as? UIScrollView }.forEach
-            {
-                $0.isScrollEnabled = isEnabled
-            }
-        }
-
-        func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController?
-        {
-            guard let index = controllers.firstIndex(where: { $0 === viewController }), index > 0 else { return nil }
-            return controllers[index - 1]
-        }
-
-        func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController?
-        {
-            guard let index = controllers.firstIndex(where: { $0 === viewController }), index + 1 < controllers.count else { return nil }
-            return controllers[index + 1]
-        }
-
-        func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool)
-        {
-            guard completed,
-                  let currentController = pageViewController.viewControllers?.first,
-                  let index = controllers.firstIndex(where: { $0 === currentController })
-            else { return }
-
-            visibleIndex = index
-            parent.currentPage = index
-            feedbackGenerator.impactOccurred()
-            feedbackGenerator.prepare()
-        }
-    }
-}
 
 struct MenuGridItem: View
 {
-    @AppStorage("enableLiquidGlassEffect") private var enableLiquidGlassEffect: Bool = false
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect: Bool = true
+    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     let title: String
     let icon: String
@@ -646,7 +665,9 @@ struct MenuGridItem: View
                 ZStack
                 {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(color.opacity(0.18))
+                        // 默认 35% 时保持原来的图标底色；调低页面背景不透明度
+                        // 时，常用功能卡片也会同步更通透。
+                        .fill(color.opacity(0.18 * min(max(pageBackgroundOpacity / 0.35, 0), 1)))
                         .frame(width: 60, height: 60)
                         .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
 
@@ -679,7 +700,7 @@ private struct DaysRing: View
             // 底环
             Circle()
                 .stroke(Color.green.opacity(0.15), lineWidth: 4)
-                .frame(width: 60, height: 60)
+                .frame(width: 48, height: 48)
 
             // 进度环（按一年365天算比例）
             Circle()
@@ -688,14 +709,14 @@ private struct DaysRing: View
                     Color.green.opacity(0.6),
                     style: StrokeStyle(lineWidth: 4, lineCap: .round)
                 )
-                .frame(width: 60, height: 60)
+                .frame(width: 48, height: 48)
                 .rotationEffect(.degrees(-90))
 
             // 中间数字 + 文字
             VStack(spacing: 1)
             {
-                Text("\(days)")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                Text(String(days))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundColor(.primary)
 

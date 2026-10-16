@@ -418,6 +418,15 @@ struct GradeInquiry: View
     @State private var selectedGradeForDetail: Grade?
     @State private var teachingSystemCookie: String?
 
+    // MFA 验证码输入 Sheet 的状态；挂在父视图上，避免和学期选择 Sheet
+    // 共享同一层级触发呈现冲突（曾导致“白屏一下再弹出授权”）。
+    @State private var showMFASheet = false
+    @State private var mfaMaskedPhone = ""
+    @State private var mfaCode = ""
+    @State private var mfaFromShishanyouni = true
+    @State private var mfaSendCodeAction: (() async -> String?)?
+    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
+
     /// 被排除（不计入统计）的课程 ID 集合
     @State private var excludedIDs: Set<String> = []
 
@@ -603,6 +612,12 @@ struct GradeInquiry: View
                     set: { querySource = $0 }
                 ),
                 teachingSystemCookie: $teachingSystemCookie,
+                requestShishanyouniMFACode: { phone, sessionId in
+                    await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId)
+                },
+                requestCASMFACode: { phone in
+                    await requestCASMFACode(maskedPhone: phone)
+                },
                 gradeService: gradeService,
                 onGradesLoaded: { excludedIDs = [] }   // 新查询时重置勾选
             )
@@ -714,6 +729,17 @@ struct GradeInquiry: View
         } message: {
             Text(alertMessage)
         }
+        .sheet(isPresented: $showMFASheet)
+        {
+            MFACodeInputSheet(
+                maskedPhone: mfaMaskedPhone,
+                code: $mfaCode,
+                fromShishanyouni: mfaFromShishanyouni,
+                onSendCode: $mfaSendCodeAction,
+                onCancel: { resolveMFACode(nil) },
+                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            )
+        }
         .onAppear
         {
             loadCachedGrades()
@@ -749,6 +775,45 @@ struct GradeInquiry: View
         )
         excludedIDs = []
     }
+
+    @MainActor
+    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
+    {
+        mfaFromShishanyouni = true
+        mfaMaskedPhone = maskedPhone
+        mfaCode = ""
+        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func requestCASMFACode(maskedPhone: String?) async -> String?
+    {
+        mfaFromShishanyouni = false
+        mfaMaskedPhone = maskedPhone ?? "绑定手机号"
+        mfaCode = ""
+        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
+        await Task.yield()
+        showMFASheet = true
+        return await withCheckedContinuation
+        { continuation in
+            mfaContinuation = continuation
+        }
+    }
+
+    @MainActor
+    private func resolveMFACode(_ code: String?)
+    {
+        showMFASheet = false
+        mfaContinuation?.resume(returning: code)
+        mfaContinuation = nil
+        mfaSendCodeAction = nil
+    }
 }
 
 // MARK: - 底部浮动按钮栏（保持原逻辑不变，新增 onGradesLoaded 回调）
@@ -766,13 +831,11 @@ struct BottomButtonView: View
     @Binding var querySource: GradeQuerySource
     @Binding var teachingSystemCookie: String?
     @State private var showPicker = false
-    @State private var showMFASheet = false
-    @State private var mfaMaskedPhone = ""
-    @State private var mfaCode = ""
-    @State private var mfaFromShishanyouni = true
-    @State private var mfaSendCodeAction: (() async -> String?)?
-    @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @EnvironmentObject var userinfo: userInfo
+    /// MFA 验证码输入 Sheet 由父视图 GradeInquiry 统一呈现，避免和学期选择
+    /// Sheet 挂在同一视图层级造成呈现冲突（白屏一下再弹出授权）。
+    let requestShishanyouniMFACode: @MainActor (_ maskedPhone: String, _ sessionId: String) async -> String?
+    let requestCASMFACode: @MainActor (_ maskedPhone: String?) async -> String?
     let gradeService: GradeService
     /// 成绩明细必须使用 jwgl 域会话，因此这里走教务系统专用 CAS service。
     private let scheduleQuery = ScheduleQuery(
@@ -799,8 +862,8 @@ struct BottomButtonView: View
         let term: String
         switch selectedTerm
         {
-        case "1": term = "上"
-        case "2": term = "下"
+        case "1": term = "一"
+        case "2": term = "二"
         default: term = "全部"
         }
         if selectedYear.isEmpty { return "所有成绩 · \(term)" }
@@ -812,7 +875,7 @@ struct BottomButtonView: View
         HStack(spacing: 8)
         {
             // 数据源、学期、查询保持一排；学期按钮使用固定紧凑宽度。
-            QuerySourcePickerButton(
+            DataSourceSelector(
                 selection: $querySource,
                 fontSize: 13,
                 horizontalPadding: 10,
@@ -823,50 +886,14 @@ struct BottomButtonView: View
             }
             .disabled(isLoading)
 
-            // 学期选择按钮
-            Button(action: { showPicker = true })
-            {
-                HStack(spacing: 4)
-                {
-                    Text(selectionTitle)
-                        .font(.system(size: 14, weight: .bold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .allowsTightening(true)
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: 10, weight: .bold))
-                        .fixedSize()
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 10)
-            .background(Color(.systemBackground).opacity(0.9))
-            .clipShape(Capsule())
-            .optionalLiquidGlass()
-            .frame(width: 112)
+            SemesterSelector(title: selectionTitle, action: { showPicker = true })
             .disabled(isLoading)
 
-            Button(action: { performGradeQuery() })
-            {
-                Text("查询")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.blue)
-                    .clipShape(Capsule())
-            }
-            .optionalLiquidGlass()
-            .clipShape(Capsule())
+            SearchButton("查询") { performGradeQuery() }
             .frame(width: 82)
             .disabled(isLoading)
         }
-        .padding(10)
-        .glassBackground(cornerRadius: 32)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 25)
+        .queryBottomIndicatorBar()
         .sheet(isPresented: $showPicker)
         {
             VStack
@@ -900,9 +927,8 @@ struct BottomButtonView: View
                     .pickerStyle(.wheel)
                 }
 
-                Button("确定") { showPicker = false }
-                    .optionalLiquidGlass()
-                    .buttonStyle(.borderedProminent)
+                AcceptButton("确定") { showPicker = false }
+                    .frame(maxWidth: 260)
                     .padding(.bottom)
             }
             .presentationDetents([.height(300)])
@@ -911,17 +937,6 @@ struct BottomButtonView: View
         { year in
             // 选择“所有成绩”时自动切换到全学年，确保请求的是全部学期。
             if year.isEmpty { selectedTerm = "0" }
-        }
-        .sheet(isPresented: $showMFASheet)
-        {
-            MFACodeInputSheet(
-                maskedPhone: mfaMaskedPhone,
-                code: $mfaCode,
-                fromShishanyouni: mfaFromShishanyouni,
-                onSendCode: $mfaSendCodeAction,
-                onCancel: { resolveMFACode(nil) },
-                onConfirm: { resolveMFACode(mfaCode.trimmingCharacters(in: .whitespacesAndNewlines)) }
-            )
         }
     }
 
@@ -1054,7 +1069,7 @@ struct BottomButtonView: View
 
     private func refreshShishanyouniToken(phone: String, sessionId: String) async throws
     {
-        guard let smsCode = await requestShishanyouniMFACode(maskedPhone: phone, sessionId: sessionId),
+        guard let smsCode = await requestShishanyouniMFACode(phone, sessionId),
               !smsCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else
         {
@@ -1066,45 +1081,6 @@ struct BottomButtonView: View
         {
             userinfo.updateShishanyouniToken(token)
         }
-    }
-
-    @MainActor
-    private func requestShishanyouniMFACode(maskedPhone: String, sessionId: String) async -> String?
-    {
-        mfaFromShishanyouni = true
-        mfaMaskedPhone = maskedPhone
-        mfaCode = ""
-        mfaSendCodeAction = { await ShishanyouniMFAFlow.sendCodeMessage(sessionId: sessionId) }
-        await Task.yield()
-        showMFASheet = true
-        return await withCheckedContinuation
-        { continuation in
-            mfaContinuation = continuation
-        }
-    }
-
-    @MainActor
-    private func requestCASMFACode(maskedPhone: String?) async -> String?
-    {
-        mfaFromShishanyouni = false
-        mfaMaskedPhone = maskedPhone ?? "绑定手机号"
-        mfaCode = ""
-        mfaSendCodeAction = MFACodeContext.activeSendCodeAction
-        await Task.yield()
-        showMFASheet = true
-        return await withCheckedContinuation
-        { continuation in
-            mfaContinuation = continuation
-        }
-    }
-
-    @MainActor
-    private func resolveMFACode(_ code: String?)
-    {
-        showMFASheet = false
-        mfaContinuation?.resume(returning: code)
-        mfaContinuation = nil
-        mfaSendCodeAction = nil
     }
 
     private func formatYearAbbreviation(_ year: String) -> String

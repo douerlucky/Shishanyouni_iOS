@@ -32,11 +32,76 @@ final class shishanyouniUITests: XCTestCase {
     }
 
     @MainActor
+    func testFirstLaunchDisclaimerRequiresConsent() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--reset-app-disclaimer"]
+        app.launch()
+
+        let disclaimer = app.alerts["使用声明"]
+        XCTAssertTrue(disclaimer.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.tabBars.buttons["我的"].exists)
+
+        disclaimer.buttons["不同意"].tap()
+        let blockedMessage = app.staticTexts["disclaimerWelcomeMessage"]
+        XCTAssertTrue(blockedMessage.waitForExistence(timeout: 3))
+        XCTAssertTrue(blockedMessage.label.contains("无法继续使用"))
+        XCTAssertFalse(app.tabBars.buttons["我的"].exists)
+
+        app.buttons["重新查看声明"].tap()
+        XCTAssertTrue(disclaimer.waitForExistence(timeout: 3))
+        disclaimer.buttons["同意，继续"].tap()
+        XCTAssertTrue(app.tabBars.buttons["我的"].waitForExistence(timeout: 5))
+
+        // 同意状态需要落盘；再次启动不应重复打断用户。
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["我的"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.alerts["使用声明"].exists)
+    }
+
+    @MainActor
+    func testSchoolDataQueryDoesNotShowInlineDisclaimer() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let agreeButton = app.alerts["使用声明"].buttons["同意，继续"]
+        if agreeButton.waitForExistence(timeout: 3) { agreeButton.tap() }
+        for title in ["允许", "Allow", "不允许", "Don’t Allow"] {
+            let button = app.alerts.buttons[title]
+            if button.waitForExistence(timeout: 1) { button.tap(); break }
+        }
+        let startButton = app.buttons["开始使用"]
+        if startButton.waitForExistence(timeout: 3) { startButton.tap() }
+
+        let homeTab = app.tabBars.buttons["首页"]
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 5))
+        homeTab.tap()
+
+        let classroomLink = app.staticTexts["空教室查询"].firstMatch
+        for _ in 0 ..< 5 {
+            if classroomLink.exists && classroomLink.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(classroomLink.isHittable)
+        // 首页常用功能是 UIKit CollectionView 单元格，点击整个单元格而非内部标签。
+        app.collectionViews.cells.containing(.staticText, identifier: "空教室查询").firstMatch.tap()
+
+        // 查询页面不再插入影响观感的固定声明条；需要账号授权的功能会使用独立 Sheet。
+        XCTAssertFalse(app.staticTexts["schoolDataDisclaimer"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     func testCurriculumScaleSliderRemainsResponsive() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // 首次启动可能出现通知授权和更新说明，按正常使用路径进入设置。
+        // 首次启动先确认使用声明，再处理通知授权和更新说明。
+        let agreeButton = app.alerts["使用声明"].buttons["同意，继续"]
+        if agreeButton.waitForExistence(timeout: 3) { agreeButton.tap() }
         for title in ["允许", "Allow", "不允许", "Don’t Allow"] {
             let button = app.alerts.buttons[title]
             if button.waitForExistence(timeout: 1) { button.tap(); break }

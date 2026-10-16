@@ -21,31 +21,7 @@ enum ExamQuerySource: String, QuerySourceOption, Codable {
     }
 }
 
-struct ExamResponse: Decodable
-{
-    let items: [Exam]
-}
-
-private struct LionExamResponse: Decodable {
-    let msg: String?
-    let code: Int
-    let data: [LionExamItem]?
-    let success: Bool?
-
-    var isSuccess: Bool {
-        success == true || code == 2 || code == 200
-    }
-}
-
-private struct LionExamItem: Decodable {
-    let xm: String?
-    let xh: String?
-    let kcmc: String
-    let ksmc: String
-    let kssj: String
-    let cdmc: String?
-    let bj: String?
-}
+// 考试接口响应位于 API/Models/ExamAPIModels.swift。
 
 enum ExamQueryError: LocalizedError {
     case invalidURL
@@ -204,11 +180,10 @@ private extension String
 class ExamQuery
 {
     static let shared = ExamQuery()
-    private let lionURL = "https://lion.hzau.edu.cn/app/ios/exam"
 
     func fetchExams(cookie: String, xnm: String, xqm: String) async throws -> [Exam]
     {
-        let urlString = "http://byjxyt.hzau.edu.cn/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"
+        let urlString = SchoolDirectAPI.examURL
         guard let url = URL(string: urlString) else { throw NSError(domain: "URLError", code: 400) }
 
         var request = URLRequest(url: url)
@@ -216,7 +191,7 @@ class ExamQuery
         request.setValue("application/x-www-form-urlencoded;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        request.setValue("http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default", forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.academicTimetableReferer, forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
@@ -239,7 +214,7 @@ class ExamQuery
     }
 
     func fetchExamsFromShishanyouni(username: String, encryptedPassword: String, token: String = "", xnm: String, xqm: String) async throws -> [Exam] {
-        guard let url = URL(string: lionURL) else {
+        guard let url = URL(string: ShishanyouniAPI.examURL) else {
             throw ExamQueryError.invalidURL
         }
 

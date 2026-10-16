@@ -28,20 +28,7 @@ enum GradeQuerySource: String, QuerySourceOption, Codable
     }
 }
 
-struct TeachingSystemGradeResponse: Decodable
-{
-    let items: [Grade]
-}
-
-struct LionGradeResponse: Decodable
-{
-    let msg: String?
-    let code: Int?
-    let data: [Grade]?
-    let timestamp: Int64?
-    let success: Bool?
-    let fail: Bool?
-}
+// 成绩接口响应位于 API/Models/GradeAPIModels.swift。
 
 struct Grade: Identifiable, Codable
 {
@@ -150,16 +137,12 @@ enum GradeQueryError: LocalizedError
 
 class GradeService
 {
-    private let baseURL = "https://lion.hzau.edu.cn/app/ios/score"
-    private let teachingSystemGradeURL = "http://jwgl.hzau.edu.cn/cjcx/cjcx_cxXsgrcj.html?doType=query&gnmkdm=N305005"
-    private let teachingSystemDetailURL = "http://jwgl.hzau.edu.cn/cjcx/cjcx_cxCjxqGjh.html"
-    private let teachingSystemReferer = "http://jwgl.hzau.edu.cn/cjcx/cjcx_cxDgXscj.html?gnmkdm=N305005&layout=default"
 
     /// xnm: 学年开始年份（如 "2025" 代表 2025-2026 学年）
     /// xqm: 学期（"1" 第一学期，"2" 第二学期，"0" 全学年）
     func fetchGrades(username: String, password: String, token: String = "", xnm: String, xqm: String) async throws -> [Grade]
     {
-        guard let url = URL(string: baseURL) else
+        guard let url = URL(string: ShishanyouniAPI.gradeURL) else
         {
             throw NSError(domain: "GradeService", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "URL 构建失败"])
@@ -208,7 +191,7 @@ class GradeService
     /// 从教务系统查询成绩。这个接口保留成绩明细所需的查询上下文。
     func fetchGradesFromTeachingSystem(cookie: String, xnm: String, xqm: String) async throws -> [Grade]
     {
-        guard let url = URL(string: teachingSystemGradeURL) else
+        guard let url = URL(string: SchoolDirectAPI.gradeListURL) else
         {
             throw GradeQueryError.invalidURL
         }
@@ -301,7 +284,7 @@ class GradeService
             throw GradeQueryError.invalidDetailContext
         }
 
-        var components = URLComponents(string: teachingSystemDetailURL)
+        var components = URLComponents(string: SchoolDirectAPI.gradeDetailURL)
         components?.queryItems = [
             URLQueryItem(name: "time", value: String(Int64(Date().timeIntervalSince1970 * 1000))),
             URLQueryItem(name: "gnmkdm", value: "N305005"),
@@ -314,7 +297,7 @@ class GradeService
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         applyTeachingSystemHeaders(to: &request, cookie: cookie, accept: "text/html, */*; q=0.01")
-        request.setValue("http://jwgl.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        request.setValue(SchoolDirectAPI.teachingSystemOrigin, forHTTPHeaderField: "Origin")
         request.httpBody = formBody([
             ("jxb_id", grade.jxb_id),
             ("xnm", grade.xnm ?? fallbackYear),
@@ -348,7 +331,7 @@ class GradeService
         request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue("zh-CN,zh;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
         request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
-        request.setValue(teachingSystemReferer, forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.gradeReferer, forHTTPHeaderField: "Referer")
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148", forHTTPHeaderField: "User-Agent")
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
     }
@@ -372,7 +355,7 @@ class GradeService
     private func responseLooksLikeLoginPage(_ data: Data) -> Bool
     {
         guard let text = String(data: data, encoding: .utf8)?.lowercased() else { return false }
-        return text.contains("cas-paas.hzau.edu.cn/cas/login")
+        return text.contains(SchoolDirectAPI.casLoginResponseMarker)
             || text.contains("name=\"execution\"")
             || text.contains("统一身份认证")
     }

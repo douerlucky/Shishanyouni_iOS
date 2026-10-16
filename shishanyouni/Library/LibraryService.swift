@@ -10,11 +10,10 @@ struct LibrarySeatStats
 class LibraryService
 {
     static let shared = LibraryService()
-    private let pageURL = "https://libseat.hzau.edu.cn/self"
 
     func fetchStats() async throws -> LibrarySeatStats
     {
-        var request = URLRequest(url: URL(string: pageURL)!)
+        var request = URLRequest(url: URL(string: SchoolDirectAPI.librarySeatURL)!)
         request.httpMethod = "GET"
         request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
 

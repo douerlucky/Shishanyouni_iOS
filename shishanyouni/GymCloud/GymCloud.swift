@@ -59,29 +59,7 @@ struct PhysicalScore: Identifiable, Codable
     var details: [PhysicalDetail] = []
 }
 
-private struct LionSouthlakeResponse: Decodable
-{
-    let msg: String?
-    let code: Int
-    let data: LionSouthlakeData?
-    let success: Bool?
-
-    var isSuccess: Bool
-    {
-        success == true || code == 2 || code == 200
-    }
-}
-
-private struct LionSouthlakeData: Decodable
-{
-    let items: [LionSouthlakeItem]?
-}
-
-private struct LionSouthlakeItem: Decodable
-{
-    let term: String
-    let num: String
-}
+// 南湖跑接口响应位于 API/Models/GymCloudAPIModels.swift。
 
 enum NanhuRunQueryError: LocalizedError
 {
@@ -105,15 +83,6 @@ enum NanhuRunQueryError: LocalizedError
 
 class GymCloudQuery: NSObject, URLSessionTaskDelegate
 {
-    // 南湖跑系统的地址
-    private let casLoginURL = "https://cas-paas.hzau.edu.cn/cas/login?service=https://tygl.hzau.edu.cn/"
-    private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
-    private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
-    private let scoreURL = "https://tygl.hzau.edu.cn/main.php?module=stu&title=stu_sun_score"
-    private let physicalURL = "https://tygl.hzau.edu.cn/main.php?module=stu&title=stu_ht_score"
-    private let rootURL = "https://tygl.hzau.edu.cn/"
-    private let lionSouthlakeURL = "https://lion.hzau.edu.cn/app/ios/southlake"
-
     // 手动存储 cookies (用于登录过程中的状态追踪)
     private var cookieJar: [String: String] = [:]
 
@@ -138,7 +107,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
                 partialResult[key] = value
             }
         }
-        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: casLoginURL)!)
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: response.url ?? URL(string: SchoolDirectAPI.casGymLoginURL)!)
         for cookie in cookies {
             cookieJar[cookie.name] = cookie.value
             print("[Cookie] 更新: \(cookie.name)")
@@ -207,13 +176,13 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             return ""
         }
 
-        var detectRequest = URLRequest(url: URL(string: mfaDetectURL)!)
+        var detectRequest = URLRequest(url: URL(string: SchoolDirectAPI.mfaDetectURL)!)
         detectRequest.httpMethod = "POST"
         detectRequest.setValue("application/x-www-form-urlencoded; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         detectRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
         detectRequest.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
-        detectRequest.setValue(casLoginURL, forHTTPHeaderField: "Referer")
-        detectRequest.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
+        detectRequest.setValue(SchoolDirectAPI.casGymLoginURL, forHTTPHeaderField: "Referer")
+        detectRequest.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         detectRequest.httpBody = [
             "username=\(formEncode(username))",
             "password=\(formEncode(password))",
@@ -245,7 +214,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.needCodeInput
         }
 
-        var initComponents = URLComponents(string: mfaInitSecurePhoneURL)!
+        var initComponents = URLComponents(string: SchoolDirectAPI.mfaInitSecurePhoneURL)!
         initComponents.queryItems = [URLQueryItem(name: "state", value: state)]
         var initRequest = URLRequest(url: initComponents.url!)
         initRequest.httpMethod = "GET"
@@ -265,7 +234,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         let sendCodeAction: () async -> String? = {
             do
             {
-                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/send")!)
+                var sendRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + SchoolDirectAPI.securePhoneSendPath)!)
                 sendRequest.httpMethod = "POST"
                 sendRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
                 sendRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
@@ -295,7 +264,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.cancelled
         }
 
-        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + "/api/guard/securephone/valid")!)
+        var validRequest = URLRequest(url: URL(string: initInfo.attestServerUrl + SchoolDirectAPI.securePhoneVerifyPath)!)
         validRequest.httpMethod = "POST"
         validRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
         validRequest.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
@@ -320,7 +289,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
     {
         // ===== Step 1: GET 获取 CAS 登录页面的 execution 参数 =====
         print("Step 1: 获取 CAS Execution")
-        var request1 = URLRequest(url: URL(string: casLoginURL)!)
+        var request1 = URLRequest(url: URL(string: SchoolDirectAPI.casGymLoginURL)!)
         request1.httpMethod = "GET"
         request1.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
 
@@ -346,11 +315,11 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
 
         // ===== Step 2: POST 提交登录表单 =====
         print("Step 2: POST CAS 登录表单")
-        var request2 = URLRequest(url: URL(string: casLoginURL)!)
+        var request2 = URLRequest(url: URL(string: SchoolDirectAPI.casGymLoginURL)!)
         request2.httpMethod = "POST"
         request2.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request2.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
-        request2.setValue(casLoginURL, forHTTPHeaderField: "Referer")
+        request2.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
+        request2.setValue(SchoolDirectAPI.casGymLoginURL, forHTTPHeaderField: "Referer")
         request2.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
         request2.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
 
@@ -390,11 +359,11 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
     func fetchRunScores(cookie: String) async throws -> [RunScore]
     {
         print("\n[Fetch] 正在获取环湖跑成绩列表...")
-        var request = URLRequest(url: URL(string: scoreURL)!)
+        var request = URLRequest(url: URL(string: SchoolDirectAPI.gymRunScoreURL)!)
         request.httpMethod = "GET"
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
         request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
-        request.setValue("https://tygl.hzau.edu.cn/main.php", forHTTPHeaderField: "Referer")
+        request.setValue(SchoolDirectAPI.gymReferer, forHTTPHeaderField: "Referer")
 
         let (data, _) = try await NetworkService.perform(with: session, request: request)
         guard let html = String(data: data, encoding: .utf8)
@@ -408,7 +377,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
 
     func fetchRunScoresFromShishanyouni(username: String, encryptedPassword: String, token: String = "") async throws -> [RunScore]
     {
-        guard let url = URL(string: lionSouthlakeURL) else
+        guard let url = URL(string: ShishanyouniAPI.southlakeURL) else
         {
             throw NanhuRunQueryError.invalidURL
         }
@@ -491,7 +460,7 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
     // - Parameter semesterKey: 格式如 "2024-2025_1"
     func fetchPhysicalScores(cookie: String, semesterKey: String) async throws -> PhysicalScore?
     {
-        let url = "\(physicalURL)&year=\(semesterKey)"
+        let url = "\(SchoolDirectAPI.gymPhysicalScoreURL)&year=\(semesterKey)"
         var request = URLRequest(url: URL(string: url)!)
         request.setValue(cookie, forHTTPHeaderField: "Cookie")
 

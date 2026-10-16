@@ -125,7 +125,7 @@ final class CourseEdit
 
         // retryCount 为 0：即使超时也绝不自动再发一次可能改变课表的请求。
         let (data, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.select,
+            urlString: SchoolDirectAPI.courseSelectionSubmitURL,
             method: "POST",
             cookie: cookie,
             parameters: parameters,
@@ -226,7 +226,7 @@ final class CourseEdit
         }
 
         let (checkData, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.dropCheck,
+            urlString: SchoolDirectAPI.courseSelectionDropCheckURL,
             method: "POST",
             cookie: cookie,
             parameters: checkParameters,
@@ -273,7 +273,7 @@ final class CourseEdit
         dropParameters.append(("txbsfrl", context.value("txbsfrl").isEmpty ? "0" : context.value("txbsfrl")))
 
         let (dropData, _) = try await CourseSelectionHTTP.send(
-            urlString: CourseSelectionEndpoint.drop,
+            urlString: SchoolDirectAPI.courseSelectionDropURL,
             method: "POST",
             cookie: cookie,
             parameters: dropParameters,
@@ -289,7 +289,7 @@ final class CourseEdit
         do
         {
             let (syncData, _) = try await CourseSelectionHTTP.send(
-                urlString: CourseSelectionEndpoint.preferenceSync,
+                urlString: SchoolDirectAPI.courseSelectionPreferenceSyncURL,
                 method: "POST",
                 cookie: cookie,
                 parameters: [("zypxs", ""), ("jxb_ids", "")],
