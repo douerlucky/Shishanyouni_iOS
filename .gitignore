@@ -37,3 +37,40 @@ Pods/
 
 # 本地开发账号配置（不提交）
 DevConfig.json
+
+# BEGIN curated Design sources
+# 当前 PXD、定稿源组件与必要说明；草稿、归档、导出和 ZIP 仅本地保留。
+/Design/**
+!/Design/
+!/Design/AppStore/
+!/Design/Character/
+!/Design/AppStore/ComponentKit-20261026/
+!/Design/AppStore/ComponentKit-20261026/01-狮小铃透明贴纸/
+!/Design/AppStore/ComponentKit-20261026/01B-头像透明贴纸/
+!/Design/AppStore/ComponentKit-20261026/03-动画UI控件贴纸/
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/原始生成图/
+!/Design/AppStore/ComponentKit-20261026/01-狮小铃透明贴纸/01-招手欢迎.png
+!/Design/AppStore/ComponentKit-20261026/01-狮小铃透明贴纸/02-走路查手机.png
+!/Design/AppStore/ComponentKit-20261026/01-狮小铃透明贴纸/03-抱书指引.png
+!/Design/AppStore/ComponentKit-20261026/01-狮小铃透明贴纸/04-环湖慢跑.png
+!/Design/AppStore/ComponentKit-20261026/01B-头像透明贴纸/01-日间头像.png
+!/Design/AppStore/ComponentKit-20261026/01B-头像透明贴纸/02-夜间头像.png
+!/Design/AppStore/ComponentKit-20261026/03-动画UI控件贴纸/01-下一节课.png
+!/Design/AppStore/ComponentKit-20261026/03-动画UI控件贴纸/02-本周课表.png
+!/Design/AppStore/ComponentKit-20261026/03-动画UI控件贴纸/03-成绩概览.png
+!/Design/AppStore/ComponentKit-20261026/03-动画UI控件贴纸/04-校园服务.png
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/PXD安全区域.json
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/原始生成图/搜索线纹底图-原生分辨率.png
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/原始生成图/校园远景-原生分辨率.png
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/搜索底图生成提示词.md
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/生成提示词.md
+!/Design/AppStore/ComponentKit-20261026/04-参考与说明/素材清单.json
+!/Design/AppStore/ComponentKit-20261026/使用说明.md
+!/Design/AppStore/creative_assets-search_results_template-static.pxd
+!/Design/AppStore/creative_assets-universal_asset_template-static.pxd
+!/Design/AppStore/狮山有你.pxd
+!/Design/AppStore/狮山有你dark.pxd
+!/Design/Character/狮小铃.md
+!/Design/README.md
+# END curated Design sources
