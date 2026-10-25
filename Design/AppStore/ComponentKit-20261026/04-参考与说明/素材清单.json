@@ -1,0 +1,214 @@
+[
+  {
+    "file": "01-狮小铃透明贴纸/01-招手欢迎.png",
+    "dimensions": [
+      1024,
+      1536
+    ],
+    "mode": "RGBA",
+    "sha256": "ef2f6d21ff64882e44af87225b48eb8a2f4925046a428c1087658dbf8d4029cf",
+    "bytes": 1637331,
+    "alpha_min": 0,
+    "alpha_max": 254,
+    "transparent_fraction": 0.537,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "01-狮小铃透明贴纸/02-走路查手机.png",
+    "dimensions": [
+      1024,
+      1536
+    ],
+    "mode": "RGBA",
+    "sha256": "498c3d49fe3b2f30d24f5432c2650266093d32654bc56577aa04c77f2561dee5",
+    "bytes": 1654965,
+    "alpha_min": 0,
+    "alpha_max": 254,
+    "transparent_fraction": 0.5303,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "01-狮小铃透明贴纸/03-抱书指引.png",
+    "dimensions": [
+      1024,
+      1536
+    ],
+    "mode": "RGBA",
+    "sha256": "8bec90f4ed65622ea8bc6545776a013cf7b406e1e1c7fb03e1463aebf3f612e9",
+    "bytes": 1655401,
+    "alpha_min": 0,
+    "alpha_max": 254,
+    "transparent_fraction": 0.5278,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "01-狮小铃透明贴纸/04-环湖慢跑.png",
+    "dimensions": [
+      1024,
+      1536
+    ],
+    "mode": "RGBA",
+    "sha256": "f5f77289e31e2ef16de9756dbc9bd2538d904216b17d732f991d10ba3704dbfa",
+    "bytes": 1682014,
+    "alpha_min": 0,
+    "alpha_max": 254,
+    "transparent_fraction": 0.5425,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "01B-头像透明贴纸/01-日间头像.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "sha256": "b08092ae2c1aa0ba8423270aefecf4a20287bfbdd266fdea86d02ca794e4a91e",
+    "bytes": 1413062,
+    "alpha_min": 0,
+    "alpha_max": 255,
+    "transparent_fraction": 0.3596,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "01B-头像透明贴纸/02-夜间头像.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "sha256": "0569fadf938fd1cdf439a58d5d1b14fa4fe9922536a48ad8d922584649e5d1e8",
+    "bytes": 1450491,
+    "alpha_min": 0,
+    "alpha_max": 255,
+    "transparent_fraction": 0.3425,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "02-背景/01-搜索底图-狮山南湖线纹-3840x2560.png",
+    "dimensions": [
+      3840,
+      2560
+    ],
+    "mode": "RGB",
+    "sha256": "4ae4a55f2dcd7d35c54501f513d466019a40bb9570deb9e891c9bd1f72a17541",
+    "bytes": 2120389,
+    "opaque_background": true
+  },
+  {
+    "file": "02-背景/02-校园实景改绘-远景脱敏-5244x2950.png",
+    "dimensions": [
+      5244,
+      2950
+    ],
+    "mode": "RGB",
+    "sha256": "aca1ebe4b34983b7c02555b212cf9ee99ef3473549e8f47dbeb92e8f11460e9f",
+    "bytes": 17389743,
+    "opaque_background": true
+  },
+  {
+    "file": "03-动画UI控件贴纸/01-下一节课.png",
+    "dimensions": [
+      1728,
+      910
+    ],
+    "mode": "RGBA",
+    "sha256": "e2068578bce1c223bc1729235321ae969174bf66374702fa412b2294287df042",
+    "bytes": 1117655,
+    "alpha_min": 0,
+    "alpha_max": 255,
+    "transparent_fraction": 0.3388,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "03-动画UI控件贴纸/02-本周课表.png",
+    "dimensions": [
+      1728,
+      910
+    ],
+    "mode": "RGBA",
+    "sha256": "dbf60a403579d8688725f08e1315f5b2eae5a524906d387f174f619f007dba05",
+    "bytes": 1050831,
+    "alpha_min": 0,
+    "alpha_max": 255,
+    "transparent_fraction": 0.3676,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "03-动画UI控件贴纸/03-成绩概览.png",
+    "dimensions": [
+      1728,
+      910
+    ],
+    "mode": "RGBA",
+    "sha256": "a7b191d57968c7a5b0b1f1c9ca060b2659eee325e7921625aed57a7e73c82abc",
+    "bytes": 1141928,
+    "alpha_min": 0,
+    "alpha_max": 255,
+    "transparent_fraction": 0.3361,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "file": "03-动画UI控件贴纸/04-校园服务.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "sha256": "4429fbc496edfeff900adde632b42f73772edb13e31ac4a94c4e23f3189016d2",
+    "bytes": 1379568,
+    "alpha_min": 0,
+    "alpha_max": 254,
+    "transparent_fraction": 0.2864,
+    "corner_alpha": [
+      0,
+      0,
+      1,
+      0
+    ]
+  }
+]

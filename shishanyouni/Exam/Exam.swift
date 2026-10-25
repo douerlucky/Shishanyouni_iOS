@@ -15,7 +15,7 @@ enum ExamQuerySource: String, QuerySourceOption, Codable {
 
     var title: String {
         switch self {
-        case .cas: return "CAS"
+        case .cas: return SchoolServiceName.academicPlatform
         case .shishanyouni: return "狮山有你"
         }
     }

@@ -935,7 +935,7 @@ struct SaveScoreButton: View
                 .foregroundColor(.blue)
                 .clipShape(Capsule())
             }
-            .optionalLiquidGlass()
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
 
             // 保存按钮
             Button(action: { onSave() })
@@ -966,7 +966,7 @@ struct SaveScoreButton: View
                 .clipShape(Capsule())
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showFeedback)
             }
-            .optionalLiquidGlass()
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 20)

@@ -167,12 +167,19 @@ enum CASBindResult {
 
 /// 只负责学校 CAS 登录校验和短信 MFA 流程。
 class CASBinder: NSObject, URLSessionTaskDelegate {
+
+    private let sessionConfiguration: URLSessionConfiguration
+
+    init(sessionConfiguration: URLSessionConfiguration = .ephemeral) {
+        self.sessionConfiguration = sessionConfiguration
+        super.init()
+    }
     
     // 手动存储 cookies
     private var cookieJar: [String: String] = [:]
     
     private lazy var session: URLSession = {
-        let config = URLSessionConfiguration.default
+        let config = sessionConfiguration
         // 禁用自动 cookie 管理，改为手动
         config.httpCookieStorage = nil
         config.httpShouldSetCookies = false
@@ -251,15 +258,16 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
             throw CASMFAError.initFailed
         }
         print("[MFA][Login] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false)")
+        // state 是本次登录检测凭证；免短信验证也必须随表单提交。
+        guard let state = detectInfo.state, !state.isEmpty else {
+            throw CASMFAError.initFailed
+        }
         guard detectInfo.need else {
-            print("[MFA][Login] 服务端判定无需二次验证，本次不会弹验证码。")
-            return ""
+            print("[MFA][Login] 无需短信验证，保留检测凭证继续登录。")
+            return state
         }
         guard (detectInfo.mfaTypeSecurePhone ?? false) else {
             throw CASMFAError.unsupportedType
-        }
-        guard let state = detectInfo.state, !state.isEmpty else {
-            throw CASMFAError.initFailed
         }
         guard let provider = mfaCodeProvider else {
             throw CASMFAError.needCodeInput
@@ -390,7 +398,9 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         request2.setValue(SchoolDirectAPI.casPortalLoginURL, forHTTPHeaderField: "Referer")
         request2.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         
-        // 手动添加 Cookie header
+        let mfaState = try await performMFAIfNeeded(username: username, password: password, mfaCodeProvider: mfaCodeProvider)
+
+        // MFA 检测/验证可能更新会话，最终提交使用最新 Cookie。
         let cookieHeader = getCookieHeader()
         if !cookieHeader.isEmpty {
             request2.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
@@ -398,8 +408,6 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         } else {
             print("警告：没有 cookies 可发送")
         }
-        
-        let mfaState = try await performMFAIfNeeded(username: username, password: password, mfaCodeProvider: mfaCodeProvider)
         
         let bodyString = [
             "username=\(formEncode(username))",
@@ -423,12 +431,12 @@ class CASBinder: NSObject, URLSessionTaskDelegate {
         }
         print("Status: \(httpResponse2.statusCode)")
         
-        // 根据状态码判断登录结果
+        extractCookies(from: httpResponse2)
+
+        // CAS 失败时仍返回登录页（HTTP 200），不能直接判定为密码错误。
         if httpResponse2.statusCode == 200 {
-            // 200 表示登录失败（账号或密码错误）
-            let responseText = String(data: data2, encoding: .utf8) ?? ""
-            print("登录失败，响应体大小: \(responseText.utf8.count) 字节。")
-            return .failure(message: "账号或密码错误")
+            print("CAS 返回登录页，响应体大小: \(data2.count) 字节。")
+            return .failure(message: CASLoginFailure.message(from: data2))
         } else if httpResponse2.statusCode == 302 {
             // 302 表示登录成功
             print("登录成功！")

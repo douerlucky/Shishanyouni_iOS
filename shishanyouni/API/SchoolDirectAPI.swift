@@ -27,6 +27,7 @@ enum SchoolDirectAPI
     static let academicTimetableReferer = academicOrigin + "/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151&layout=default"
     static let timetableURL = academicOrigin + "/kbcx/xskbcxMobile_cxXsKb.html"
     static let timetableReferer = academicOrigin + "/kbcx/xskbcxMobile_cxTimeTableIndex.html?gnmkdm=N2190&layout=default"
+    static let curriculumImportURL = academicOrigin + "/kbcx/xskbcx_cxXsKb.html?gnmkdm=index"
     static let courseSearchURL = academicOrigin + "/kbdy/kckbdy_cxKckbdyList.html?gnmkdm=N214520"
     static let courseDetailURL = academicOrigin + "/kbdy/kckbdy_cxKcKb.html?gnmkdm=N214520"
     static let examURL = academicOrigin + "/kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105"

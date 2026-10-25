@@ -355,7 +355,7 @@ struct NanhuRunQueryButton: View
                     .foregroundColor(.white)
                     .clipShape(Capsule())
             }
-            .optionalLiquidGlass()
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 20)

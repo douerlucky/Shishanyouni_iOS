@@ -3,7 +3,7 @@ import SwiftUI
 /// 所有主要蓝色操作共用系统蓝，保持课表和查询页面一致。
 let appActionBlue = Color.blue
 
-/// 统一的液态玻璃操作按钮。
+/// 统一操作按钮；即使位于玻璃容器内也允许玻璃，仍受全局开关控制。
 /// 业务页面只传入颜色、图标和动作，不再各自拼接背景与圆角。
 struct LiquidGlassCapsuleButton: View
 {
@@ -27,7 +27,7 @@ struct LiquidGlassCapsuleButton: View
         .buttonStyle(.plain)
         .background(tint, in: Capsule())
         .clipShape(Capsule())
-        .optionalLiquidGlass(in: Capsule())
+        .optionalLiquidGlass(allowsNesting: true, in: Capsule())
     }
 }
 
@@ -100,7 +100,7 @@ struct SearchButton: View
         .buttonStyle(.plain)
         .background(appActionBlue, in: title == nil ? AnyShape(Circle()) : AnyShape(Capsule()))
         .clipShape(title == nil ? AnyShape(Circle()) : AnyShape(Capsule()))
-        .optionalLiquidGlass(in: title == nil ? AnyShape(Circle()) : AnyShape(Capsule()))
+        .optionalLiquidGlass(allowsNesting: true, in: title == nil ? AnyShape(Circle()) : AnyShape(Capsule()))
     }
 }
 
@@ -137,7 +137,7 @@ struct NextButton: View
         .buttonStyle(.plain)
         .background(tint, in: Circle())
         .clipShape(Circle())
-        .optionalLiquidGlass(in: Circle())
+        .optionalLiquidGlass(allowsNesting: true, in: Circle())
     }
 }
 

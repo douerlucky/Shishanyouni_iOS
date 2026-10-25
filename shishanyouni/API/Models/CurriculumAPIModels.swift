@@ -107,8 +107,7 @@ struct TimetableResponse: Decodable
 
 /// 教务「我的课表（学生）」接口中的单条课次。
 ///
-/// 这个接口与狮山有你自己的课表接口不同：它带有 `khfsmc`，因此只用来
-/// 补充考核方式，不参与课程时间、地点等主数据的解析。
+/// 仅供狮山有你导入后的可选考核方式补充使用；教务直接导入使用下方独立模型。
 struct CurriculumAssessmentItem: Decodable
 {
     let courseName: String?
@@ -126,4 +125,38 @@ struct CurriculumAssessmentItem: Decodable
 struct CurriculumAssessmentResponse: Decodable
 {
     let kbList: [CurriculumAssessmentItem]?
+}
+
+// MARK: - 教务整学期课表导入
+
+struct AcademicCurriculumResponse: Decodable
+{
+    // 使用可选值区分“本学期没有课程”和“返回了不相关的 JSON”。
+    let kbList: [AcademicCurriculumItem]?
+    let sjkList: [AcademicOtherCurriculumItem]?
+}
+
+struct AcademicCurriculumItem: Decodable
+{
+    let jxb_id: String?
+    let kch_id: String?
+    let kcmc: String
+    let xm: String?
+    let cdmc: String?
+    let xqj: String
+    let jcs: String?
+    let jcor: String?
+    let jc: String?
+    let zcd: String
+    let khfsmc: String?
+}
+
+/// 实践课和其他课程没有固定星期/节次，排课说明来自 sjkcgs / qtkcgs。
+struct AcademicOtherCurriculumItem: Decodable
+{
+    let kcmc: String?
+    let xm: String?
+    let zcd: String?
+    let sjkcgs: String?
+    let qtkcgs: String?
 }

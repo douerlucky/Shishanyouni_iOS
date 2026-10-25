@@ -1,9 +1,24 @@
 import SwiftUI
 
-/// 查询数据源的统一选择器。
+/// 账号绑定、查询等页面共用的服务来源选项。
 protocol QuerySourceOption: CaseIterable, Hashable, Identifiable
 {
     var title: String { get }
+}
+
+/// 已在页面内展示的双来源使用系统分段选择器，避免再叠加一层选择 Sheet。
+struct DataSourceTabs<Source: QuerySourceOption>: View
+{
+    @Binding var selection: Source
+
+    var body: some View
+    {
+        Picker("数据源", selection: $selection)
+        {
+            ForEach(Array(Source.allCases)) { source in Text(source.title).tag(source) }
+        }
+        .pickerStyle(.segmented)
+    }
 }
 
 struct DataSourceSelector<Source: QuerySourceOption>: View
@@ -13,6 +28,7 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
     var horizontalPadding: CGFloat = 16
     var verticalPadding: CGFloat = 10
     var foreground: Color = .primary
+    var selectionTitle: String = "选择数据源"
     var onSelect: ((Source) -> Void)? = nil
 
     @State private var isPresented = false
@@ -25,6 +41,8 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
             HStack(spacing: 6)
             {
                 Text(selection.title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .bold))
             }
@@ -34,14 +52,14 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
             .padding(.vertical, verticalPadding)
             .background(.ultraThinMaterial, in: Capsule())
             .clipShape(Capsule())
-            .optionalLiquidGlass(in: Capsule())
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $isPresented)
         {
             VStack(spacing: 18)
             {
-                Text("选择数据源")
+                Text(selectionTitle)
                     .font(.headline)
 
                 VStack(spacing: 12)
@@ -60,6 +78,8 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
                             {
                                 Text(source.title)
                                     .font(.system(size: 17, weight: .bold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.75)
                                 Spacer()
                                 if selection == source
                                 {
@@ -71,7 +91,7 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
                             .padding(.horizontal, 18)
                             .padding(.vertical, 15)
                             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            .optionalLiquidGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .optionalLiquidGlass(allowsNesting: true, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
@@ -81,6 +101,8 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
                     .frame(maxWidth: 160)
             }
             .padding(24)
+            // 新呈现的 Sheet 是独立界面，不继承查询栏的“玻璃内部”状态。
+            .environment(\.isInsideLiquidGlassSurface, false)
             .presentationDetents([.height(300)])
             .presentationDragIndicator(.hidden)
         }
@@ -114,7 +136,7 @@ struct SemesterSelector: View
             .padding(.vertical, 10)
             .background(.ultraThinMaterial, in: Capsule())
             .clipShape(Capsule())
-            .optionalLiquidGlass(in: Capsule())
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
         }
         .buttonStyle(.plain)
         .frame(width: width)
@@ -146,7 +168,7 @@ struct TeachingBuildingSelector: View
             .foregroundStyle(.primary)
             .background(.ultraThinMaterial, in: Capsule())
             .clipShape(Capsule())
-            .optionalLiquidGlass(in: Capsule())
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
         }
         .buttonStyle(.plain)
     }

@@ -223,7 +223,7 @@ struct PersonalScheduleView: View
                     .foregroundColor(.purple)
                     .frame(width: 36, height: 36)
                     .background(Color.purple.opacity(0.1), in: Circle())
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 18)
             }
 
             Spacer()
@@ -245,7 +245,7 @@ struct PersonalScheduleView: View
                     .padding(.vertical, 6)
                     .background(Color.purple.opacity(0.1), in: Capsule())
                     .foregroundColor(.purple)
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 18)
             }
 
             Spacer()
@@ -265,7 +265,7 @@ struct PersonalScheduleView: View
                     .foregroundColor(.purple)
                     .frame(width: 36, height: 36)
                     .background(Color.purple.opacity(0.1), in: Circle())
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 18)
             }
         }
     }
@@ -539,7 +539,7 @@ struct PersonalScheduleView: View
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(Color.purple, in: RoundedRectangle(cornerRadius: 12))
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 12)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 12)
             }
             .padding(.horizontal, 16)
         }
@@ -561,7 +561,7 @@ struct PersonalScheduleView: View
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Color.purple.opacity(0.92), in: Capsule())
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 28)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 28)
             }
         }
         .padding(.horizontal, 16)

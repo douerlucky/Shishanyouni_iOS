@@ -19,7 +19,7 @@ enum NanhuRunQuerySource: String, QuerySourceOption
         switch self
         {
         case .cas:
-            return "CAS"
+            return SchoolServiceName.sportsCloud
         case .shishanyouni:
             return "狮山有你"
         }
@@ -199,16 +199,17 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         guard detect.code == 0, let detectInfo = detect.data else {
             throw CASMFAError.initFailed
         }
-        print("[MFA][Gym] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false), state=\(detectInfo.state ?? "nil"), fpVisitorId=\(CASMFADebug.fpVisitorId)")
+        print("[MFA][Gym] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false)")
+        // state 是本次登录检测凭证；免短信验证也必须随表单提交。
+        guard let state = detectInfo.state, !state.isEmpty else {
+            throw CASMFAError.initFailed
+        }
         guard detectInfo.need else {
-            print("[MFA][Gym] 服务端判定无需二次验证，本次不会弹验证码。")
-            return ""
+            print("[MFA][Gym] 无需短信验证，保留检测凭证继续登录。")
+            return state
         }
         guard (detectInfo.mfaTypeSecurePhone ?? false) else {
             throw CASMFAError.unsupportedType
-        }
-        guard let state = detectInfo.state, !state.isEmpty else {
-            throw CASMFAError.initFailed
         }
         guard let provider = mfaCodeProvider else {
             throw CASMFAError.needCodeInput
@@ -320,10 +321,11 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
         request2.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request2.setValue(SchoolDirectAPI.casOrigin, forHTTPHeaderField: "Origin")
         request2.setValue(SchoolDirectAPI.casGymLoginURL, forHTTPHeaderField: "Referer")
-        request2.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
         request2.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
 
         let mfaState = try await performMFAIfNeeded(username: username, password: rsaPassword, mfaCodeProvider: mfaCodeProvider)
+        // MFA 检测/验证可能更新会话，最终提交使用最新 Cookie。
+        request2.setValue(getCookieHeader(), forHTTPHeaderField: "Cookie")
 
         let bodyString = [
             "username=\(formEncode(username))",
@@ -341,9 +343,13 @@ class GymCloudQuery: NSObject, URLSessionTaskDelegate
 
         request2.httpBody = bodyString.data(using: .utf8)
 
-        let (_, response2) = try await session.data(for: request2)
+        let (data2, response2) = try await session.data(for: request2)
         guard let httpResponse2 = response2 as? HTTPURLResponse else { throw NSError(domain: "Network", code: 0) }
         extractCookies(from: httpResponse2)
+
+        if httpResponse2.statusCode == 200 {
+            throw CASLoginFailure.error(from: data2)
+        }
 
         guard let ticketLocation = httpResponse2.allHeaderFields["Location"] as? String
         else

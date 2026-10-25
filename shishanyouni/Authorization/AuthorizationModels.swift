@@ -71,10 +71,14 @@ enum FeatureAuthorizationScope: String, CaseIterable, Identifiable
     {
         switch self
         {
-        case .grades, .allCourses:
-            return "默认通过“狮山有你”接口查询；进入后可切换为直接访问学校系统（CAS）。"
-        case .exams, .nanhuRun:
-            return "默认直接访问学校系统（CAS）查询；进入后可切换为“狮山有你”接口。"
+        case .grades:
+            return "默认通过“狮山有你”接口查询；进入后可切换为直接访问“\(SchoolServiceName.teachingSystem)”。"
+        case .allCourses:
+            return "默认通过“狮山有你”接口查询；进入后可切换为直接访问“\(SchoolServiceName.academicPlatform)”。"
+        case .exams:
+            return "默认直接访问“\(SchoolServiceName.academicPlatform)”查询；进入后可切换为“狮山有你”接口。"
+        case .nanhuRun:
+            return "默认直接访问“\(SchoolServiceName.sportsCloud)”查询；进入后可切换为“狮山有你”接口。"
         case .chooseCourse, .physicalTest, .itc, .electricity, .libraryReservation:
             return "本功能会直接访问学校相关系统查询或办理，不经过狮山有你接口代查。"
         }

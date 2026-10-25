@@ -141,7 +141,7 @@ struct DebugRoom: View
                         do
                         {
                             print("🚀 开始测试课表接口...")
-                            let (courses, startDate) = try await CurriculumService.fetchCourses(
+                            let (courses, startDate) = try await ShishanyouniCurriculumImporter.fetchCourses(
                                 username: userinfo.username,
                                 password: userinfo.encryptedPasswordShishanyouni,
                                 token: userinfo.shishanyouniToken,
@@ -188,7 +188,7 @@ struct DebugRoom: View
 
                 // MARK: - 南湖跑接口测试（保持原有逻辑）
 
-                Button("测试 CAS 登录接口（MFA）")
+                Button("测试\(SchoolServiceName.unifiedIdentity)登录接口（MFA）")
                 {
                     let casBinder = CASBinder()
                     Task

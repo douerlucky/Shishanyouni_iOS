@@ -1,0 +1,44 @@
+{
+  "universal": {
+    "canvas_px": [
+      5244,
+      2950
+    ],
+    "safe_rect_top_left_px": [
+      1921.0,
+      660.0,
+      1402.0,
+      962.0
+    ],
+    "safe_rect_normalized": [
+      0.36632341723874906,
+      0.22372881355932203,
+      0.26735316552250193,
+      0.32610169491525426
+    ],
+    "coordinate_conversion": "PXD layer coordinates use image points and a bottom-left origin; multiply by scale and flip Y to get PNG pixels.",
+    "point_to_pixel_scale": 2.0,
+    "source": "Read from existing PXD Art Safe Area layer; template left unchanged."
+  },
+  "search": {
+    "canvas_px": [
+      3840,
+      2560
+    ],
+    "safe_rect_top_left_px": [
+      836.0,
+      765.0,
+      2168.0,
+      1030.0
+    ],
+    "safe_rect_normalized": [
+      0.21770833333333334,
+      0.298828125,
+      0.5645833333333333,
+      0.40234375
+    ],
+    "coordinate_conversion": "PXD layer coordinates use image points and a bottom-left origin; multiply by scale and flip Y to get PNG pixels.",
+    "point_to_pixel_scale": 2.0,
+    "source": "Read from existing PXD Art Safe Area layer; template left unchanged."
+  }
+}

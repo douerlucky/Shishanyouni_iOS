@@ -612,6 +612,7 @@ struct HomeView: View
 /// 固定高度和内边距后，两张卡片能保持顶边、底边对齐，避免内容变化时跳动。
 private struct HomeHeaderGlassCard<Content: View>: View
 {
+    @Environment(\.isInsideLiquidGlassSurface) private var isInsideSurface
     let content: Content
     @AppStorage(PreferenceKey.enableLiquidGlassEffect)
     private var enableLiquidGlassEffect: Bool = true
@@ -634,6 +635,10 @@ private struct HomeHeaderGlassCard<Content: View>: View
             .padding(.vertical, 6)
             .frame(height: Self.fixedHeight, alignment: .center)
             .frame(maxWidth: .infinity)
+            .environment(
+                \.isInsideLiquidGlassSurface,
+                isInsideSurface || (enableLiquidGlassEffect && LiquidGlassAvailability.isSupported)
+            )
             .background
             {
                 shape
@@ -648,7 +653,6 @@ private struct HomeHeaderGlassCard<Content: View>: View
 
 struct MenuGridItem: View
 {
-    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var enableLiquidGlassEffect: Bool = true
     @AppStorage(PreferenceKey.pageBackgroundOpacity) private var pageBackgroundOpacity: Double = 0.35
 
     let title: String
@@ -669,7 +673,7 @@ struct MenuGridItem: View
                         // 时，常用功能卡片也会同步更通透。
                         .fill(color.opacity(0.18 * min(max(pageBackgroundOpacity / 0.35, 0), 1)))
                         .frame(width: 60, height: 60)
-                        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 16)
+                        .optionalLiquidGlass(allowsNesting: true, cornerRadius: 16)
 
                     Image(systemName: icon)
                         .font(.system(size: 26))

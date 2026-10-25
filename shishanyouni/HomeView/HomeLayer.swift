@@ -221,11 +221,10 @@ struct EditableHomeFeatureItem: View
     }
 }
 
-private struct HomeFeatureGlassIcon: View
+private struct HomeFeatureIcon: View
 {
     let icon: String
     let color: Color
-    let glassEnabled: Bool
     @AppStorage(PreferenceKey.pageBackgroundOpacity)
     private var pageBackgroundOpacity: Double = 0.35
 
@@ -236,10 +235,8 @@ private struct HomeFeatureGlassIcon: View
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(color.opacity(0.18 * min(max(pageBackgroundOpacity / 0.35, 0), 1)))
                 .frame(width: 60, height: 60)
-                // iOS 26 的玻璃效果会读取形状本身的 alpha；将它放在
-                // optionalLiquidGlass 之前，才能让开关和“背景不透明度”同时生效。
                 .opacity(min(max(pageBackgroundOpacity / 0.35, 0), 1))
-                .optionalLiquidGlass(enabled: glassEnabled, cornerRadius: 16)
+                .optionalLiquidGlass(allowsNesting: true, cornerRadius: 16)
 
             Image(systemName: icon)
                 .font(.system(size: 26))
@@ -256,6 +253,8 @@ private struct HomeFeatureGlassIcon: View
 /// 负责把 UIKit 的事件翻译回 SwiftUI/HomeLayer。
 struct HomeFavoriteGridView: UIViewRepresentable
 {
+    @Environment(\.isInsideLiquidGlassSurface) private var isInsideSurface
+
     private static let itemHeight: CGFloat = 126
     private static let lineSpacing: CGFloat = 16
     private static let topInset: CGFloat = 10
@@ -332,6 +331,7 @@ struct HomeFavoriteGridView: UIViewRepresentable
         let featureKeys = features.map(\.key)
         let needsReload = featureKeys != context.coordinator.renderedFeatureKeys
             || isEditing != context.coordinator.renderedIsEditing
+            || isInsideSurface != context.coordinator.renderedIsInsideSurface
 
         // 揭示动画会频繁重绘父视图，但收藏内容没有变化时不应 reloadData。
         // 反复 reload 会让 UICollectionView 的三列布局闪动，并中断长按手势。
@@ -341,6 +341,7 @@ struct HomeFavoriteGridView: UIViewRepresentable
             collectionView.collectionViewLayout.invalidateLayout()
             context.coordinator.renderedFeatureKeys = featureKeys
             context.coordinator.renderedIsEditing = isEditing
+            context.coordinator.renderedIsInsideSurface = isInsideSurface
         }
     }
 
@@ -353,6 +354,7 @@ struct HomeFavoriteGridView: UIViewRepresentable
         var currentFeatures: [HomeFeatureItem]
         var renderedFeatureKeys: [HomeFeatureKey]
         var renderedIsEditing: Bool
+        var renderedIsInsideSurface: Bool
         weak var collectionView: UICollectionView?
         private let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
         var isInteractivelyMoving = false
@@ -363,6 +365,7 @@ struct HomeFavoriteGridView: UIViewRepresentable
             currentFeatures = parent.features
             renderedFeatureKeys = parent.features.map(\.key)
             renderedIsEditing = parent.isEditing
+            renderedIsInsideSurface = parent.isInsideSurface
             super.init()
             feedbackGenerator.prepare()
         }
@@ -382,7 +385,8 @@ struct HomeFavoriteGridView: UIViewRepresentable
             cell.configure(
                 feature: feature,
                 isEditing: parent.isEditing,
-                canRemove: true
+                canRemove: true,
+                isInsideSurface: parent.isInsideSurface
             ) {
                 self.parent.onRemove(feature)
             }
@@ -476,7 +480,7 @@ struct HomeFavoriteGridView: UIViewRepresentable
         }
     }
 
-    /// UIKit Cell 内嵌一个 SwiftUI 图标视图，保留现有的液态玻璃绘制效果。
+    /// UIKit Cell 的独立 SwiftUI 根需要显式传递玻璃层级，避免嵌入时丢失环境。
     final class HomeFavoriteCell: UICollectionViewCell
     {
         private let iconHostContainer = UIView()
@@ -504,11 +508,9 @@ struct HomeFavoriteGridView: UIViewRepresentable
             accessoryButton.isHidden = true
         }
 
-        func configure(feature: HomeFeatureItem, isEditing: Bool, canRemove: Bool, accessoryAction: @escaping () -> Void)
+        func configure(feature: HomeFeatureItem, isEditing: Bool, canRemove: Bool, isInsideSurface: Bool, accessoryAction: @escaping () -> Void)
         {
-            let glassEnabled = UserDefaults.standard.object(forKey: PreferenceKey.enableLiquidGlassEffect) as? Bool ?? true
-
-            updateIcon(icon: feature.icon, color: feature.color, glassEnabled: glassEnabled)
+            updateIcon(icon: feature.icon, color: feature.color, isInsideSurface: isInsideSurface)
             titleLabel.text = feature.title
             self.accessoryAction = accessoryAction
 
@@ -567,9 +569,12 @@ struct HomeFavoriteGridView: UIViewRepresentable
             ])
         }
 
-        private func updateIcon(icon: String, color: Color, glassEnabled: Bool)
+        private func updateIcon(icon: String, color: Color, isInsideSurface: Bool)
         {
-            let view = AnyView(HomeFeatureGlassIcon(icon: icon, color: color, glassEnabled: glassEnabled))
+            let view = AnyView(
+                HomeFeatureIcon(icon: icon, color: color)
+                    .environment(\.isInsideLiquidGlassSurface, isInsideSurface)
+            )
 
             if let iconHostingController
             {

@@ -992,7 +992,7 @@ struct BottomButtonView: View
                         throw NSError(
                             domain: "GradeService",
                             code: 401,
-                            userInfo: [NSLocalizedDescriptionKey: "请先绑定教务系统账号。"]
+                            userInfo: [NSLocalizedDescriptionKey: "请先绑定\(SchoolServiceName.unifiedIdentity)账号。"]
                         )
                     }
 

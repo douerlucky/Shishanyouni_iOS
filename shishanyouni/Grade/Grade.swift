@@ -22,7 +22,7 @@ enum GradeQuerySource: String, QuerySourceOption, Codable
     {
         switch self
         {
-        case .teachingSystem: return "教务系统"
+        case .teachingSystem: return SchoolServiceName.teachingSystem
         case .shishanyouni: return "狮山有你"
         }
     }

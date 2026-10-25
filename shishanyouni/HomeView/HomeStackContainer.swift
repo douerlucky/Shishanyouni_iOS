@@ -343,8 +343,8 @@ struct HomeStackContainer<FavoriteContent: View, AllFunctionsContent: View>: Vie
             // 先让 ScrollView 填满，再由最终 frame 统一计算四周边距，保证
             // 真机上“全部功能”始终覆盖整个可用区域。
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // “全部功能”本身就是第二层液态玻璃：使用很淡的材料底，
-            // 让首页图片持续透出；开关关闭时只保留轻微的材料背景。
+            // “全部功能”是明确的设计例外：背景面板和入口图标都使用玻璃。
+            // 玻璃只修饰背景形状，不向目录内容传播玻璃边界；全局防嵌套规则不变。
             .background
             {
                 panelShape

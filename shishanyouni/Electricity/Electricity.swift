@@ -253,15 +253,16 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
             throw CASMFAError.initFailed
         }
         print("[MFA][Electricity] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false)")
+        // state 是本次登录检测凭证；免短信验证也必须随表单提交。
+        guard let state = detectInfo.state, !state.isEmpty else {
+            throw CASMFAError.initFailed
+        }
         guard detectInfo.need else {
-            print("[MFA][Electricity] 服务端判定无需二次验证，本次不会弹验证码。")
-            return ""
+            print("[MFA][Electricity] 无需短信验证，保留检测凭证继续登录。")
+            return state
         }
         guard (detectInfo.mfaTypeSecurePhone ?? false) else {
             throw CASMFAError.unsupportedType
-        }
-        guard let state = detectInfo.state, !state.isEmpty else {
-            throw CASMFAError.initFailed
         }
         guard let provider = mfaCodeProvider else {
             throw CASMFAError.needCodeInput
@@ -394,14 +395,19 @@ class ElectricityQuery: NSObject, URLSessionTaskDelegate
         ].joined(separator: "&")
         request2.httpBody = bodyString.data(using: .utf8)
 
-        let (_, response2) = try await session.data(for: request2)
-        guard let httpResponse2 = response2 as? HTTPURLResponse,
-              let location3 = httpResponse2.allHeaderFields["Location"] as? String
+        let (data2, response2) = try await session.data(for: request2)
+        guard let httpResponse2 = response2 as? HTTPURLResponse
         else
         {
             throw NSError(domain: "LoginFailed_NoTicketLocation", code: 401)
         }
         extractCookies(from: httpResponse2)
+        if httpResponse2.statusCode == 200 {
+            throw CASLoginFailure.error(from: data2)
+        }
+        guard let location3 = httpResponse2.allHeaderFields["Location"] as? String else {
+            throw NSError(domain: "LoginFailed_NoTicketLocation", code: 401)
+        }
         print("[Electricity][CAS] POST /cas/login -> \(httpResponse2.statusCode)，已收到服务端跳转。")
 
         // --- Step 3: GET Ticket 链接 ---

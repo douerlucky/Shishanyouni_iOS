@@ -6,6 +6,12 @@ struct WhatsNewView: View
 
     private let features: [WhatsNewFeature] = [
         WhatsNewFeature(
+            title: "课表导入与课程管理",
+            message: "课表支持从\(SchoolServiceName.academicPlatform)导入，“所有课程”可查看未显示在课表中的实践课程及其他课程。",
+            icon: "calendar.badge.plus",
+            color: .orange
+        ),
+        WhatsNewFeature(
             title: "首页UI交互优化",
             message: "重构首页UI,首页上滑呼出全部功能更丝滑，全部功能现按照分类来进行归类，使用功能更加方便。",
             icon: "rectangle.roundedtop.fill",
@@ -86,7 +92,7 @@ struct WhatsNewView: View
                         ),
                         in: Capsule()
                     )
-                    .optionalLiquidGlass(in: Capsule())
+                    .optionalLiquidGlass(allowsNesting: true, in: Capsule())
             }
             .buttonStyle(.plain)
         }
@@ -138,7 +144,6 @@ private struct WhatsNewFeatureRow: View
                     .foregroundStyle(feature.color)
                     .frame(width: 48, height: 48)
                     .background(feature.color.opacity(0.14), in: iconShape)
-                    .optionalLiquidGlass(in: iconShape)
             }
 
             VStack(alignment: .leading, spacing: 4)
@@ -189,7 +194,6 @@ private struct CourseAbbreviationIcon: View
         }
         .frame(width: 64, height: 56)
         .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .optionalLiquidGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

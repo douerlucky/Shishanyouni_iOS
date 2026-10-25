@@ -3,6 +3,8 @@ import SwiftUI
 /// 轻量液态玻璃卡片。内容布局和卡片材质分离，便于首页、日程和查询页复用。
 struct LiquidGlassCard<Content: View>: View
 {
+    @Environment(\.isInsideLiquidGlassSurface) private var isInsideSurface
+
     let cornerRadius: CGFloat
     let opacity: Double
     let enabled: Bool
@@ -26,7 +28,7 @@ struct LiquidGlassCard<Content: View>: View
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
         content
-            .background(.ultraThinMaterial, in: shape)
+            .background { LiquidGlassBase(shape: shape, isInsideSurface: isInsideSurface) }
             .overlay(shape.stroke(Color.white.opacity(opacity), lineWidth: 0.7))
             .clipShape(shape)
             .optionalLiquidGlass(enabled: enabled, in: shape)

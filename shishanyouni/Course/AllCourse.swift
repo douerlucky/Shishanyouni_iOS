@@ -19,7 +19,7 @@ enum CourseQuerySource: String, QuerySourceOption
         switch self
         {
         case .cas:
-            return "CAS"
+            return SchoolServiceName.academicPlatform
         case .shishanyouni:
             return "狮山有你"
         }

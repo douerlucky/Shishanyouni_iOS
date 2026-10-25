@@ -27,7 +27,7 @@ enum CurriculumWidgetSync
             UserDefaults.standard.set(data, forKey: WidgetAppGroup.Key.savedCourses)
 
             // App Group 只存 Widget 所需字段，Extension 不依赖 App 的 Course 模型。
-            CurriculumWidgetShared.saveCourses(courses.map(widgetCourse(from:)))
+            CurriculumWidgetShared.saveCourses(courses.filter(\.hasScheduledTime).map(widgetCourse(from:)))
             reloadWidget() //刷新课表 Widget
         }
         catch
@@ -57,7 +57,7 @@ enum CurriculumWidgetSync
             {
                 UserDefaults.standard.set(localData, forKey: WidgetAppGroup.Key.savedCourses)
             }
-            CurriculumWidgetShared.saveCourses(courses.map(widgetCourse(from:)))
+            CurriculumWidgetShared.saveCourses(courses.filter(\.hasScheduledTime).map(widgetCourse(from:)))
             return courses
         }
 

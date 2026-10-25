@@ -681,7 +681,7 @@ struct PhysicalTestQueryButton: View
                 .foregroundColor(.blue)
                 .clipShape(Capsule())
             }
-            .optionalLiquidGlass()
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
 
             // 2. 刷新/查询按钮（中间核心位置）
             Button(action: {
@@ -696,7 +696,7 @@ struct PhysicalTestQueryButton: View
                     .foregroundColor(.white)
                     .clipShape(Capsule())
             }
-            .optionalLiquidGlass()
+            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 20)

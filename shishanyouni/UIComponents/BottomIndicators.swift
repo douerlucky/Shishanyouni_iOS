@@ -3,6 +3,8 @@ import SwiftUI
 /// 成绩、考试、空教室等页面共用的底部液态玻璃容器。
 struct QueryBottomIndicatorBar<Content: View>: View
 {
+    @Environment(\.isInsideLiquidGlassSurface) private var isInsideSurface
+
     let content: Content
     let cornerRadius: CGFloat
 
@@ -17,11 +19,13 @@ struct QueryBottomIndicatorBar<Content: View>: View
 
     var body: some View
     {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
         content
             .padding(10)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .optionalLiquidGlass(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .background { LiquidGlassBase(shape: shape, isInsideSurface: isInsideSurface) }
+            .clipShape(shape)
+            .optionalLiquidGlass(in: shape)
             .padding(.horizontal, 20)
             .padding(.bottom, 25)
     }

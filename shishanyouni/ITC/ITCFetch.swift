@@ -102,11 +102,11 @@ enum ITCError: LocalizedError
         switch self
         {
         case .executionNotFound:
-            return "未找到CAS执行令牌。"
+            return "未获取到\(SchoolServiceName.unifiedIdentity)登录凭据。"
         case let .loginFailed(msg):
             return msg
         case .noLocation:
-            return "CAS登录后未获取到重定向地址。"
+            return "\(SchoolServiceName.unifiedIdentity)登录后未获取到跳转地址。"
         case .cookieNotFound:
             return "未获取到Session Cookie。"
         case .parseFailed:
@@ -203,7 +203,7 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
         let (data1, response1) = try await session.data(for: request1)
         guard let httpResponse1 = response1 as? HTTPURLResponse else
         {
-            throw ITCError.networkError("无法连接CAS服务器。")
+            throw ITCError.networkError("无法连接\(SchoolServiceName.unifiedIdentity)服务器。")
         }
         extractCookies(from: httpResponse1)
 
@@ -263,7 +263,7 @@ class ITCFetch: NSObject, URLSessionTaskDelegate
 
         if httpResponse2.statusCode == 200
         {
-            throw ITCError.loginFailed("CAS登录失败，请检查账号密码。")
+            throw ITCError.loginFailed("\(SchoolServiceName.unifiedIdentity)登录失败，请检查账号密码。")
         }
 
         guard let location3 = httpResponse2.allHeaderFields["Location"] as? String

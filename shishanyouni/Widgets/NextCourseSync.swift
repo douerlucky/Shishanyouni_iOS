@@ -75,7 +75,7 @@ enum NextCourseSync
 
             for course in courses
             {
-                guard course.day == weekday,
+                guard course.hasScheduledTime, course.day == weekday,
                       course.weekList.contains(week),
                       let startPeriod = CurriculumClassSchedule.period(number: course.start),
                       let endPeriod = CurriculumClassSchedule.period(number: course.endPeriod),

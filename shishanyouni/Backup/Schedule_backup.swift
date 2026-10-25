@@ -235,6 +235,7 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
 
     private let step1And2URL: String
     private let followServiceRedirects: Bool
+    private let sessionConfiguration: URLSessionConfiguration
     private let mfaDetectURL = "https://cas-paas.hzau.edu.cn/cas/mfa/detect"
     private let mfaInitSecurePhoneURL = "https://cas-paas.hzau.edu.cn/cas/mfa/initByType/securephone"
     private let courseQueryURL = "http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151"
@@ -244,16 +245,18 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
 
     init(
         serviceURL: String = ScheduleQuery.byjxytLoginServiceURL,
-        followServiceRedirects: Bool = false
+        followServiceRedirects: Bool = false,
+        sessionConfiguration: URLSessionConfiguration = .ephemeral
     )
     {
         step1And2URL = serviceURL
         self.followServiceRedirects = followServiceRedirects
+        self.sessionConfiguration = sessionConfiguration
         super.init()
     }
     
     private lazy var session: URLSession = {
-        let config = URLSessionConfiguration.default
+        let config = sessionConfiguration
         config.httpCookieStorage = nil
         config.httpShouldSetCookies = false
         config.httpCookieAcceptPolicy = .never
@@ -457,19 +460,20 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         {
             throw CASMFAError.initFailed
         }
-        print("[MFA][Schedule] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false), state=\(detectInfo.state ?? "nil"), fpVisitorId=\(CASMFADebug.fpVisitorId)")
+        print("[MFA][Schedule] detect need=\(detectInfo.need), securePhone=\(detectInfo.mfaTypeSecurePhone ?? false)")
+        // state 是本次登录检测凭证；免短信验证也必须随表单提交。
+        guard let state = detectInfo.state, !state.isEmpty else
+        {
+            throw CASMFAError.initFailed
+        }
         guard detectInfo.need else
         {
-            print("[MFA][Schedule] 服务端判定无需二次验证，本次不会弹验证码。")
-            return ""
+            print("[MFA][Schedule] 无需短信验证，保留检测凭证继续登录。")
+            return state
         }
         guard (detectInfo.mfaTypeSecurePhone ?? false) else
         {
             throw CASMFAError.unsupportedType
-        }
-        guard let state = detectInfo.state, !state.isEmpty else
-        {
-            throw CASMFAError.initFailed
         }
         guard let provider = mfaCodeProvider else
         {
@@ -612,13 +616,14 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
         request2.setValue(step1And2URL, forHTTPHeaderField: "Referer")
         request2.setValue("https://cas-paas.hzau.edu.cn", forHTTPHeaderField: "Origin")
         
-        let cookieHeader = getCookieHeader()
+        let mfaState = try await performMFAIfNeeded(username: username, password: rsaPassword, mfaCodeProvider: mfaCodeProvider)
+
+        // MFA 检测/验证可能更新会话，最终提交使用最新 Cookie。
+        let cookieHeader = getCookieHeader(for: request2.url)
         if !cookieHeader.isEmpty
         {
             request2.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
         }
-        
-        let mfaState = try await performMFAIfNeeded(username: username, password: rsaPassword, mfaCodeProvider: mfaCodeProvider)
         
         let bodyString = [
             "username=\(formEncode(username))",
@@ -643,10 +648,11 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
             throw NSError(domain: "Step2Failed", code: 500)
         }
         
+        extractCookies(from: httpResponse2)
+
         if httpResponse2.statusCode == 200
         {
-            let responseText = String(data: data2, encoding: .utf8) ?? ""
-            throw NSError(domain: "LoginFailed", code: 401, userInfo: ["response": responseText])
+            throw CASLoginFailure.error(from: data2)
         }
         
         guard let location3 = httpResponse2.allHeaderFields["Location"] as? String
@@ -655,8 +661,6 @@ class ScheduleQuery: NSObject, URLSessionTaskDelegate
             throw NSError(domain: "NoLocationStep2", code: 401)
         }
         
-        extractCookies(from: httpResponse2)
-
         return try await finishLoginWithTicketLocation(location3)
     }
     

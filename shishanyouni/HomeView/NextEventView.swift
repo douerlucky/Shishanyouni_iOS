@@ -131,7 +131,7 @@ class NextEventViewModel: ObservableObject
 
             for course in courses
             {
-                guard course.day == weekday else { continue }
+                guard course.hasScheduledTime, course.day == weekday else { continue }
                 guard course.weekList.contains(week) else { continue }
                 guard let periodInfo = CurriculumClassSchedule.period(number: course.start) else { continue }
 
@@ -413,9 +413,7 @@ struct NextEventView: View
                     iconShape
                         .fill(event.type.color.opacity(0.12))
                         .frame(width: 48, height: 48)
-                        .background(.ultraThinMaterial, in: iconShape)
                         .clipShape(iconShape)
-                        .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: iconShape)
 
                     Image(systemName: event.type.icon)
                         .font(.system(size: 20, weight: .semibold))
@@ -427,10 +425,8 @@ struct NextEventView: View
                     .foregroundColor(event.type.color)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(.ultraThinMaterial, in: Capsule())
                     .background(event.type.color.opacity(0.10), in: Capsule())
                     .clipShape(Capsule())
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: Capsule())
             }
 
             // 中间文字

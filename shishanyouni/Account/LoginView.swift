@@ -8,7 +8,7 @@
 import SwiftUI
 import UIKit
 
-private enum LoginBindingSource: String, CaseIterable, Identifiable
+private enum LoginBindingSource: String, QuerySourceOption
 {
     case shishanyouni
     case cas
@@ -22,7 +22,7 @@ private enum LoginBindingSource: String, CaseIterable, Identifiable
         case .shishanyouni:
             return "狮山有你服务器"
         case .cas:
-            return "CAS"
+            return SchoolServiceName.unifiedIdentity
         }
     }
 }
@@ -74,27 +74,24 @@ struct LoginView: View
                         .scaledToFit()
                         .frame(width: 128, height: 128)
                         .cornerRadius(32)
-                    Text("绑定校园信息门户账号，即表示接受我们为你提供个性化校园服务。")
+                    Text("绑定账号")
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
+                        
                         .padding(.horizontal, 24)
                 }
 
 
                 VStack(spacing: 16)
                 {
-                    Picker("绑定方式", selection: Binding(
-                        get: { bindingSource },
-                        set: { bindingSource = $0 }
-                    ))
-                    {
-                        ForEach(LoginBindingSource.allCases)
-                        { source in
-                            Text(source.title)
-                                .tag(source)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    // 完整名称较长，复用来源选择器，避免分段控件截断学校服务名。
+                    DataSourceSelector(
+                        selection: Binding(get: { bindingSource }, set: { bindingSource = $0 }),
+                        fontSize: 15,
+                        verticalPadding: 12,
+                        selectionTitle: "选择绑定方式"
+                    )
+                    .disabled(isLoading)
                     .padding(.bottom, 2)
 
                     // 学号行
@@ -206,7 +203,7 @@ struct LoginView: View
                                     await MainActor.run
                                     {
                                         self.alertTitle = "出现错误"
-                                        self.alertMessage = "CAS 密码加密失败，请稍后重试或联系开发者检查公钥配置。"
+                                        self.alertMessage = "\(SchoolServiceName.unifiedIdentity)密码加密失败，请稍后重试或联系开发者检查公钥配置。"
                                         self.showAlert = true
                                         UINotificationFeedbackGenerator().notificationOccurred(.error)
                                     }
@@ -287,13 +284,13 @@ struct LoginView: View
                             .background(Color.blue)
                             .clipShape(Capsule())
                 }
-                .optionalLiquidGlass()
+                .optionalLiquidGlass(allowsNesting: true)
                 .padding()
 
                 VStack(spacing: 12)
                 {
                     bindingIndicator(title: "狮山有你后端连接", isBound: userinfo.isShishanyouniBound, message: backendStatusMessage)
-                    bindingIndicator(title: "CAS 连接", isBound: userinfo.isCASBound, message: casStatusMessage)
+                    bindingIndicator(title: "\(SchoolServiceName.unifiedIdentity)连接", isBound: userinfo.isCASBound, message: casStatusMessage)
                 }
                 .padding(.horizontal, 20)
 
@@ -338,6 +335,7 @@ struct LoginView: View
                     Text("正在绑定\n\(bindingSource.title)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
     
                 }
@@ -493,9 +491,9 @@ extension LoginView {
     private func buildBindingAlerts(casBound: Bool, casMessage: String?, backendBound: Bool, backendMessage: String?) -> (String, String) {
         var messages: [String] = []
         if casBound {
-            messages.append("CAS 已绑定成功。")
+            messages.append("\(SchoolServiceName.unifiedIdentity)已绑定成功。")
         } else {
-            messages.append("绑定 CAS 服务有问题：\(casMessage ?? "请稍后重试。")")
+            messages.append("绑定\(SchoolServiceName.unifiedIdentity)服务有问题：\(casMessage ?? "请稍后重试。")")
         }
 
         if backendBound {

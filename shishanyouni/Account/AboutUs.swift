@@ -39,7 +39,7 @@ struct AboutUs: View
                     Text("iOS版设计：douer_lucky")
                     Text("iOS版开发：douer_lucky、澜沧")
 
-                    Text("版本 1.7")
+                    Text("版本 1.7.1")
                     Text("反馈QQ群聊（长按复制）：1090311516")
                         .textSelection(.enabled)
                         .onTapGesture

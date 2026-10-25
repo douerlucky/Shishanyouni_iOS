@@ -216,7 +216,7 @@ struct SchoolCalendarView: View
                     .foregroundColor(.blue)
                     .frame(width: 36, height: 36)
                     .background(Color.blue.opacity(0.1), in: Circle())
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 18)
             }
 
             Spacer()
@@ -238,7 +238,7 @@ struct SchoolCalendarView: View
                     .padding(.vertical, 6)
                     .background(Color.blue.opacity(0.1), in: Capsule())
                     .foregroundColor(.blue)
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 18)
             }
 
             Spacer()
@@ -258,7 +258,7 @@ struct SchoolCalendarView: View
                     .foregroundColor(.blue)
                     .frame(width: 36, height: 36)
                     .background(Color.blue.opacity(0.1), in: Circle())
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, cornerRadius: 18)
+                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, allowsNesting: true, cornerRadius: 18)
             }
         }
     }

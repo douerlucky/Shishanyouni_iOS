@@ -88,6 +88,7 @@ struct FeatureAuthorizationSheet: View
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 12)
+        .environment(\.isInsideLiquidGlassSurface, false)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
         .accessibilityIdentifier("featureAuthorizationSheet")

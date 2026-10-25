@@ -14,8 +14,6 @@ struct ProfileView: View
     @State private var navigateToSubscription = false
     @State private var showWhatsNew = false
     @State private var backgroundImage: UIImage?
-    @AppStorage(PreferenceKey.enableLiquidGlassEffect)
-    private var enableLiquidGlassEffect: Bool = true
     @AppStorage(PreferenceKey.showCampusPassFeatures) private var showCampusPassFeatures = true
     @AppStorage(PreferenceKey.showCampusPassCard) private var showCampusPassCard = true
     @AppStorage(PreferenceKey.scheduleBackgroundImageFilename) private var backgroundImageFilename = ""
@@ -116,7 +114,7 @@ struct ProfileView: View
                                 .font(.body)
                             if userinfo.username.isEmpty
                             {
-                                Text("点击绑定信息门户账号")
+                                Text("点击绑定\(SchoolServiceName.unifiedIdentity)账号")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
@@ -128,19 +126,19 @@ struct ProfileView: View
                             }
                             else if userinfo.isCASBound
                             {
-                                Text("CAS已绑定，狮山有你未绑定")
+                                Text("\(SchoolServiceName.unifiedIdentity)已绑定，狮山有你未绑定")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
                             else if userinfo.isShishanyouniBound
                             {
-                                Text("狮山有你已绑定，CAS未绑定")
+                                Text("狮山有你已绑定，\(SchoolServiceName.unifiedIdentity)未绑定")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
                             else
                             {
-                                Text("未成功绑定狮山有你、CAS账号")
+                                Text("未成功绑定狮山有你、\(SchoolServiceName.unifiedIdentity)账号")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
@@ -170,7 +168,6 @@ struct ProfileView: View
                                 iconShape
                                     .fill(campusPassTint.opacity(0.14))
                                     .frame(width: 52, height: 52)
-                                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: iconShape)
 
                                 Image(systemName: iapStore.hasActiveSubscription ? "checkmark.shield.fill" : "crown.fill")
                                     .font(.system(size: 22, weight: .semibold))
@@ -206,14 +203,16 @@ struct ProfileView: View
                                     .opacity(0.12),
                                 in: Capsule()
                             )
-                            .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: Capsule())
                     }
                     // 原来的白边 inset 已经在下面通过 listRowInsets 清零；
                     // 这里把蓝色底的 padding 补齐到原白边的宽度，让蓝色铺满整行。
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(18)
-                    .background(campusPassTint.opacity(0.2), in: cardShape)
-                    .optionalLiquidGlass(enabled: enableLiquidGlassEffect, in: cardShape)
+                    .background
+                    {
+                        cardShape.fill(Color(uiColor: .secondarySystemGroupedBackground))
+                            .overlay(cardShape.fill(campusPassTint.opacity(0.12)))
+                    }
                 }
                 .buttonStyle(.plain)
                 .listRowInsets(EdgeInsets())
