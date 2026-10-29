@@ -47,7 +47,7 @@ struct shishanyouniTests {
         });
         """
 
-        let events = SchoolCalendarFetcher.parseEmbeddedCalendarEvents(from: html)
+        let events = SchoolCalendarAPI.parseEmbeddedCalendarEvents(from: html)
         let openingWeek = try #require(events.first)
         let sportsMeet = try #require(events.last)
 

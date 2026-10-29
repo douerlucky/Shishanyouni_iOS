@@ -9,7 +9,7 @@ struct CASLoginFlowTests
     @Test("绑定 CAS 免短信时仍提交检测凭证和最新 Cookie")
     func binderKeepsStateWithoutSMS() async throws
     {
-        let binder = CASBinder(sessionConfiguration: installMock())
+        let binder = SchoolIdentityAPI(sessionConfiguration: installMock())
         let result = try await binder.bind(username: "cas-test-user", password: "__RSA__fixture")
         guard case .success = result else
         {
@@ -24,7 +24,7 @@ struct CASLoginFlowTests
     @Test("教务免短信登录保留检测凭证并换取业务 Cookie")
     func scheduleKeepsStateWithoutSMS() async throws
     {
-        let query = ScheduleQuery(sessionConfiguration: installMock())
+        let query = SchoolAcademicAPI(sessionConfiguration: installMock())
         let cookie = try await query.loginAndGetCookie(username: "cas-test-user", rsaPassword: "__RSA__fixture")
 
         try expectFinalLoginStateAndCookie()
@@ -39,7 +39,7 @@ struct CASLoginFlowTests
     func academicImportRemainsSchoolOnly() async throws
     {
         let configuration = installMock()
-        let cookie = try await ScheduleQuery(sessionConfiguration: configuration)
+        let cookie = try await SchoolAcademicAPI(sessionConfiguration: configuration)
             .loginAndGetCookie(username: "cas-test-user", rsaPassword: "__RSA__fixture")
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
@@ -89,7 +89,7 @@ struct CASLoginFlowTests
     func binderPreservesSMSFlow() async throws
     {
         let configuration = installMock(needSMS: true)
-        let binder = CASBinder(sessionConfiguration: configuration)
+        let binder = SchoolIdentityAPI(sessionConfiguration: configuration)
         let result = try await binder.bind(username: "cas-test-user", password: "__RSA__fixture")
         { phone in
             #expect(phone == "133****0000")
@@ -133,12 +133,12 @@ struct CASLoginFlowTests
             {
                 if useSchedule
                 {
-                    _ = try await ScheduleQuery(sessionConfiguration: configuration)
+                    _ = try await SchoolAcademicAPI(sessionConfiguration: configuration)
                         .loginAndGetCookie(username: "cas-test-user", rsaPassword: "__RSA__fixture")
                 }
                 else
                 {
-                    _ = try await CASBinder(sessionConfiguration: configuration)
+                    _ = try await SchoolIdentityAPI(sessionConfiguration: configuration)
                         .bind(username: "cas-test-user", password: "__RSA__fixture")
                 }
                 Issue.record("缺少检测凭证时不应继续登录")
@@ -155,7 +155,7 @@ struct CASLoginFlowTests
     func loginPageFailureHasReadableMessage() async throws
     {
         let configuration = installMock(loginStatus: 200)
-        let result = try await CASBinder(sessionConfiguration: configuration)
+        let result = try await SchoolIdentityAPI(sessionConfiguration: configuration)
             .bind(username: "cas-test-user", password: "__RSA__fixture")
         guard case let .failure(message) = result else
         {
@@ -164,7 +164,7 @@ struct CASLoginFlowTests
         }
         #expect(message.contains("安全验证状态已失效，请重新登录"))
 
-        let query = ScheduleQuery(sessionConfiguration: installMock(loginStatus: 200))
+        let query = SchoolAcademicAPI(sessionConfiguration: installMock(loginStatus: 200))
         do
         {
             _ = try await query.loginAndGetCookie(username: "cas-test-user", rsaPassword: "__RSA__fixture")

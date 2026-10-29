@@ -80,22 +80,19 @@ struct APIModelTests
         #expect(lion.data?.first?.cdmc == nil)
     }
 
-    @Test("绑定响应继续兼容数字和字符串状态码")
-    func accountResponsesKeepFlexibleCodeParsing()
+    @Test("V3 响应兼容数字和字符串状态码，先读错误包装再解业务数据")
+    func accountResponsesKeepFlexibleCodeParsing() throws
     {
-        for code in [22, "22"] as [Any]
+        for code in ["22", "\"22\""]
         {
-            let response = ShishanyouniBindResponse(json: [
-                "msg": "需要短信验证", "code": code,
-                "data": ["phone": "133****0000", "sessionId": "test-session"]
-            ])
-            #expect(response.code == 22)
-            #expect(response.data?.sessionId == "test-session")
+            let raw = Data("{\"msg\":\"需要短信验证\",\"code\":\(code),\"data\":{\"phone\":\"133****0000\",\"sessionId\":\"test-session\"}}".utf8)
+            let header = try JSONDecoder().decode(ShishanyouniV3Header.self, from: raw)
+            let response = ShishanyouniV3Response(header: header, rawData: raw)
+            #expect(header.code == 22)
+            #expect(try response.payload(ShishanyouniV3Challenge.self).sessionId == "test-session")
         }
-        let code = ShishanyouniCodeResponse(json: ["code": "2", "msg": "成功", "data": "已发送"])
-        #expect(code.code == 2)
-        #expect(code.data == "已发送")
-        #expect(ShishanyouniBindResponse(json: ["code": NSNull()]).code == nil)
+        let failure = try decode(ShishanyouniV3Header.self, json: #"{"code":5,"msg":"上游暂不可用","data":42}"#)
+        #expect(failure.msg == "上游暂不可用")
     }
 
     @Test("CAS 安全验证模型保留动态校验服务器和可选字段")
@@ -110,18 +107,12 @@ struct APIModelTests
         #expect(verified.data?.status == 1)
     }
 
-    @Test("课表请求继续省略空 token 并发送 type=0")
-    func timetableRequestPreservesEncoding() throws
+    @Test("V3 绑定与短信验证返回独立的门户凭据对象")
+    func portalResponseDecodes() throws
     {
-        for token in [nil, "test-token"] as [String?]
-        {
-            let request = TimetableRequest(username: "test-user", password: "encrypted", token: token, year: "2026", term: "1")
-            let data = try JSONEncoder().encode(request)
-            let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
-            #expect(json["token"] as? String == token)
-            #expect(json["type"] as? Int == 0)
-            #expect(json["year"] as? String == "2026")
-        }
+        let result = try decode(ShishanyouniV3Data<ShishanyouniV3Portal>.self, json: #"{"code":2,"data":{"portalToken":"mock-portal","expireAt":1790000000000}}"#)
+        #expect(result.data.portalToken == "mock-portal")
+        #expect(result.data.expireAt == 1790000000000)
     }
 
     @Test("课表新旧字段都能转换成本地 Course")

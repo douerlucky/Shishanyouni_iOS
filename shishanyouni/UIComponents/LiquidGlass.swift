@@ -14,26 +14,6 @@ private struct InsideLiquidGlassSurfaceKey: EnvironmentKey
     static let defaultValue = false
 }
 
-/// 保留独立组件原有的材质底；放在玻璃上时换成普通填充，避免继续叠加模糊。
-struct LiquidGlassBase<S: Shape>: View
-{
-    let shape: S
-    // 由组件在绘制自身玻璃前读取父层级，避免把自身误判为另一层玻璃。
-    let isInsideSurface: Bool
-
-    var body: some View
-    {
-        if isInsideSurface
-        {
-            shape.fill(Color(uiColor: .secondarySystemBackground))
-        }
-        else
-        {
-            shape.fill(.ultraThinMaterial)
-        }
-    }
-}
-
 extension EnvironmentValues
 {
     /// 仅记录 App 自己绘制的玻璃容器，系统 Sheet、导航栈不算一层玻璃。
@@ -50,6 +30,9 @@ private struct OptionalLiquidGlass<S: Shape>: ViewModifier
     let enabled: Bool
     let allowsNesting: Bool
     let shape: S
+    let tint: Color?
+    let fallback: Color
+    let interactive: Bool
     @Environment(\.isInsideLiquidGlassSurface) private var isInsideSurface
     @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var glassEnabled = true
 
@@ -59,26 +42,68 @@ private struct OptionalLiquidGlass<S: Shape>: ViewModifier
         {
             content
                 .environment(\.isInsideLiquidGlassSurface, true)
-                .glassEffect(.clear, in: shape)
+                .background
+                {
+                    // 玻璃与前景分层；只淡化底板，文字和图标不受组件滑块影响。
+                    Color.clear
+                        .glassEffect(.regular.tint(tint).interactive(interactive), in: shape)
+                        .componentBackgroundOpacity()
+                        .allowsHitTesting(interactive)
+                }
         }
         else
         {
             // 未绘制玻璃就不新增边界，纯色父容器里的独立玻璃仍然可用。
             content
+                .background
+                {
+                    shape.fill(fallback)
+                        .componentBackgroundOpacity()
+                        .allowsHitTesting(false)
+                }
         }
     }
 }
 
 extension View
 {
-    func optionalLiquidGlass<S: Shape>(enabled: Bool = true, allowsNesting: Bool = false, in shape: S) -> some View
+    /// fallback 仅在玻璃关闭、不受支持或被父层玻璃抑制时绘制，不会叠在玻璃下面。
+    func optionalLiquidGlass<S: Shape>(
+        enabled: Bool = true,
+        allowsNesting: Bool = false,
+        in shape: S,
+        tint: Color? = nil,
+        fallback: Color = .clear,
+        interactive: Bool = false
+    ) -> some View
     {
-        modifier(OptionalLiquidGlass(enabled: enabled, allowsNesting: allowsNesting, shape: shape))
+        modifier(OptionalLiquidGlass(
+            enabled: enabled,
+            allowsNesting: allowsNesting,
+            shape: shape,
+            tint: tint,
+            fallback: fallback,
+            interactive: interactive
+        ))
     }
 
-    func optionalLiquidGlass(enabled: Bool = true, allowsNesting: Bool = false, cornerRadius: CGFloat = 64) -> some View
+    func optionalLiquidGlass(
+        enabled: Bool = true,
+        allowsNesting: Bool = false,
+        cornerRadius: CGFloat = 64,
+        tint: Color? = nil,
+        fallback: Color = .clear,
+        interactive: Bool = false
+    ) -> some View
     {
-        optionalLiquidGlass(enabled: enabled, allowsNesting: allowsNesting, in: RoundedRectangle(cornerRadius: cornerRadius))
+        optionalLiquidGlass(
+            enabled: enabled,
+            allowsNesting: allowsNesting,
+            in: RoundedRectangle(cornerRadius: cornerRadius),
+            tint: tint,
+            fallback: fallback,
+            interactive: interactive
+        )
     }
 
     func glassBackground(cornerRadius: CGFloat = 64) -> some View
@@ -96,31 +121,12 @@ extension View
 private struct GlassBackground<S: InsettableShape>: ViewModifier
 {
     let shape: S
-    @Environment(\.isInsideLiquidGlassSurface) private var isInsideSurface
-    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var glassEnabled = true
-    @AppStorage(PreferenceKey.pageBackgroundOpacity) private var backgroundOpacity = 0.35
-
     func body(content: Content) -> some View
     {
         content
-            .environment(
-                \.isInsideLiquidGlassSurface,
-                isInsideSurface || (glassEnabled && LiquidGlassAvailability.isSupported)
+            .optionalLiquidGlass(
+                in: shape,
+                fallback: Color(uiColor: .secondarySystemBackground)
             )
-            .background
-            {
-                Group
-                {
-                    if #available(iOS 26.0, *), glassEnabled && !isInsideSurface
-                    {
-                        Color.clear.glassEffect(.regular, in: shape)
-                    }
-                    else
-                    {
-                        shape.fill(Color(uiColor: .secondarySystemBackground))
-                    }
-                }
-                .opacity(backgroundOpacity)
-            }
     }
 }

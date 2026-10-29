@@ -46,6 +46,8 @@
 
 ## 目录速览
 
+主 App 按功能组织，具体职责见[代码目录与维护规则](docs/code-organization.md)。
+
 ```text
 shishanyouni/          主 App
 ScheduleWidget/        课表桌面小组件

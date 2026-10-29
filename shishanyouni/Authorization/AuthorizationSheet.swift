@@ -11,6 +11,32 @@ struct FeatureAuthorizationSheet: View
 
     var body: some View
     {
+        ScrollView
+        {
+            authorizationDetails
+        }
+        .safeAreaInset(edge: .bottom)
+        {
+            HStack(spacing: 12)
+            {
+                CancelButton { dismiss() }
+                AcceptButton("我已阅读并同意授权")
+                {
+                    onAuthorize(rememberAuthorization)
+                    dismiss()
+                }
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 12)
+        }
+        .environment(\.isInsideLiquidGlassSurface, false)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .accessibilityIdentifier("featureAuthorizationSheet")
+    }
+
+    private var authorizationDetails: some View
+    {
         VStack(spacing: 14)
         {
             let iconShape = RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -18,8 +44,7 @@ struct FeatureAuthorizationSheet: View
                 .font(.system(size: 42, weight: .semibold))
                 .foregroundStyle(scope.tint)
                 .frame(width: 76, height: 76)
-                .background(scope.tint.opacity(0.12), in: iconShape)
-                .optionalLiquidGlass(in: iconShape)
+                .optionalLiquidGlass(in: iconShape, fallback: scope.tint.opacity(0.12))
                 .padding(.top, 12)
 
             VStack(spacing: 4)
@@ -48,49 +73,11 @@ struct FeatureAuthorizationSheet: View
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 8)
 
-            // 三个操作项统一放在说明文字下方：先“下次不再提醒”，再是取消/同意按钮组。
-            VStack(spacing: 14)
-            {
-                Button
-                {
-                    rememberAuthorization.toggle()
-                }
-                label:
-                {
-                    HStack(spacing: 8)
-                    {
-                        Image(systemName: rememberAuthorization ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(rememberAuthorization ? .blue : .secondary)
-                        Text("下次不再提醒")
-                            .foregroundStyle(.primary)
-                    }
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                HStack(spacing: 12)
-                {
-                    CancelButton
-                    {
-                        dismiss()
-                    }
-
-                    AcceptButton("我已阅读并同意授权")
-                    {
-                        onAuthorize(rememberAuthorization)
-                        dismiss()
-                    }
-                }
-                .frame(height: 48)
-            }
-            .padding(.top, 32)
+            Toggle("下次不再提醒", isOn: $rememberAuthorization)
+                .tint(appActionBlue)
+                .padding(.top, 16)
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 12)
-        .environment(\.isInsideLiquidGlassSurface, false)
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-        .accessibilityIdentifier("featureAuthorizationSheet")
     }
 }

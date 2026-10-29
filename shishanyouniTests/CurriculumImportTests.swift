@@ -28,7 +28,9 @@ struct CurriculumImportTests
     {
         for (term, academicCode) in [("1", "3"), ("2", "12")]
         {
-            let request = AcademicCurriculumImporter.makeRequest(cookie: "JSESSIONID=test", year: "2026", term: term)
+            let mappedTerm = AcademicCurriculumImporter.academicTermCode(from: term)
+            #expect(mappedTerm == academicCode)
+            let request = AcademicCurriculumAPI.makeRequest(cookie: "JSESSIONID=test", year: "2026", academicTerm: mappedTerm)
             #expect(request.url?.absoluteString == "http://byjxyt.hzau.edu.cn/kbcx/xskbcx_cxXsKb.html?gnmkdm=index")
             #expect(request.httpMethod == "POST")
             #expect(request.value(forHTTPHeaderField: "Cookie") == "JSESSIONID=test")
@@ -79,11 +81,11 @@ struct CurriculumImportTests
     @Test("单双周和不连续周次能解析，损坏的范围不能静默变成单周")
     func parsesWeeksWithoutInventingDates()
     {
-        #expect(AcademicCurriculumImporter.parseWeeks("1-8周(单),10-14周(双),17周") == [1, 3, 5, 7, 10, 12, 14, 17])
-        #expect(AcademicCurriculumImporter.parseWeeks("2－5周，7周、9周") == [2, 3, 4, 5, 7, 9])
-        #expect(AcademicCurriculumImporter.parseWeeks("1-abc周").isEmpty)
-        #expect(AcademicCurriculumImporter.parseWeeks("2-1周").isEmpty)
-        #expect(AcademicCurriculumImporter.parseWeeks("1-4周,未知周次").isEmpty)
+        #expect(CurriculumWeekParser.parse("1-8周(单),10-14周(双),17周") == [1, 3, 5, 7, 10, 12, 14, 17])
+        #expect(CurriculumWeekParser.parse("2－5周，7周、9周") == [2, 3, 4, 5, 7, 9])
+        #expect(CurriculumWeekParser.parse("1-abc周").isEmpty)
+        #expect(CurriculumWeekParser.parse("2-1周").isEmpty)
+        #expect(CurriculumWeekParser.parse("1-4周,未知周次").isEmpty)
     }
 
     @Test("其他课程不生成日历上课事件、不计入课时和占用时段")

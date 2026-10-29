@@ -66,6 +66,21 @@ struct LiquidGlassHierarchyTests
         #expect(toolbarCapture.values.last == LiquidGlassAvailability.isSupported)
     }
 
+    @Test("原生玻璃按钮建立材质边界，关闭玻璃后不建立", arguments: [false, true])
+    func nativeButtonMarksItsLabel(glassEnabled: Bool)
+    {
+        for prominent in [false, true]
+        {
+            let capture = Capture()
+            render(
+                Button(action: {}) { Probe(capture: capture) }
+                    .nativeGlassButtonStyle(prominent: prominent),
+                glassEnabled: glassEnabled
+            )
+            #expect(capture.values.last == (glassEnabled && LiquidGlassAvailability.isSupported))
+        }
+    }
+
     @Test("Sheet 是独立界面，内部单层玻璃不受呈现来源影响")
     func presentationStartsANewSurfaceContext()
     {
@@ -100,6 +115,37 @@ struct LiquidGlassHierarchyTests
         #expect(capture.values.last == false)
     }
 
+    @Test("组件不透明度调节底板，不改变玻璃开关判定", arguments: [0.0, 0.35, 1.0])
+    func backgroundOpacityDoesNotControlGlass(_ opacity: Double)
+    {
+        let capture = Capture()
+        render(
+            Probe(capture: capture).glassBackground(),
+            componentOpacity: opacity
+        )
+        #expect(capture.values.last == LiquidGlassAvailability.isSupported)
+
+        let disabledCapture = Capture()
+        render(
+            Probe(capture: disabledCapture).glassBackground(),
+            glassEnabled: false,
+            componentOpacity: opacity
+        )
+        #expect(disabledCapture.values.last == false)
+    }
+
+    @Test("回退底色和语义着色不能绕过玻璃关闭开关")
+    func fallbackDoesNotIntroduceGlass()
+    {
+        let capture = Capture()
+        render(
+            Probe(capture: capture)
+                .optionalLiquidGlass(in: Capsule(), tint: .blue, fallback: .red),
+            glassEnabled: false
+        )
+        #expect(capture.values.last == false)
+    }
+
     @Test("允许按钮叠放也不能绕过当前组件的关闭开关")
     func nestedExceptionRespectsLocalSetting()
     {
@@ -111,11 +157,12 @@ struct LiquidGlassHierarchyTests
         #expect(capture.values.last == false)
     }
 
-    private func render(_ view: some View, glassEnabled: Bool = true)
+    private func render(_ view: some View, glassEnabled: Bool = true, componentOpacity: Double = 1.0)
     {
         let suiteName = "LiquidGlassHierarchyTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.set(glassEnabled, forKey: PreferenceKey.enableLiquidGlassEffect)
+        defaults.set(componentOpacity, forKey: PreferenceKey.componentOpacity)
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let renderer = ImageRenderer(

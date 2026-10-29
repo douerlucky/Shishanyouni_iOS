@@ -25,86 +25,83 @@ struct DataSourceSelector<Source: QuerySourceOption>: View
 {
     @Binding var selection: Source
     var fontSize: CGFloat = 14
-    var horizontalPadding: CGFloat = 16
-    var verticalPadding: CGFloat = 10
     var foreground: Color = .primary
     var selectionTitle: String = "选择数据源"
     var onSelect: ((Source) -> Void)? = nil
 
-    @State private var isPresented = false
-
     var body: some View
     {
-        Button { isPresented = true }
+        Menu
+        {
+            Picker(selectionTitle, selection: Binding(
+                get: { selection },
+                set: { source in
+                    if let onSelect { onSelect(source) }
+                    else { selection = source }
+                }
+            ))
+            {
+                ForEach(Array(Source.allCases)) { source in Text(source.title).tag(source) }
+            }
+        }
         label:
         {
             HStack(spacing: 6)
             {
                 Text(selection.title)
+                    .font(.system(size: fontSize, weight: .bold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.65)
+                    .minimumScaleFactor(0.5)
+                    .allowsTightening(true)
+                    .appTextOpacity()
+                    .frame(maxWidth: .infinity)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .bold))
             }
-            .font(.system(size: fontSize, weight: .bold))
             .foregroundStyle(foreground)
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .background(.ultraThinMaterial, in: Capsule())
-            .clipShape(Capsule())
-            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
-        .sheet(isPresented: $isPresented)
+        // Menu 直接接收 Apple 的样式，不经过 Button(configuration) 的按钮转发封装。
+        .menuStyle(.button)
+        .modifier(DataSourceMenuButtonStyle())
+        .controlSize(.mini)
+        .frame(height: QueryControlMetrics.height)
+        .accessibilityLabel(selectionTitle)
+        .accessibilityValue(selection.title)
+    }
+}
+
+/// Menu 的原生触发器单独配置；不是额外绘制一个背景。
+private struct DataSourceMenuButtonStyle: ViewModifier
+{
+    @AppStorage(PreferenceKey.enableLiquidGlassEffect) private var glassEnabled = true
+    private let tint = Color.primary.opacity(0.18)
+
+    @ViewBuilder
+    func body(content: Content) -> some View
+    {
+        if #available(iOS 26.1, *), glassEnabled
         {
-            VStack(spacing: 18)
-            {
-                Text(selectionTitle)
-                    .font(.headline)
-
-                VStack(spacing: 12)
-                {
-                    ForEach(Array(Source.allCases))
-                    { source in
-                        Button
-                        {
-                            onSelect?(source)
-                            if onSelect == nil { selection = source }
-                            isPresented = false
-                        }
-                        label:
-                        {
-                            HStack
-                            {
-                                Text(source.title)
-                                    .font(.system(size: 17, weight: .bold))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.75)
-                                Spacer()
-                                if selection == source
-                                {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                            .foregroundStyle(selection == source ? .blue : .primary)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 15)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            .optionalLiquidGlass(allowsNesting: true, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                CancelButton("取消") { isPresented = false }
-                    .frame(maxWidth: 160)
-            }
-            .padding(24)
-            // 新呈现的 Sheet 是独立界面，不继承查询栏的“玻璃内部”状态。
-            .environment(\.isInsideLiquidGlassSurface, false)
-            .presentationDetents([.height(300)])
-            .presentationDragIndicator(.hidden)
+            content
+                .buttonStyle(.glass(.regular.tint(tint)))
+                .buttonBorderShape(.capsule)
+                .buttonSizing(.flexible)
+        }
+        else if #available(iOS 26.0, *), glassEnabled
+        {
+            content
+                .buttonStyle(.glass)
+                .tint(tint)
+                .buttonBorderShape(.capsule)
+                .buttonSizing(.flexible)
+        }
+        else
+        {
+            content
+                .buttonStyle(.bordered)
+                .tint(tint)
+                .buttonBorderShape(.capsule)
         }
     }
 }
@@ -127,19 +124,17 @@ struct SemesterSelector: View
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
                     .allowsTightening(true)
+                    .appTextOpacity()
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10, weight: .bold))
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(.primary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: Capsule())
-            .clipShape(Capsule())
-            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
+            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
-        .frame(width: width)
+        .nativeGlassButtonStyle(fillsWidth: true)
+        .controlSize(.mini)
+        .frame(width: width, height: QueryControlMetrics.height)
     }
 }
 
@@ -159,18 +154,17 @@ struct TeachingBuildingSelector: View
                     .font(.system(size: 14, weight: .bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+                    .appTextOpacity()
                 Image(systemName: "chevron.up")
                     .font(.system(size: 8, weight: .bold))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(.primary)
-            .background(.ultraThinMaterial, in: Capsule())
-            .clipShape(Capsule())
-            .optionalLiquidGlass(allowsNesting: true, in: Capsule())
+            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .nativeGlassButtonStyle(fillsWidth: true)
+        .controlSize(.mini)
+        .frame(height: QueryControlMetrics.height)
     }
 }
 

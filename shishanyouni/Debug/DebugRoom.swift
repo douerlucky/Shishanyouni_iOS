@@ -17,7 +17,7 @@ struct DebugRoom: View
     @State private var mfaCode = ""
     @State private var mfaContinuation: CheckedContinuation<String?, Never>?
     @State private var mfaSendCodeAction: (() async -> String?)?
-    @State private var randomFPVisitorEnabled = CASMFADebug.randomFPVisitorEnabled
+    @State private var randomFPVisitorEnabled = CASClientEnvironment.randomFPVisitorEnabled
     @State private var fpRefreshTick = 0
 
     @State var cookieInput: String = ""
@@ -36,7 +36,7 @@ struct DebugRoom: View
                 {
                     showWeb = true
                 }
-                .buttonStyle(.borderedProminent)
+                .nativeGlassButtonStyle(prominent: true)
 
                 ScrollView
                 {
@@ -80,14 +80,14 @@ struct DebugRoom: View
                         userinfo.performShishanyouniEncryption()
                         print("✅ 狮山有你 RSA 加密成功（密文已生成，未输出明文）")
                     }
-                    .buttonStyle(.bordered)
+                    .nativeGlassButtonStyle()
 
                     Button("设定该学号密码")
                     {
                         userinfo.performSchoolEncryption()
                         userinfo.debugprint()
                     }
-                    .buttonStyle(.bordered)
+                    .nativeGlassButtonStyle()
                 }
                 .padding()
                 .background(Color.blue.opacity(0.05))
@@ -102,20 +102,20 @@ struct DebugRoom: View
                 {
                     Toggle("MFA 使用随机 fpVisitorId（更容易触发 need=true）", isOn: $randomFPVisitorEnabled)
                         .onChange(of: randomFPVisitorEnabled) { newValue in
-                            CASMFADebug.setRandomFPVisitorEnabled(newValue)
+                            CASClientEnvironment.setRandomFPVisitorEnabled(newValue)
                         }
 
-                    Text("当前 fpVisitorId: \(CASMFADebug.fpVisitorId)")
+                    Text("当前 fpVisitorId: \(CASClientEnvironment.fpVisitorId)")
                         .font(.system(size: 12, weight: .regular, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .id(fpRefreshTick)
 
                     Button("重新生成 fpVisitorId")
                     {
-                        CASMFADebug.regenerateFPVisitorId()
+                        CASClientEnvironment.regenerateFPVisitorId()
                         fpRefreshTick += 1
                     }
-                    .buttonStyle(.bordered)
+                    .nativeGlassButtonStyle()
 
                     Button("预览验证码弹窗页面")
                     {
@@ -124,7 +124,7 @@ struct DebugRoom: View
                         mfaSendCodeAction = { nil }
                         showMFASheet = true
                     }
-                    .buttonStyle(.borderedProminent)
+                    .nativeGlassButtonStyle(prominent: true)
                 }
                 .padding()
                 .background(Color.orange.opacity(0.08))
@@ -143,8 +143,7 @@ struct DebugRoom: View
                             print("🚀 开始测试课表接口...")
                             let (courses, startDate) = try await ShishanyouniCurriculumImporter.fetchCourses(
                                 username: userinfo.username,
-                                password: userinfo.encryptedPasswordShishanyouni,
-                                token: userinfo.shishanyouniToken,
+                                encryptedPassword: userinfo.encryptedPasswordShishanyouni,
                                 year:     "2025",
                                 term:     "2"
                             )
@@ -190,7 +189,7 @@ struct DebugRoom: View
 
                 Button("测试\(SchoolServiceName.unifiedIdentity)登录接口（MFA）")
                 {
-                    let casBinder = CASBinder()
+                    let casBinder = SchoolIdentityAPI()
                     Task
                     {
                         do
@@ -214,7 +213,7 @@ struct DebugRoom: View
 
                 Button("测试南湖跑查询接口")
                 {
-                    let nanhurunquery: GymCloudQuery = GymCloudQuery()
+                    let nanhurunquery: GymCloudAPI = GymCloudAPI()
                     Task
                     {
                         do
@@ -242,7 +241,7 @@ struct DebugRoom: View
 
                 Button("测试电费查询接口")
                 {
-                    let electrictyquery: ElectricityQuery = ElectricityQuery()
+                    let electrictyquery: ElectricityAPI = ElectricityAPI()
                     Task
                     {
                         do
